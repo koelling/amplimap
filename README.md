@@ -7,4 +7,4 @@
 
 2. Generation of per-basepair "pileup" tables with nucleotide counts of each base at each target basepair for each sample, to help estimate somatic mutation frequencies.
 
-Built on top of *Snakemake* and *Python 3*, *amplimap* is entirely automated and can easily be run on a single machine as well as a cluster (eg. LSF, SGD).
+Built on top of *Snakemake* and *Python 3*, *amplimap* is entirely automated and can easily be run on a single machine as well as a cluster (eg. LSF, SGE).
