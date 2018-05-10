@@ -232,7 +232,7 @@ def main():
                             used_file_hashes = yaml.safe_load(used_file_hashes_file.read())
 
                             from .reader import get_file_hashes
-                            for fn, current_hash in get_file_hashes().items():
+                            for fn, current_hash in get_file_hashes(args.working_directory).items():
                                 if used_file_hashes[fn] != current_hash:
                                     sys.stderr.write('File {} seems to have changed since the last run!\n\n'.format(fn))
                                     sys.stderr.write('To ensure consistent results, you should rename or delete the old analysis directory and start a new analysis.\n')
