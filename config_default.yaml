@@ -1,0 +1,65 @@
+paths:
+  hg38:
+    bwa: "/PATH/TO/bwa/index/prefix"
+    bowtie2: "/PATH/TO/Bowtie2Index/genome"
+    star: "/PATH/TO/STAR/"
+    fasta: "/PATH/TO/genome.fa"
+    annovar: '/PATH/TO/annovar/indices'
+general:
+  reference_type: "genome"
+  genome_name: "hg38"
+  mask_bed: ""
+  ignore_umis: true
+  trim_primers: true
+  trim_min_length: 20
+  quality_trim_threshold: false
+  quality_trim_phred_base: 33
+  umi_min_consensus_count: 1
+  lanes: 0
+parse_reads:
+  max_mismatches: 2
+  umi_one: 0
+  umi_two: 0
+  min_percentage_good: 0
+align:
+  aligner: "bwa"
+  bowtie2:
+    report_n: 1
+pileup:
+  min_mapq: 0
+  min_baseq: 30
+  subsample_reads: false
+  validate_probe_targets: true
+  filter_softclipped: true
+  no_probe_data: false
+  umi_tag_name: RX
+  group_with_mate_positions: false
+variants:
+  caller: "gatk"
+  caller_low_frequency: "mutect2"
+  gatk:
+    parameters: "--disable-read-filter MappingQualityAvailableReadFilter --disable-read-filter WellformedReadFilter"
+  mutect2:
+    parameters: ""
+  platypus:
+    parameters: "--filterDuplicates=0 --filterReadsWithDistantMates=0 --minFlank=0 --trimOverlapping=0 --sbThreshold=0 --abThreshold=0"
+annotate:
+  annovar:
+    protocols: 'refGene,esp6500siv2_all,1000g2014oct_all,avsnp147,cosmic82,dbnsfp33a,clinvar_20150629,dbscsnv11,exac03,gnomad_genome,gnomad_exome'
+    operations: 'g,f,f,f,f,f,f,f,f,f,f'
+clusters:
+  qsub:
+    command_sync: 'qsub -o {workflow.workdir_init}/cluster_log/ -sync yes -j y -m n'
+  bsub:
+    command_nosync: 'bsub -oo {workflow.workdir_init}/cluster_log/%J.log'
+modules:
+  bedtools: ''
+  samtools: ''
+  bcftools: ''
+  bwa: ''
+  bowtie2: ''
+  star: ''
+  platypus: ''
+  gatk: ''
+  annovar: ''
+  picard: ''
