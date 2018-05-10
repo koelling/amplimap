@@ -183,12 +183,6 @@ def main():
                 raise Exception('Path for {} reference is set to {}, which is probably incorrect. Please set the correct path in your default configuration or your local config.yaml file, or leave it empty.'.format(
                     name, path))
 
-        #provide our source dir name to snakefile
-        config['general']['amplimap_dir'] = basedir
-        #this will be used to (very hackily) make sure amplimap can be imported as amplimap.xxx
-        #by adding the parent dir to the top of sys.path in the Snakefile
-        config['general']['amplimap_parent_dir'] = os.path.dirname(basedir)
-
         #check if analysis dir exists already
         analysis_dir = os.path.join(args.working_directory, 'analysis')
         configfile = os.path.join(analysis_dir, 'config_used.yaml')
@@ -251,6 +245,12 @@ def main():
         #write config to analysis directory, and then use that for snakemake
         with open(configfile, 'w') as f:
             yaml.dump(config, f, default_flow_style=False)
+
+        #provide our source dir name to snakefile, but only after checking and saving the config
+        config['general']['amplimap_dir'] = basedir
+        #this will be used to (very hackily) make sure amplimap can be imported as amplimap.xxx
+        #by adding the parent dir to the top of sys.path in the Snakefile
+        config['general']['amplimap_parent_dir'] = os.path.dirname(basedir)
 
         #set up cluster commands
         cluster_command_nosync = None
