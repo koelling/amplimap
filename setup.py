@@ -26,9 +26,7 @@ setup(
 
     packages = find_packages(),
     #these files will be added to the package directory
-    package_data={ '': ['parse_reads_cy.pyx'] },
-    #these files should be one level above the package directory (amplimap)
-    data_files = [ ('', ['Snakefile', 'config_default.yaml']) ],
+    package_data={ '': ['parse_reads_cy.pyx', 'Snakefile', 'config_default.yaml'] },
 
     # metadata for upload to PyPI
     author = "Nils Koelling",
