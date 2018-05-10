@@ -204,6 +204,11 @@ def make_trimmed_read(read, probe,
                 sys.exit('fail')
                 return ''
 
+    #make sure these are ints (they should be, but the probes.csv might contain floats)
+    primer_trim_start = int(primer_trim_start)
+    primer_trim_end = int(primer_trim_end)
+
+    #trim seq and quality
     read_seq_trimmed = read[1][primer_trim_start:primer_trim_end]
     read_qual_trimmed = read[2][primer_trim_start:primer_trim_end]
     primer_trimmed_len = len(read_seq_trimmed)

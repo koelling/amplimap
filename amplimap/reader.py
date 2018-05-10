@@ -259,6 +259,20 @@ def read_new_probe_design(path: str, reference_type: str = 'genome') -> pd.DataF
         design['capture_size'] = design['probe_end'] - design['probe_start_0']
         design['target_length'] = design['target_end'] - design['target_start_0']
 
+        #fix data types for generated columns, because somehow the columns involving .str.len() got turned into floats?!
+        design = design.astype(
+            {
+                'probe_start': 'uint',
+                'probe_start_0': 'uint',
+                'probe_end': 'uint',
+                'capture_size': 'uint',
+
+                #seems to stay int, but let's make sure
+                'target_length': 'uint',
+            },
+            errors = 'raise'
+        )
+
         # #chr should start with chr
         # if reference_type == 'genome':
         #     design.loc[~design['chr'].str.startswith('chr'), 'chr'] = ['chr' + c for c in design.loc[~design['chr'].str.startswith('chr'), 'chr']]
@@ -425,6 +439,15 @@ def read_targets(path: str, check_overlaps: bool = False, reference_type: str = 
         #     targets.loc[~targets['chr'].str.startswith('chr'), 'chr'] = ['chr' + c for c in targets.loc[~targets['chr'].str.startswith('chr'), 'chr']]
 
         targets['length'] = targets['end'] - targets['start_0']
+
+        #fix data types (should already be int but let's make sure)
+        targets = targets.astype(
+            {
+                'length': 'uint',
+            },
+            errors = 'raise'
+        )
+
         targets_wrong_length = targets['length'] <= 0
         if targets_wrong_length.any():
             print(targets[targets_wrong_length])
