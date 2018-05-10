@@ -19,9 +19,6 @@ Read parser
 .. automodule:: amplimap.parse_reads
    :members:
 
-.. automodule:: amplimap.parse_reads_cy
-   :members:
-
 Alignment stats
 ---------------
 
