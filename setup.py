@@ -5,12 +5,7 @@ import sys
 if sys.version_info[0] < 3:
     sys.exit("Sorry, amplimap requires at least Python 3")
 
-from setuptools import setup, find_packages
-#"Note that when using setuptools, you should import it before Cython"
-try:
-    from Cython.Build import cythonize #this will fail if cython is not installed
-except ImportError:
-    raise ImportError('Could not load Cython! Please make sure the cython package is installed.')
+from setuptools import setup, find_packages, Extension
 
 #load version number (can't just import the package since we might miss requirements)
 filename = 'amplimap/version.py'
@@ -33,7 +28,7 @@ setup(
     author_email = "git@nk.gl",
     description = "amplicon/smMIP mapping and analysis pipeline",
     long_description = long_description,
-    #license = "MIT",
+    license = "Apache License, Version 2.0",
     keywords = "amplimap amplicon smmip mapping analysis pipeline",
     url = "https://github.com/koelling/amplimap/",
     download_url="https://github.com/koelling/amplimap/archive/v%s.tar.gz" % __version__,
@@ -42,13 +37,13 @@ setup(
         'console_scripts': [
             'amplimap = amplimap.run:main',
             'amplimap_merge = amplimap.merge_folders:main',
-            'amplimap_pileup = amplimap.pileup:main',
+            #'amplimap_pileup = amplimap.pileup:main',
         ]
     },
 
     classifiers=[
         'Development Status :: 4 - Beta',
-        #'License :: OSI Approved :: MIT License',
+        'License :: OSI Approved :: Apache Software License',
         'Operating System :: MacOS',
         'Operating System :: Unix',
         'Programming Language :: Python :: 3',
@@ -71,5 +66,10 @@ setup(
         'umi_tools',
     ],
 
-    ext_modules = cythonize("amplimap/parse_reads_cy.pyx")
+    setup_requires=[
+        'setuptools>=18.0',
+        'cython',
+    ],
+
+    ext_modules = [Extension("amplimap.parse_reads_cy", ["amplimap/parse_reads_cy.pyx"])]
 )
