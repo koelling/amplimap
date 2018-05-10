@@ -398,8 +398,12 @@ def parse_read_pairs(
                         second_umi = second_read_str[:umi_two]
 
                         #extract read id
-                        first_id = first_read[0][:first_read[0].index(' ')]
-                        second_id = second_read[0][:second_read[0].index(' ')]
+                        first_id = first_read[0]
+                        if ' ' in first_id:
+                            first_id = first_id[:first_id.index(' ')]
+                        second_id = second_read[0]
+                        if ' ' in second_id:
+                            second_id = second_id[:second_id.index(' ')]
                         assert len(first_id) > 0
                         assert first_id == second_id
 
