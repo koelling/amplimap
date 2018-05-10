@@ -49,7 +49,7 @@ def main():
     Run amplimap.
     """
     try:
-        basedir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+        basedir = os.path.dirname(os.path.realpath(__file__))
         #sys.stderr.write('Called with arguments: "{}"\n'.format('" "'.join(sys.argv)))
         
         #parse the arguments, which will be available as properties of args (e.g. args.probe)
@@ -183,9 +183,11 @@ def main():
                 raise Exception('Path for {} reference is set to {}, which is probably incorrect. Please set the correct path in your default configuration or your local config.yaml file, or leave it empty.'.format(
                     name, path))
 
-        #adjust config
-        config['general']['basedir'] = basedir
-        config['general']['amplimap_dir'] = os.path.join(basedir, 'amplimap')
+        #provide our source dir name to snakefile
+        config['general']['amplimap_dir'] = basedir
+        #this will be used to (very hackily) make sure amplimap can be imported as amplimap.xxx
+        #by adding the parent dir to the top of sys.path in the Snakefile
+        config['general']['amplimap_parent_dir'] = os.path.dirname(basedir)
 
         #check if analysis dir exists already
         analysis_dir = os.path.join(args.working_directory, 'analysis')

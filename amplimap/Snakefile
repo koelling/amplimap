@@ -1,4 +1,8 @@
-import os, shutil
+import os, shutil, sys
+
+#make sure we can import amplimap, and we are using the correct path
+#by adding it to the beginning of sys.path
+sys.path.insert(0, config['general']['amplimap_parent_dir'])
 
 #version and title
 from amplimap.version import __title__, __version__
@@ -49,7 +53,7 @@ SAMPLES = [s for s in SAMPLES if s != 'Undetermined_S0']
 #versions
 VERSIONS = {}
 VERSIONS['_amplimap'] = str(__version__)
-VERSIONS['Snakefile'] = str(os.path.getmtime(os.path.join(config['general']['basedir'], 'Snakefile')))
+VERSIONS['Snakefile'] = str(os.path.getmtime(os.path.join(config['general']['amplimap_dir'], 'Snakefile')))
 VERSIONS['parse_reads'] = str(os.path.getmtime(os.path.join(config['general']['amplimap_dir'], 'parse_reads.py')))
 VERSIONS['pileup'] = str(os.path.getmtime(os.path.join(config['general']['amplimap_dir'], 'pileup.py')))
 VERSIONS['stats_alignment'] = str(os.path.getmtime(os.path.join(config['general']['amplimap_dir'], 'stats_alignment.py')))
