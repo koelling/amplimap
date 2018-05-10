@@ -71,5 +71,9 @@ setup(
         'umi_tools',
     ],
 
+    setup_requires=[
+        'cython',
+    ],
+
     ext_modules = cythonize("amplimap/parse_reads_cy.pyx")
 )
