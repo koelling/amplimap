@@ -1,3 +1,18 @@
+#NK:
+.DS_Store
+*.sublime-*
+out_*/
+*.glue
+old/
+test.*
+scratch/
+.Rhistory
+*.html
+package/__pycache__/
+build/
+dist/
+amplimap.egg-info/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
