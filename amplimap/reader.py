@@ -72,7 +72,7 @@ def get_file_hashes(path: str = '.') -> dict:
         fpath = os.path.join(path, fn)
         if os.path.isfile(fpath):
             file_hash = hashlib.sha256()
-            with open(fn, 'rb', buffering = 0) as file:
+            with open(fpath, 'rb', buffering = 0) as file:
                 for chunk in iter(lambda : file.read(128*1024), b''):
                     file_hash.update(chunk)
             hashes[fn] = file_hash.hexdigest()

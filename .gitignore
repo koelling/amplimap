@@ -12,6 +12,7 @@ package/__pycache__/
 build/
 dist/
 amplimap.egg-info/
+amplimap/*.c
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
