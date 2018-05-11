@@ -7,6 +7,7 @@ import argparse
 import yaml
 
 from .version import __title__, __version__
+from .reader import AmplimapReaderException, read_new_probe_design, read_targets, read_snps_txt
 
 def check_config_keys(default_config, my_config, path = []):
     """Recursively check that config keys provided in my_config also exist in default_config (ignoring 'paths' and 'clusters')."""
@@ -168,11 +169,17 @@ def main():
             if not config['general']['quality_trim_threshold'] > 0 and config['general']['quality_trim_threshold'] < 1:
                 raise Exception('quality_trim_threshold must be either "false" or above 0 and below 1!')
 
-        if not config['parse_reads']['min_percentage_good'] >= 0 and config['parse_reads']['min_percentage_good'] <= 100:
+        if not (config['parse_reads']['min_percentage_good'] >= 0 and config['parse_reads']['min_percentage_good'] <= 100):
             raise Exception('min_percentage_good must be between 0 and 100')
+
+        if not (config['parse_reads']['umi_one'] >= 0 and config['parse_reads']['umi_two'] >= 0):
+            raise Exception('umi_one and umi_two must be 0 or greater')
 
         if config['annotate']['annovar']['protocols'].count(',') != config['annotate']['annovar']['operations'].count(','):
             raise Exception('The number of comma-separated protocols and operations under `annotate: annovar:` must match!')
+
+        #if we don't have UMIs we definitely have to ignore them
+        config['general']['ignore_umis'] = config['general']['ignore_umis'] or config['parse_readse']['umi_one'] + config['parse_readse']['umi_two'] == 0
 
         #check we have proper paths
         if not config['general']['genome_name'] in config['paths']:
@@ -182,6 +189,17 @@ def main():
             if path.startswith('/PATH/TO/'):
                 raise Exception('Path for {} reference is set to {}, which is probably incorrect. Please set the correct path in your default configuration or your local config.yaml file, or leave it empty.'.format(
                     name, path))
+
+        #check input files
+        sys.stderr.write('Checking input files...\n')
+        if os.path.isfile(os.path.join(args.working_directory, 'probes.csv')):
+            read_new_probe_design(os.path.join(args.working_directory, 'probes.csv'), reference_type = config['general']['reference_type'])
+        if os.path.isfile(os.path.join(args.working_directory, 'targets.csv')):
+            read_targets(os.path.join(args.working_directory, 'targets.csv'), reference_type = config['general']['reference_type'], file_type = 'csv')
+        if os.path.isfile(os.path.join(args.working_directory, 'targets.bed')):
+            read_targets(os.path.join(args.working_directory, 'targets.bed'), reference_type = config['general']['reference_type'], file_type = 'bed')
+        if os.path.isfile(os.path.join(args.working_directory, 'snps.txt')):
+            read_snps_txt(os.path.join(args.working_directory, 'snps.txt'), reference_type = config['general']['reference_type'])
 
         #provide our source dir name to snakefile
         config['general']['amplimap_dir'] = basedir
@@ -307,11 +325,19 @@ def main():
         else:
             sys.stderr.write('{} {} failed! Please see output above or cluster logs for details.\n'.format(__title__,  __version__))
             return 1
+    except AmplimapReaderException as e:
+        if args.debug:
+            import traceback
+            traceback.print_exc()
+        sys.stderr.write(str(e))
+        sys.stderr.write('{} {} failed!\n'.format(__title__, __version__))
+        return 2
     except Exception as e:
         if args.debug:
             import traceback
             traceback.print_exc()
         sys.stderr.write('\nERROR: {}\n\n'.format(e))
+        sys.stderr.write('{} {} failed!\n'.format(__title__, __version__))
         return 1
 
 if __name__ == '__main__':

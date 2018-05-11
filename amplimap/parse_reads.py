@@ -1,7 +1,6 @@
 #python 3 compat
 #http://python-future.org/compatible_idioms.html
 from __future__ import print_function
-from six.moves import zip #replacement for itertools.izip in python2/3 way
 
 import sys
 import os
@@ -390,22 +389,22 @@ def parse_read_pairs(
                             log.error('Multiple probes for read pair #%d (%s) -- %s', counters['pairs_total'], first_read[0], str(matches))
                             raise Exception('ABORTING: Multiple probes encountered!')
 
+                    #extract sequences
+                    first_umi = first_read_str[:umi_one]
+                    second_umi = second_read_str[:umi_two]
+
+                    #extract read id
+                    first_id = first_read[0]
+                    if ' ' in first_id:
+                        first_id = first_id[:first_id.index(' ')]
+                    second_id = second_read[0]
+                    if ' ' in second_id:
+                        second_id = second_id[:second_id.index(' ')]
+                    assert len(first_id) > 0, 'Encountered read with missing read name, stopping! Read #%d' % counters['pairs_total']
+                    assert first_id == second_id, 'Encountered mismatching read IDs between R1 and R2, stopping! Read #%d %s/%s' % (counters['pairs_total'], first_id, second_id)
+
                     for match in matches:
                         probe = match[0]
-
-                        #extract sequences
-                        first_umi = first_read_str[:umi_one]
-                        second_umi = second_read_str[:umi_two]
-
-                        #extract read id
-                        first_id = first_read[0]
-                        if ' ' in first_id:
-                            first_id = first_id[:first_id.index(' ')]
-                        second_id = second_read[0]
-                        if ' ' in second_id:
-                            second_id = second_id[:second_id.index(' ')]
-                        assert len(first_id) > 0
-                        assert first_id == second_id
 
                         if fastqs is not None:
                             first_len = len(probes_dict['first_primer_5to3'][probe])

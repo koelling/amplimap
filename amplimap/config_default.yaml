@@ -9,7 +9,7 @@ general:
   reference_type: "genome"
   genome_name: "hg38"
   mask_bed: ""
-  ignore_umis: true
+  ignore_umis: true  
   trim_primers: true
   trim_min_length: 20
   quality_trim_threshold: false

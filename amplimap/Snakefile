@@ -150,7 +150,6 @@ rule check_python_packages:
     output:
         touch("checks/check_python_packages.done")
     run:
-        import six
         import numpy
         import pdb
         import Bio
