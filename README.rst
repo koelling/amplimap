@@ -26,5 +26,15 @@ Built on top of Snakemake and Python 3, amplimap is entirely
 automated and can be run on a single machine as well as on a HPC cluster
 (eg. LSF, SGE).
 
-- Github: https://github.com/koelling/amplimap/
+Links
+--------
+
+- Package: https://pypi.org/project/amplimap/
+- Code: https://github.com/koelling/amplimap/
 - Documentation: https://amplimap.readthedocs.io/
+
+
+Basic installation
+-------------------
+
+	pip install amplimap
