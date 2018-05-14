@@ -947,7 +947,7 @@ rule do_pileup:
 
             #to allow running straight from tagged bams:
             no_probe_data = config['pileup']['no_probe_data'],
-            umi_tag_name = config['pileup']['umi_tag_name'],
+            umi_tag_name = config['general']['umi_tag_name'],
         )
 
 rule pileup_agg:
@@ -999,7 +999,7 @@ rule do_pileup_snps:
 
             #to allow running straight from tagged bams:
             no_probe_data = config['pileup']['no_probe_data'],
-            umi_tag_name = config['pileup']['umi_tag_name'],
+            umi_tag_name = config['general']['umi_tag_name'],
         )
 
 rule pileup_snps_agg:

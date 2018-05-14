@@ -178,8 +178,10 @@ def main():
         if config['annotate']['annovar']['protocols'].count(',') != config['annotate']['annovar']['operations'].count(','):
             raise Exception('The number of comma-separated protocols and operations under `annotate: annovar:` must match!')
 
-        #if we don't have UMIs we definitely have to ignore them
-        config['general']['ignore_umis'] = config['general']['ignore_umis'] or config['parse_readse']['umi_one'] + config['parse_readse']['umi_two'] == 0
+        #if we don't have UMIs (either on reads or as bam tag) we definitely have to ignore them
+        #this makes it possible to "auto-detect" whether we need to ignore_umis or not
+        if (config['parse_reads']['umi_one'] + config['parse_reads']['umi_two'] == 0) and config['general']['umi_tag_name'] == "":
+            config['general']['ignore_umis'] = True
 
         #check we have proper paths
         if not config['general']['genome_name'] in config['paths']:
