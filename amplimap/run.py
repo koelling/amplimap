@@ -50,9 +50,6 @@ def main(argv = None):
     Run amplimap.
     """
     try:
-        if argv is None:
-            argv = sys.argv
-
         basedir = os.path.dirname(os.path.realpath(__file__))
         #sys.stderr.write('Called with arguments: "{}"\n'.format('" "'.join(sys.argv)))
         
