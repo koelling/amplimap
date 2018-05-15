@@ -4,7 +4,8 @@ This does some basic testing of the whole pipeline. Note this needs to be run th
 
 #make sure we can import from package directory
 import sys, os
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__)))) 
+packagedir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, packagedir) 
 
 import shutil
 import subprocess
@@ -12,11 +13,12 @@ import pandas as pd
 
 import amplimap.run
 
-#use this to load parse_reads_cy properly
-import pyximport; pyximport.install()
+#we need to build the cython file here, since snakemake will call an external python that wouldn't
+#inherit pyximport
+os.system("cythonize -i {}".format(os.path.join(packagedir, "amplimap/parse_reads_cy.pyx")))
 
 #set config
-os.environ['AMPLIMAP_CONFIG'] = "sample_data/config_default.yaml"
+os.environ['AMPLIMAP_CONFIG'] = os.path.join(packagedir, "sample_data/config_default.yaml")
 
 def init_wd(path):
     assert os.path.isdir(path)
@@ -36,26 +38,27 @@ def test_version(capsys):
 def test_config(capsys):
     amplimap.run.main(['--print-config'])
     captured = capsys.readouterr()
-    assert 'Reading additional configuration from: sample_data/config_default.yaml' in captured.err
+    assert 'Reading additional configuration from: {}'.format(os.path.join(packagedir, "sample_data/config_default.yaml")) in captured.err
     # with capsys.disabled():
     #     sys.stdout.write(captured.err)
     #     sys.stdout.write(captured.out)
 
 def test_normal_pileups(capsys):
-    init_wd("sample_data/wd1/")
+    wd_path = os.path.join(packagedir, "sample_data/wd1/")
+    init_wd(wd_path)
 
     #dry-run
-    amplimap.run.main(['--working-directory={}'.format("sample_data/wd1/"), 'pileups'])
+    amplimap.run.main(['--working-directory={}'.format(wd_path), 'pileups'])
     captured = capsys.readouterr()
     assert '{} {} dry run successful.'.format(amplimap.run.__title__, amplimap.run.__version__) in captured.err.strip()
 
     #full run
-    amplimap.run.main(['--working-directory={}'.format("sample_data/wd1/"), 'pileups', '--run'])
+    amplimap.run.main(['--working-directory={}'.format(wd_path), 'pileups', '--run'])
     captured = capsys.readouterr()
     assert '{} {} finished!'.format(amplimap.run.__title__, amplimap.run.__version__) in captured.err.strip()
 
     #check sample stats
-    samples = pd.read_csv('sample_data/wd1/analysis/reads_parsed/stats_samples.csv')
+    samples = pd.read_csv(os.path.join(wd_path, 'analysis/reads_parsed/stats_samples.csv'))
     assert len(samples) == 1
 
     assert samples.loc[0, 'sample'] == 'S1'
@@ -64,7 +67,7 @@ def test_normal_pileups(capsys):
     assert samples.loc[0, 'pairs_good_arms'] == 5
 
     #check pileups
-    pileups = pd.read_csv('sample_data/wd1/analysis/pileup/pileups_long.csv')
+    pileups = pd.read_csv(os.path.join(wd_path, 'analysis/pileup/pileups_long.csv'))
     assert len(pileups) == 11
 
     assert pileups.loc[~pileups.pos.isin([35,37]), 'alts'].isnull().all()
