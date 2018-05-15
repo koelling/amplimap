@@ -45,11 +45,14 @@ def compare_config_dicts(my_config, used_config, path = []):
             sys.stderr.write('Warning - config key {} not set in used config\n'.format(':'.join(path+[key])))
     return differences
 
-def main():
+def main(argv = None):
     """
     Run amplimap.
     """
     try:
+        if argv is None:
+            argv = sys.argv
+
         basedir = os.path.dirname(os.path.realpath(__file__))
         #sys.stderr.write('Called with arguments: "{}"\n'.format('" "'.join(sys.argv)))
         
@@ -72,7 +75,7 @@ def main():
         parser.add_argument("--debug", help="debug mode", action="store_true")
         #parser.add_argument("--debug-dag", help="debug DAG", action="store_true")
         parser.add_argument("TARGET", help="targets to run (eg. pileups variants coverages)", nargs="*")
-        args = parser.parse_args()
+        args = parser.parse_args(argv)
 
         if args.version:
             print('{} {}'.format(__title__, __version__))
