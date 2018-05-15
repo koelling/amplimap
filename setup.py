@@ -14,7 +14,7 @@ exec(compile(open(filename, "rb").read(), filename, 'exec')) #python2/3 compatib
 #load long description from readme
 import codecs
 with codecs.open('README.rst', 'r', 'utf-8') as f:
-    long_description = f.read
+    long_description = f.read()
 
 setup(
     name = __title__,
