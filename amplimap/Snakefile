@@ -35,20 +35,21 @@ else:
     assert samples_with_lane1 == samples_with_lane2, 'Did not find R1 and R2 fastq files for all samples!'
 
     #now get list of samples and lanes
-    SAMPLES_FULL, LANES = glob_wildcards("reads_in/{sample_full}_L{lane}_R1_001.fastq.gz") 
+    SAMPLES_FULL, LANES = glob_wildcards("reads_in/{sample_full}_L{lane}_R1_001.fastq.gz")
 
     #make unique
     SAMPLES = list(set(SAMPLES_FULL))
 
     #auto-detect number of input lanes
     if config['general']['lanes'] == 0:
-        config['general']['lanes_actual'] = max((int(l) for l in LANES))
+        config['general']['lanes_actual'] = max((int(l) for l in LANES)) if len(LANES) > 0 else 1
     else:
         config['general']['lanes_actual'] = config['general']['lanes']
 
 #sort and make sure we don't use "Undetermined" sample
 SAMPLES.sort()
 SAMPLES = [s for s in SAMPLES if s != 'Undetermined_S0']
+assert len(SAMPLES) > 0, '\n\nNo samples found. Please check input filenames.\n\n'
 
 #versions
 VERSIONS = {}

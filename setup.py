@@ -12,8 +12,9 @@ filename = 'amplimap/version.py'
 exec(compile(open(filename, "rb").read(), filename, 'exec')) #python2/3 compatible replacement for execfile()
 
 #load long description from readme
-with open('README.rst') as f:
-    long_description = f.read()
+import codecs
+with codecs.open('README.rst', 'r', 'utf-8') as f:
+    long_description = f.read
 
 setup(
     name = __title__,
