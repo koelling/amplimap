@@ -18,7 +18,7 @@ If this does not work, you can try to install it manually:
 
   #download and install amplimap
   #you may need to use `python` instead of `python3`
-  git clone https://github.com/koelling/amplimap.git
+  git clone --depth=1 https://github.com/koelling/amplimap.git
   cd amplimap
   python3 setup.py install
 
