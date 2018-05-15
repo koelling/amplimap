@@ -50,9 +50,6 @@ def main(argv = None):
     Run amplimap.
     """
     try:
-        if argv is None:
-            argv = sys.argv
-
         basedir = os.path.dirname(os.path.realpath(__file__))
         #sys.stderr.write('Called with arguments: "{}"\n'.format('" "'.join(sys.argv)))
         
@@ -75,7 +72,14 @@ def main(argv = None):
         parser.add_argument("--debug", help="debug mode", action="store_true")
         #parser.add_argument("--debug-dag", help="debug DAG", action="store_true")
         parser.add_argument("TARGET", help="targets to run (eg. pileups variants coverages)", nargs="*")
-        args = parser.parse_args(argv)
+        if argv is None:
+            args = parser.parse_args()
+        else:
+            args = parser.parse_args(argv)
+
+        if args.debug:
+            print('Incoming argv: {}'.format(str(argv)))
+            print('Targets: {}'.format(str(args.TARGET)))
 
         if args.version:
             print('{} {}'.format(__title__, __version__))
