@@ -51,13 +51,14 @@ Unmapped BAM files (unmapped_bams_in/)
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 
 Instead of the reads_in directory you can also provide your sequencing data
-as unmapped BAM files inside a 
-directory called ``unmapped_bams_in/``.
-If your reads contained UMIs, these should have been trimmed off already and be
-provided in the bam file using the ``RX`` tag.
-
+as unmapped BAM files inside a directory called ``unmapped_bams_in/``.
 This is useful for running amplimap on data from capture-based protocols.
-See also :ref:`running-capture`.
+
+If your reads contained UMIs, these should have been trimmed off already and be
+provided in the bam file using a BAM tag (eg. ``RX``). You will need to
+specify the name of this tag in the config file.
+
+See also :ref:`running-capture` for more details and examples.
 
 If you run amplimap with unmapped BAM files, probes can no longer be identified
 based on the primer arms. Thus, some of the output files can not be generated.

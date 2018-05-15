@@ -1,7 +1,6 @@
 #python 3 compat
 #http://python-future.org/compatible_idioms.html
 from __future__ import print_function
-from six import itervalues
 
 import sys
 import os
@@ -1018,7 +1017,8 @@ def process_file(input, output, probes_file, snps_file, targets_file, validate_p
                 del umi_counts
 
             #then do actual pileup
-            iter_pileup = samfile.pileup(region[0], region[1], region[2], max_depth = max_depth)
+            #note: do not filter at this stage since we will do this ourselves
+            iter_pileup = samfile.pileup(region[0], region[1], region[2], max_depth = max_depth, stepper = 'nofilter') 
             log.info('Piling up in region #%d: %s (length = %d)', region_index, region, region_length)
 
             seen_positions = set()
@@ -1083,7 +1083,7 @@ def process_file(input, output, probes_file, snps_file, targets_file, validate_p
 
             if region is not None:
                 #make sure we have pileup rows for every single nucleotide in the region
-                log.info('%s: Got %d pileup rows so far - checking between %d and %d (0-based)', region_id, len(rows), region[1], region[2])
+                log.info('%s: Got %d pileup rows so far - filling in missing positions between %d and %d (0-based)', region_id, len(rows), region[1], region[2])
                 for pos_0 in range(region[1], region[2]):
                     if not pos_0 in seen_positions:
                         #log.info('Row missing for: %d (0-based)', pos_0)

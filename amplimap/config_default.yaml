@@ -9,7 +9,8 @@ general:
   reference_type: "genome"
   genome_name: "hg38"
   mask_bed: ""
-  ignore_umis: true
+  ignore_umis: false
+  umi_tag_name: ""
   trim_primers: true
   trim_min_length: 20
   quality_trim_threshold: false
@@ -32,7 +33,6 @@ pileup:
   validate_probe_targets: true
   filter_softclipped: true
   no_probe_data: false
-  umi_tag_name: RX
   group_with_mate_positions: false
 variants:
   caller: "gatk"

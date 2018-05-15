@@ -21,11 +21,11 @@ class AmplimapReaderException(Exception):
     """
     def __init__(self, e: Exception, filename: str, should_have_header: bool = None):
         if isinstance(e, ValueError):
-            err = 'Invalid value. This usually indicates that there were non-numeric characters (eg. letters, spaces, ...) in a column that should only contain numbers. Detailed message: {}'.format(
+            err = 'Invalid value. This usually indicates that there were non-numeric characters (eg. letters, spaces, ...) in a column that should only contain numbers.\n\nMessage: {}'.format(
                 str(e)
             )
         elif isinstance(e, AssertionError):
-            err = 'Assertion error. This usually indicates that one of the values is invalid or in an unexpected range. Detailed message: {}'.format(
+            err = 'Assertion error. This usually indicates that one of the values is invalid or in an unexpected range.\n\nMessage: {}'.format(
                 str(e)
             )
         else:
@@ -243,8 +243,9 @@ def read_new_probe_design(path: str, reference_type: str = 'genome') -> pd.DataF
                 'strand': str,
                 'first_primer_5to3': str,
                 'second_primer_5to3': str,
-                'target_start': 'uint',
-                'target_end': 'uint',
+                #these need to be int instead of uint, otherwise they'll get turned into floats when subtracting an int (as we do below)
+                'target_start': int,
+                'target_end': int,
             },
             errors = 'raise'
         )
@@ -285,7 +286,7 @@ def read_new_probe_design(path: str, reference_type: str = 'genome') -> pd.DataF
 
         #check strand
         if 'strand' in design.columns:
-            assert (design['strand'].isin(['+', '-'])).all()
+            assert (design['strand'].isin(['+', '-'])).all(), 'strand must be + or -'
 
         #get reverse complement of sequence for smart trimming and matching to arms reverse read
         for c in ['first_primer_5to3', 'second_primer_5to3']:
@@ -397,8 +398,8 @@ def read_targets(path: str, check_overlaps: bool = False, reference_type: str = 
             {
                 'id': str,
                 'chr': str,
-                'start_0': 'uint',
-                'end': 'uint',
+                'start_0': int,
+                'end': int,
             },
             errors = 'raise'
         )
@@ -425,6 +426,7 @@ def read_targets(path: str, check_overlaps: bool = False, reference_type: str = 
         #     targets.loc[~targets['chr'].str.startswith('chr'), 'chr'] = ['chr' + c for c in targets.loc[~targets['chr'].str.startswith('chr'), 'chr']]
 
         targets['length'] = targets['end'] - targets['start_0']
+
         targets_wrong_length = targets['length'] <= 0
         if targets_wrong_length.any():
             print(targets[targets_wrong_length])
@@ -472,7 +474,7 @@ def read_snps_txt(path: str, reference_type: str = 'genome') -> pd.DataFrame:
             {
                 'id': str,
                 'chr': str,
-                'pos': 'uint',
+                'pos': int,
             },
             errors = 'raise'
         )

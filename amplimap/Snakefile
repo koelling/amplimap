@@ -150,7 +150,6 @@ rule check_python_packages:
     output:
         touch("checks/check_python_packages.done")
     run:
-        import six
         import numpy
         import pdb
         import Bio
@@ -174,7 +173,7 @@ rule check_target_overlaps:
 rule check_sample_info:
     version: VERSIONS['parse_reads']
     input:
-        rules.check_python_packages.output,
+        rules.start_analysis.output,
         sample_info = "sample_info.csv",
     output:
         touch("{analysis_dir}/checks/check_sample_info.done")
@@ -191,7 +190,7 @@ rule coverages:
 
 rule pileups_only:
     input:
-        rules.check_python_packages.output, #enforce packages (and thus also config) check here
+        rules.start_analysis.output, #enforce packages (and thus also config) check here
         "analysis/pileup/pileups_long.csv" if os.path.isfile("targets.bed") or os.path.isfile("targets.csv") else [],
         "analysis/pileup/target_coverage_long.csv" if os.path.isfile("targets.bed") or os.path.isfile("targets.csv") else [],
         "analysis/pileup_snps/target_snps_pileups_long.csv" if os.path.isfile("snps.txt") else []
@@ -286,7 +285,7 @@ rule convert_targets_csv:
 rule copy_probes:
     version: VERSIONS['parse_reads']
     input:
-        rules.check_python_packages.output,
+        rules.start_analysis.output,
         probes = "probes.csv"
     output:
         probes = "{analysis_dir}/probes.csv"
@@ -298,7 +297,7 @@ rule copy_probes:
 rule convert_mipgen_probes:
     version: VERSIONS['parse_reads']
     input:
-        rules.check_python_packages.output,
+        rules.start_analysis.output,
         mipgen = "probes_mipgen.csv"
     output:
         probes = "{analysis_dir}/probes.csv"
@@ -310,7 +309,7 @@ rule convert_mipgen_probes:
 rule convert_heatseq_probes:
     version: VERSIONS['parse_reads']
     input:
-        rules.check_python_packages.output,
+        rules.start_analysis.output,
         heatseq = "probes_heatseq.tsv"
     output:
         probes = "{analysis_dir}/probes.csv"
@@ -948,7 +947,7 @@ rule do_pileup:
 
             #to allow running straight from tagged bams:
             no_probe_data = config['pileup']['no_probe_data'],
-            umi_tag_name = config['pileup']['umi_tag_name'],
+            umi_tag_name = config['general']['umi_tag_name'],
         )
 
 rule pileup_agg:
@@ -1000,7 +999,7 @@ rule do_pileup_snps:
 
             #to allow running straight from tagged bams:
             no_probe_data = config['pileup']['no_probe_data'],
-            umi_tag_name = config['pileup']['umi_tag_name'],
+            umi_tag_name = config['general']['umi_tag_name'],
         )
 
 rule pileup_snps_agg:
