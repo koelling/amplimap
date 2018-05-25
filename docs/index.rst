@@ -43,6 +43,7 @@ Contents
    extended_installation
    code
    references
+   tutorials
 
 Citation and License
 --------------------

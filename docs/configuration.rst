@@ -1,3 +1,5 @@
+.. _configuration:
+
 Configuration
 -------------
 
@@ -35,6 +37,8 @@ configuration files, run ``amplimap --print-config``.
 
 Common configuration changes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. _config-reference:
 
 Reference genome paths
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -83,6 +87,21 @@ set your ``genome_name`` to the same name. For example:
 
 Note that when you are doing variant annotation with Annovar your
 ``genome_name`` has to match the name that Annovar uses.
+
+.. _config-annovar:
+
+Setting up Annovar
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+For licensing reasons annovar needs to be downloaded and installed manually.
+Please see the `Annovar website <http://annovar.openbioinformatics.org/en/latest/user-guide/download/>`_
+for details.
+
+Once you have Annovar installed we recommend that you download the following indices:
+
+- refGene,esp6500siv2_all,1000g2014oct_all,avsnp147,cosmic82,dbnsfp33a,clinvar_20150629,dbscsnv11,exac03,gnomad_genome,gnomad_exome
+
+Finally, you need to specify the path to your Annovar index directory in your :ref:`default-config` file (see :ref:`config-reference`).
+If you downloaded a different set of indices you also need to adjust the annovar protocols and operations parameters.
 
 Running with UMIs (eg. for smMIPs)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

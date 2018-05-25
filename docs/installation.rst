@@ -1,3 +1,5 @@
+.. _installation:
+
 Installation
 ------------
 amplimap is available through pip, so this command should install
