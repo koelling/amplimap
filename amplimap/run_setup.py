@@ -27,3 +27,16 @@ def main(argv = None):
             args = parser.parse_args()
         else:
             args = parser.parse_args(argv)
+
+        raise Exception('Not implemented yet.')
+        
+    except Exception as e:
+        if args.debug:
+            import traceback
+            traceback.print_exc()
+        sys.stderr.write('\nERROR: {}\n\n'.format(e))
+        sys.stderr.write('{} {} failed!\n'.format(__title__, __version__))
+        return 1
+
+if __name__ == '__main__':
+    sys.exit(main())
