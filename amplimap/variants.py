@@ -58,67 +58,80 @@ def load_gene_exons(file: str, genes: list) -> dict:
     #make dict of genes to exon locations
     gene_exons = {}
     for gex in gene_exon_df.itertuples():
-        #skip chrY FIXME: do we want this
-        if gex.chr == 'chrY':
-            continue
+        try:
+            #skip chrY FIXME: do we want this
+            if gex.chr == 'chrY':
+                continue
 
-        exon_data = {
-            'chr': gex.chr,
-            'strand': gex.strand,
-            'starts': [int(x) for x in gex.exon_starts.split(',') if len(x) > 0],
-            'ends': [int(x) for x in gex.exon_ends.split(',') if len(x) > 0],
-        }
+            exon_data = {
+                'chr': gex.chr,
+                'strand': gex.strand,
+                'starts': [int(x) for x in gex.exon_starts.split(',') if len(x) > 0],
+                'ends': [int(x) for x in gex.exon_ends.split(',') if len(x) > 0],
+            }
 
-        if gex.gene in gene_exons:
-            if gene_exons[gex.gene]['chr'] == exon_data['chr']:
-                if gene_exons[gex.gene]['strand'] == exon_data['strand']:
-                    n_total = 0
-                    n_added = 0
-                    for start, end in zip(exon_data['starts'], exon_data['ends']):
-                        n_total += 1
+            #do we already have exons for this gene?
+            if gex.gene in gene_exons:
+                #is this on the same chr (and not an Alt chr)?
+                if gene_exons[gex.gene]['chr'] == exon_data['chr']:
+                    #if we are on the same strand let's merge them
+                    if gene_exons[gex.gene]['strand'] == exon_data['strand']:
+                        n_total = 0
+                        n_added = 0
+                        for start, end in zip(exon_data['starts'], exon_data['ends']):
+                            n_total += 1
 
-                        #try to find existing pair that matches                        
-                        for existing_start, existing_end in zip(gene_exons[gex.gene]['starts'], gene_exons[gex.gene]['ends']):
-                            if existing_start == start and existing_end == end:
-                                break
-                        #otherwise add it
-                        else:
-                            n_added += 1
-                            gene_exons[gex.gene]['starts'].append(start)
-                            gene_exons[gex.gene]['ends'].append(end)
+                            #try to find existing pair that matches                        
+                            for existing_start, existing_end in zip(gene_exons[gex.gene]['starts'], gene_exons[gex.gene]['ends']):
+                                if existing_start == start and existing_end == end:
+                                    break
+                            #otherwise add it
+                            else:
+                                n_added += 1
+                                gene_exons[gex.gene]['starts'].append(start)
+                                gene_exons[gex.gene]['ends'].append(end)
 
-                    #log.debug('Merging exon data from duplicate rows for gene %s - added %d/%d', gex.gene, n_added, n_total)
+                        #log.debug('Merging exon data from duplicate rows for gene %s - added %d/%d', gex.gene, n_added, n_total)
+                    else:
+                        print(gex.gene)
+                        print(gene_exons[gex.gene])
+                        print(exon_data)
+                        raise Exception('Data mismatch!')
+                #if the existing copy is on a standard chr we want to keep it
+                elif regex_standard_chr.match(gene_exons[gex.gene]['chr']):
+                    #normally this should only happen if we are on an alt chr now
+                    if not regex_standard_chr.match(gex.chr):
+                        # log.debug('Skipping copy of gene on nonstandard chr for gene exon table: {} @ {}/{}'.format(
+                        #     gex.gene, gex.chr, gene_exons[gex.gene]['chr']
+                        # ))
+                        continue
+                    else:
+                        raise Exception('Two copies of gene on different standard chrs encounted for gene exon table: {} @ {}/{}'.format(
+                            gex.gene, gex.chr, gene_exons[gex.gene]['chr']
+                        ))
+                #if the existing copy was not on a standard chr we will just overwrite it with this copy
                 else:
-                    print(gene_exons[gex.gene])
-                    print(exon_data)
-                    raise Exception('Data mismatch!')
-            elif regex_standard_chr.match(gene_exons[gex.gene]['chr']):
-                if not regex_standard_chr.match(gex.chr):
-                    # log.debug('Skipping copy of gene on nonstandard chr for gene exon table: {} @ {}/{}'.format(
+                    pass
+                    # log.debug('Overwriting copy of gene on nonstandard chr for gene exon table: {} @ {}/{}'.format(
                     #     gex.gene, gex.chr, gene_exons[gex.gene]['chr']
                     # ))
-                    continue
-                else:
-                    raise Exception('Two copies of gene on different standard chrs encounted for gene exon table: {} @ {}/{}'.format(
-                        gex.gene, gex.chr, gene_exons[gex.gene]['chr']
-                    ))
-            else:
-                pass
-                # log.debug('Overwriting copy of gene on nonstandard chr for gene exon table: {} @ {}/{}'.format(
-                #     gex.gene, gex.chr, gene_exons[gex.gene]['chr']
-                # ))
 
-        gene_exons[gex.gene] = exon_data
+            #error checking
+            assert len(exon_data['starts']) == len(exon_data['ends'])
+            assert len(exon_data['starts']) == gex.n_exons
+            for start, end in zip(exon_data['starts'], exon_data['ends']):
+                assert end > start
 
-        #error checking
-        assert len(gene_exons[gex.gene]['starts']) == len(gene_exons[gex.gene]['ends'])
-        assert len(gene_exons[gex.gene]['starts']) == gex.n_exons
-        for start, end in zip(gene_exons[gex.gene]['starts'], gene_exons[gex.gene]['ends']):
-            assert end > start
+            #finally save the exon data
+            gene_exons[gex.gene] = exon_data
+        except Exception as e:
+            print('Error while processing exon data:')
+            print(e)
 
     #make sure we found exons for every gene
     missing_genes = set(genes) - set(gene_exons.keys())
-    assert pd.Series(genes).isin(gene_exons.keys()).all(), 'Failed to find exon location information for: %s' % (','.join(missing_genes))
+    if len(missing_genes) > 0:
+        print('Failed to find exon location information for: %s' % (','.join(missing_genes)))
 
     return gene_exons
 
@@ -129,7 +142,9 @@ def find_closest_exon(row: pd.Series, gexs: dict) -> int:
         return None
     if not row['Func.refGene'] in ['intronic', 'upstream', 'downstream']:
         return None
-    
+    if not row['Gene.refGene'] in gexs:
+        return None
+
     gex = gexs[row['Gene.refGene']]
     assert row['Chr'] == gex['chr']
     
