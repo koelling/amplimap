@@ -93,10 +93,10 @@ def load_gene_exons(file: str, genes: list) -> dict:
 
                         #log.debug('Merging exon data from duplicate rows for gene %s - added %d/%d', gex.gene, n_added, n_total)
                     else:
-                        print(gex.gene)
-                        print(gene_exons[gex.gene])
-                        print(exon_data)
-                        raise Exception('Data mismatch!')
+                        # print(gex.gene)
+                        # print(gene_exons[gex.gene])
+                        # print(exon_data)
+                        raise Exception('Exon strand mismatch for {}'.format(gex.gene))
                 #if the existing copy is on a standard chr we want to keep it
                 elif regex_standard_chr.match(gene_exons[gex.gene]['chr']):
                     #normally this should only happen if we are on an alt chr now
@@ -120,13 +120,13 @@ def load_gene_exons(file: str, genes: list) -> dict:
             assert len(exon_data['starts']) == len(exon_data['ends'])
             assert len(exon_data['starts']) == gex.n_exons
             for start, end in zip(exon_data['starts'], exon_data['ends']):
-                assert end > start
+                assert end > start, 'Exon end is not after start for {}'.format(gex.gene)
 
             #finally save the exon data
             gene_exons[gex.gene] = exon_data
         except Exception as e:
-            print('Error while processing exon data:')
-            print(e)
+            print('Igoring error while processing exon data: {}'.format(
+                str(e)))
 
     #make sure we found exons for every gene
     missing_genes = set(genes) - set(gene_exons.keys())
