@@ -71,14 +71,15 @@ align:
 pileup:
   #minimum mapping quality
   min_mapq: 0
-  #minimum base quality
+  #minimum base quality - amplimap will provide both total counts and counts with baseq>X in output files
   min_baseq: 30
-  #
+  #maximum depth of reads to process at each base (set to false to leave practically unlimited, currently 1e7)
   subsample_reads: false
-  #check that reads have the expected coordinates for their probe
-  validate_probe_targets: true
-  #filter reads with softclipped bases
-  filter_softclipped: true
+  #only consider base calls from reads that fall within the expected coordinates of their probe
+  #this will remove errorneous calls due to untrimmed primer arms from overlapping probes
+  validate_probe_targets: false
+  #filter reads with softclipped bases (but still consider mate)
+  filter_softclipped: false
   #set to true if probe data is not provided in read names
   no_probe_data: false
   #only group reads together if they also have the same mate start positions (in addition to their UMI matching)
@@ -87,7 +88,7 @@ pileup:
 #variant calling settings
 variants:
   #default variant caller (platypus/gatk)
-  caller: "gatk"
+  caller: "platypus"
   #beta: variant caller to use for low frequency variant calling (only mutect2 currently support)
   caller_low_frequency: "mutect2"
   #caller-specific parameters to use
