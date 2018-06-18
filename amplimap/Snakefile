@@ -86,6 +86,14 @@ def get_path(name, my_config = None, default = None):
     else:
         return my_config['paths'][my_config['general']['genome_name']][name]
 
+#helper to get annovar name for genome
+def get_annovar_name():
+    #use get_path here even though this is of course not a path
+    annovar_name = get_path('annovar_name', default = '') #empty default so we don't die if this is missing
+    if len(annovar_name) == 0:
+        annovar_name = config['general']['genome_name']
+    return annovar_name
+
 #helper to figure out which index to use
 #used with False to get actual parameter for tool call, and with True to get path for Snakemake
 def get_alignment_index_filename(real_path):
@@ -1218,7 +1226,7 @@ rule annotate_variants:
     input:
         "{analysis_dir}/{variants_dir}/{sample_full}.vcf",
     output:
-        "{analysis_dir}/{variants_dir}/{sample_full}.vcf."+config['general']['genome_name']+"_multianno.csv",
+        "{analysis_dir}/{variants_dir}/{sample_full}.vcf."+get_annovar_name()+"_multianno.csv",
         temp("{analysis_dir}/{variants_dir}/{sample_full}.for_annovar.vcf.gz"),
         temp("{analysis_dir}/{variants_dir}/{sample_full}.for_annovar.bed")
     run:
@@ -1260,7 +1268,7 @@ rule annotate_variants:
                 table_annovar.pl \
                     {output[2]:q} \
                     "%s" \
-                    --buildver {config[general][genome_name]:q} \
+                    --buildver "%s" \
                     --otherinfo -csvout -remove \
                     -protocol {config[annotate][annovar][protocols]:q} \
                     -operation {config[annotate][annovar][operations]:q} \
@@ -1273,12 +1281,12 @@ rule annotate_variants:
                     echo "Lost lines?!"
                     exit 2
                 fi
-            """ % (load_module_command('bcftools', config), load_module_command('annovar', config), get_path('fasta'), get_path('annovar')))
+            """ % (load_module_command('bcftools', config), load_module_command('annovar', config), get_path('fasta'), get_path('annovar'), get_annovar_name()))
 
 rule variants_merge:
     version: VERSIONS['variants']
     input:
-        csvs = expand("{{analysis_dir}}/{{variants_dir}}/{sample_full}.vcf."+config['general']['genome_name']+"_multianno.csv", sample_full = SAMPLES)
+        csvs = expand("{{analysis_dir}}/{{variants_dir}}/{sample_full}.vcf."+get_annovar_name()+"_multianno.csv", sample_full = SAMPLES)
     output:
         "{analysis_dir}/{variants_dir}/variants_merged.csv"
     run:
