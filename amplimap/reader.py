@@ -374,14 +374,14 @@ def read_targets(path: str, check_overlaps: bool = False, reference_type: str = 
                 targets['id'] = ['target_%d' % i for i in range(len(targets))]
             else:
                 print(targets)
-                raise Exception('Invalid target BED file -- expected to find either 6, 4 or 3 columns separated by tabs.')
+                raise Exception('Invalid target BED file: expected to find either 6, 4 or 3 columns separated by tabs.')
         elif file_type == 'csv':
             targets = pd.read_csv(path)
 
             #check columns
             if not ('chr' in targets.columns and 'start' in targets.columns and 'end' in targets.columns):
                 print(targets)
-                raise Exception('Invalid target CSV -- first line should contain column names, which must include "chr", "start" and "end".')
+                raise Exception('Invalid target CSV: first line should contain column names, which must include "chr", "start" and "end".')
 
             #add id if need be
             if not 'id' in targets.columns:
@@ -407,7 +407,7 @@ def read_targets(path: str, check_overlaps: bool = False, reference_type: str = 
         #make sure we have no duplicated ids
         if targets.duplicated('id').any():
             print(targets[targets.duplicated('id', keep=False)])
-            raise Exception('Invalid target table -- found duplicated target ID(s)!')
+            raise Exception('Invalid target table: found duplicated target ID(s)!')
 
         #check for overlaps
         if check_overlaps:
@@ -418,7 +418,7 @@ def read_targets(path: str, check_overlaps: bool = False, reference_type: str = 
                     if row1['chr'] == row2['chr'] and row1['start_0'] <= row2['end'] and row1['end'] >= row2['start_0']:
                         print(row1)
                         print(row2)
-                        raise Exception('Invalid target table -- target regions %s and %s overlap!' % (row1['id'], row2['id']))
+                        raise Exception('Invalid target table: target regions %s and %s overlap! Please merge them or shorten one of the regions' % (row1['id'], row2['id']))
 
         #chr should always start with chr
         targets['chr_original'] = targets['chr']
@@ -430,7 +430,7 @@ def read_targets(path: str, check_overlaps: bool = False, reference_type: str = 
         targets_wrong_length = targets['length'] <= 0
         if targets_wrong_length.any():
             print(targets[targets_wrong_length])
-            raise Exception('Invalid target table -- found targets with length <= 0')
+            raise Exception('Invalid target table: found targets with length <= 0! Please check start and end coordinates.')
 
         targets['type'] = 'target'
     except Exception as e:
