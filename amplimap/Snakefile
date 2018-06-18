@@ -601,8 +601,8 @@ rule parse_reads_pe:
             unknown_arms_directory = os.path.join(wildcards['analysis_dir'], 'reads_parsed'),
             umi_one = config['parse_reads']['umi_one'], umi_two = config['parse_reads']['umi_two'],
             mismatches = config['parse_reads']['max_mismatches'],
-            trim_primers = config['general']['trim_primers'],
-            trim_min_length = config['general']['trim_min_length'],
+            trim_primers = config['parse_reads']['trim_primers'],
+            trim_min_length = config['parse_reads']['trim_min_length'],
             trim_primers_strict = False,
             trim_primers_smart = False,
             quality_trim_threshold = config['parse_reads']['quality_trim_threshold'] if config['parse_reads']['quality_trim_threshold'] != False else None,
@@ -910,7 +910,7 @@ rule stats_alignment:
             output = "{}/stats_alignment/{}".format(wildcards['analysis_dir'], wildcards['sample_full']),
             min_mapq = config['pileup']['min_mapq'],
             min_consensus_count = config['general']['umi_min_consensus_count'],
-            include_primers = not config['general']['trim_primers'],
+            include_primers = not config['parse_reads']['trim_primers'],
             use_naive_groups = not config['general']['ignore_umis'],
             ignore_groups = config['general']['ignore_umis']
         )

@@ -30,10 +30,6 @@ general:
   ignore_umis: false
   #minimum number of reads supporting a UMI group
   umi_min_consensus_count: 1
-  #when using FASTQs as input: whether to trim off primers from beginning of reads
-  trim_primers: true
-  #when using FASTQs as input: minimum read length required
-  trim_min_length: 20
   #when using FASTQs as input: number of lanes (should be detected automatically if set to 0)
   lanes: 0
   #when using unmapped BAMs as input: tag in which the UMI has been saved
@@ -53,10 +49,14 @@ parse_reads:
   umi_two: 0
   #abort pipeline if fewer than this percentage of reads have a valid pair of primer arms
   min_percentage_good: 0
+  #whether to trim off primers from beginning of reads
+  trim_primers: true
   #quality trimming threshold as fraction between 0 and 1 (false = no trimming)
   quality_trim_threshold: false  
   #quality phred score encoding (usually phred-33 or phred-64)
   quality_trim_phred_base: 33
+  #minimum read length required after primer and quality trimming
+  trim_min_length: 20
 
 #alignment settings
 align:
