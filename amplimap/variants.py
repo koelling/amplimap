@@ -230,7 +230,7 @@ def make_summary(input, output, config, exon_table_path):
     #load targets (to add a targets column)
     target_intervals = None
     if len(input['targets']) > 0:
-        targets = read_targets(input['targets'], file_type = 'bed', reference_type = config['general']['reference_type'])
+        targets = read_targets(input['targets'], file_type = 'bed', reference_type = 'genome')
         target_intervals = collections.defaultdict(interlap.InterLap)
         for target in targets.itertuples():
             target_intervals[target.chr].add( (int(target.start_0), int(target.end), target) ) #note the double parentheses!

@@ -159,9 +159,6 @@ def main(argv = None):
         #     or os.path.isfile(os.path.join(args.working_directory, 'probes_heatseq.tsv')), 'probes.csv, probes_mipgen.csv, or probes_heatseq.tsv file missing'
 
         #check some basic settings
-        if not config['general']['reference_type'] in ['genome', 'transcriptome']:
-            raise Exception('general: reference_type must be genome or transcriptome!')
-
         aligners = ['naive', 'bwa', 'bowtie2', 'star']
         if not config['align']['aligner'] in aligners:
             raise Exception('align: aligner must be one of {}!'.format(','.join(aligners)))
@@ -202,13 +199,15 @@ def main(argv = None):
         #check input files
         sys.stderr.write('Checking input files...\n')
         if os.path.isfile(os.path.join(args.working_directory, 'probes.csv')):
-            read_new_probe_design(os.path.join(args.working_directory, 'probes.csv'), reference_type = config['general']['reference_type'])
+            read_new_probe_design(os.path.join(args.working_directory, 'probes.csv'), reference_type = 'genome')
         if os.path.isfile(os.path.join(args.working_directory, 'targets.csv')):
-            read_targets(os.path.join(args.working_directory, 'targets.csv'), reference_type = config['general']['reference_type'], file_type = 'csv')
+            #note: this will fail on overlapping targets
+            read_targets(os.path.join(args.working_directory, 'targets.csv'), check_overlaps=True, reference_type = 'genome', file_type = 'csv')
         if os.path.isfile(os.path.join(args.working_directory, 'targets.bed')):
-            read_targets(os.path.join(args.working_directory, 'targets.bed'), reference_type = config['general']['reference_type'], file_type = 'bed')
+            #note: this will fail on overlapping targets
+            read_targets(os.path.join(args.working_directory, 'targets.bed'), check_overlaps=True, reference_type = 'genome', file_type = 'bed')
         if os.path.isfile(os.path.join(args.working_directory, 'snps.txt')):
-            read_snps_txt(os.path.join(args.working_directory, 'snps.txt'), reference_type = config['general']['reference_type'])
+            read_snps_txt(os.path.join(args.working_directory, 'snps.txt'), reference_type = 'genome')
 
         #provide our source dir name to snakefile
         config['general']['amplimap_dir'] = basedir

@@ -842,6 +842,7 @@ def process_file(input, output, probes_file, snps_file, targets_file, validate_p
         log.info('Loaded reference genome fasta from %s', fasta_file)
 
     #figure out actual ends
+    #TODO: this is actually no longer in use, since reference_type is forced to 'genome' now.
     if reference_type == 'transcriptome' and targets is not None:
         if ref is None:
             raise Exception('Error: need reference fasta file to do pileup on transcriptome!')
