@@ -605,8 +605,8 @@ rule parse_reads_pe:
             trim_min_length = config['general']['trim_min_length'],
             trim_primers_strict = False,
             trim_primers_smart = False,
-            quality_trim_threshold = config['general']['quality_trim_threshold'] if config['general']['quality_trim_threshold'] != False else None,
-            quality_trim_phred_base = config['general']['quality_trim_phred_base'],
+            quality_trim_threshold = config['parse_reads']['quality_trim_threshold'] if config['parse_reads']['quality_trim_threshold'] != False else None,
+            quality_trim_phred_base = config['parse_reads']['quality_trim_phred_base'],
             allow_multiple_probes = False,
             consensus_fastqs = None, #output['consensus_fastqs'],
             min_consensus_count = config['general']['umi_min_consensus_count']

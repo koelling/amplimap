@@ -188,7 +188,7 @@ If everything look okay we start amplimap:
 
 ::
 
-    amplimap coverages variants
+    amplimap coverages variants --run
 
 This will take a few minutes to complete. It would be much faster if we
 ran jobs in parallel (for example using the cluster), but we are not
@@ -210,7 +210,7 @@ run statistics.
 analysis/bam/coverage/
 ''''''''''''''''''''''''
 This directory contains the coverage information for each sample and each target.
-The most comprehensive table to look at is coverages_long. In addition,
+The most comprehensive table to look at is ``coverages_long.csv``. In addition,
 there are also various aggregate tables that, for example, tell you the minimum coverage in each target and
 each sample (XXXX) or what fraction of the target was covered by at least one read (XXXX).
 

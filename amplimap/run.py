@@ -170,10 +170,10 @@ def main(argv = None):
         if not config['variants']['caller'] in callers:
             raise Exception('variants: caller must be one of {}!'.format(','.join(callers)))
 
-        if config['general']['quality_trim_threshold'] != False:
-            if not isinstance(config['general']['quality_trim_threshold'], float):
+        if config['parse_reads']['quality_trim_threshold'] != False:
+            if not isinstance(config['parse_reads']['quality_trim_threshold'], float):
                 raise Exception('quality_trim_threshold must be a decimal number!')
-            if not config['general']['quality_trim_threshold'] > 0 and config['general']['quality_trim_threshold'] < 1:
+            if not config['parse_reads']['quality_trim_threshold'] > 0 and config['parse_reads']['quality_trim_threshold'] < 1:
                 raise Exception('quality_trim_threshold must be either "false" or above 0 and below 1!')
 
         if not (config['parse_reads']['min_percentage_good'] >= 0 and config['parse_reads']['min_percentage_good'] <= 100):
