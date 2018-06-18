@@ -35,9 +35,9 @@ general:
   #when using unmapped BAMs as input: tag in which the UMI has been saved
   umi_tag_name: ""
   #beta: optional bed file specifying bases that should be masked with Ns
+  #if specified, amplimap will try to create a masked copy of the reference genome
+  #and build custom bwa/bowtie2/star indices for it
   mask_bed: ""
-  #deprecated, do not change:
-  reference_type: "genome"
 
 #settings for FASTQ read parsing
 parse_reads:
