@@ -89,7 +89,7 @@ pileup:
 variants:
   #default variant caller (platypus/gatk)
   caller: "platypus"
-  #beta: variant caller to use for low frequency variant calling (only mutect2 currently support)
+  #beta: variant caller to use for low frequency variant calling (only mutect2 currently supported)
   caller_low_frequency: "mutect2"
   #caller-specific parameters to use
   gatk:
@@ -104,6 +104,7 @@ annotate:
   #currently only annovar is supported
   annovar:
     #annovar protocols to use. note that these must have been downloaded to the index directory specified above
+    #the "refGene" database is required for variant annotation, all others are optional
     protocols: 'refGene,esp6500siv2_all,1000g2014oct_all,avsnp147,cosmic82,dbnsfp33a,clinvar_20150629,dbscsnv11,exac03,gnomad_genome,gnomad_exome'
     #operations corresponding to the protocols. must be the same length as the protocols
     operations: 'g,f,f,f,f,f,f,f,f,f,f'
