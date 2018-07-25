@@ -435,17 +435,23 @@ def make_summary_condensed(input, output):
             else:
                 print('Not filtering, got %d rows' % len(merged))
 
-            #get desired columns
-            merged['ID_dbsnp'] = merged['avsnp147']
+            #find column with dbsnp-id (taking first that starts with avsnp)
+            avsnp_columns = [c for c in merged.columns if c.startswith('avsnp')]
+            if len(avsnp_columns) > 0:
+                merged['ID_dbsnp'] = merged[avsnp_columns[0]]
+            #rename column
             merged['Genotype'] = merged['Var_Zygosity']
-            merged = merged[
-                ([] if do_filter == 'filtered' else ['Var_FailedFilters']) + [
+            #get desired columns
+            output_columns = ([] if do_filter == 'filtered' else ['Var_FailedFilters']) + [
                     'Sample', 'Target',
                     'Chr', 'Start', 'Ref', 'Alt', 'Genotype',
                     'ID_dbsnp', 'DeleteriousScore',
                     'Gene.refGene', 'Func.refGene', 'ExonicFunc.refGene', 'AAChange.refGene'
                 ] + sample_info_columns
-            ]
+            #make sure the columns actually exist
+            output_columns = [c for c in output_columns if c in merged.columns]
+
+            merged = merged[output_columns]
 
             #output
             merged.to_csv(output[do_filter], index = False)
