@@ -260,6 +260,8 @@ def make_summary(input, output, config, exon_table_path):
         #See here for better, more general solutions: https://www.biostars.org/p/53561/
         #or actually just use the same approach as for targest (interlap.InterLap)
         if include_exon_distance:
+            assert 'Gene.refGene' in merged.columns, 'The Annovar refGene database is required to calculate the distance to the nearest exon.'
+
             merged['DistanceNearestExon'] = merged.apply(find_closest_exon, axis = 1, gexs = load_gene_exons(
                 exon_table_path,
                 merged.loc[merged['Func.refGene'].isin(['intronic', 'upstream', 'downstream']), 'Gene.refGene']))
@@ -389,7 +391,8 @@ def make_summary(input, output, config, exon_table_path):
         first_cols = []
         if include_score:
             first_cols.append('DeleteriousScore')
-        first_cols += ['Gene.refGene', 'Func.refGene', 'ExonicFunc.refGene', 'AAChange.refGene']
+        if 'Gene.refGene' in merged.columns:
+            first_cols += ['Gene.refGene', 'Func.refGene', 'ExonicFunc.refGene', 'AAChange.refGene']
         if include_exon_distance:
             first_cols.append('DistanceNearestExon')
         first_cols = first_cols + [c for c in merged.columns if c.startswith('Var_') and c != 'Var_Qual']
