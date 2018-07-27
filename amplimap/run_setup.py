@@ -106,6 +106,7 @@ def main(argv = None):
             #- ask path to reference genome
             #- build fasta index, default aligner index
             #- ask to enter name of other index to create (bwa, bowtie2, star)
+            pass
         else:
             raise Exception('Please specify a valid operation!')
     except KeyboardInterruptException:
