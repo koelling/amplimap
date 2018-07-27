@@ -144,6 +144,7 @@ class ParseReads(unittest.TestCase):
                         #print(expected)
 
                         output = make_trimmed_read(
+                            read_id,
                             read,
                             probe,
                             target_len,
