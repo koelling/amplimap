@@ -746,6 +746,7 @@ def aggregate(folder, snps_file, ref, generate_calls):
     #figure out columns for detailed output
     agg_long_detailed_columns += ['count_hq_%s' % call for call in call_types]
     agg_long_detailed_columns.append('number_called_hq')
+    agg_long_detailed_columns += ['%s_fraction' % count_col for count_col in agg_long_count_cols]
     agg_long_detailed_columns.append('filter')
 
     #output long table
