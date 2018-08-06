@@ -188,7 +188,7 @@ def main(argv = None):
             config['general']['ignore_umis'] = True
 
         #check we have proper paths
-        if not config['general']['genome_name'] in config['paths']:
+        if not config['general']['genome_name'] in config['paths'] or not isinstance(config['paths'][config['general']['genome_name']], dict):
             raise Exception('Could not find list of paths for genome_name: "{}". Please add the paths to your default configuration or your local config.yaml file.'.format(config['general']['genome_name']))
 
         for name, path in config['paths'][config['general']['genome_name']].items():
@@ -283,7 +283,7 @@ def main(argv = None):
         cluster_command_sync = None
 
         if args.cluster:
-            if args.cluster in config['clusters']:
+            if args.cluster in config['clusters'] and isinstance(config['clusters'][args.cluster], dict):
                 if 'command_sync' in config['clusters'][args.cluster]:
                     cluster_command_sync = config['clusters'][args.cluster]['command_sync']
                 elif 'command_nosync' in config['clusters'][args.cluster]:
