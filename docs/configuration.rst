@@ -108,8 +108,7 @@ Running with UMIs (eg. for smMIPs)
 
 If one or both of your reads start with UMIs, you have to specify their lengths
 in the configuration file using the ``umi_one:`` and ``umi_two:`` settings
-under ``parse_reads:``. In addition, you probably want to set ``ignore_umis: false``
-under ``general:`` to enable UMI grouping for pileups and alignment stats.
+under ``parse_reads:``.
 
 For example, to process an experiment with 5bp UMIs on each read, your
 :file:`config.yaml` might look like this:
@@ -117,8 +116,6 @@ For example, to process an experiment with 5bp UMIs on each read, your
 
 ::
 
-    general:
-      ignore_umis: false
     parse_reads:
       umi_one: 5
       umi_two: 5
