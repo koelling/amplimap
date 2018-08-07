@@ -137,10 +137,12 @@ def process_pileup_read(
     read_name = pr.alignment.query_name
     mate_starts = get_al_mate_starts(pr.alignment) if group_with_mate_positions else None
     if ignore_groups:
-        read_probe = None
+        #we haven't pre-parsed the read yet, so let's do it now
         read_umi = None
+        #parse info from read name (should be bowtie2 compatible)
+        _, read_probe, _ = parse_extended_read_name(read_name)
     else:
-        #get read metadata (will raise if we didn't see this before, but we should always have)
+        #get read metadata from before (will raise if we didn't see this before, but we should always have)
         alignment_tuple = (read_name, mate_starts)
         read_name, read_probe, read_umi, _ = read_metadata[alignment_tuple]
 
