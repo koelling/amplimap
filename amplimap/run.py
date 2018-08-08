@@ -331,7 +331,11 @@ def main(argv = None):
                 sys.stderr.write('{} {} finished!\n'.format(__title__, __version__))
             return 0
         else:
-            sys.stderr.write('{} {} failed! Please see output above or cluster logs for details.\n'.format(__title__,  __version__))
+            if args.cluster:
+                sys.stderr.write('{} {} failed! Please see output above or cluster logs for details.\n'.format(__title__,  __version__))
+            else:
+                sys.stderr.write('{} {} failed! Please see output above for details.\n'.format(__title__,  __version__))
+
             return 1
     except AmplimapReaderException as e:
         if args.debug:
