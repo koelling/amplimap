@@ -16,7 +16,7 @@ Software required by amplimap
 
 Recommended additional software
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
--  bwa: https://www.ncbi.nlm.nih.gov/pubmed/19451168
+-  bwa: https://arxiv.org/abs/1303.3997
 -  Bowtie2: https://www.nature.com/articles/nmeth.1923
 -  STAR: https://academic.oup.com/bioinformatics/article/29/1/15/272537
 -  Platypus: http://www.nature.com/ng/journal/v46/n8/full/ng.3036.html
