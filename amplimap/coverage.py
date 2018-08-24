@@ -29,7 +29,7 @@ def process_file(input: str, output: str):
     """
 
     #read bedtools output
-    depth = pd.read_csv(input, sep='\t', names = ['chr', 'start_0', 'end', 'id', 'position', 'coverage'], low_memory=False)
+    depth = pd.read_csv(input, sep='\t', names = ['chr', 'start_0', 'end', 'id', 'score', 'strand', 'position', 'coverage'], low_memory=False)
 
     #summarize
     summary = depth.groupby('id').aggregate({'coverage': [np.min, np.sum, len, np.mean, fraction_zero_coverage, fraction_10x_coverage, fraction_30x_coverage]})
