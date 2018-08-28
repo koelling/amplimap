@@ -38,6 +38,9 @@ general:
   #if specified, amplimap will try to create a masked copy of the reference genome
   #and build custom bwa/bowtie2/star indices for it
   mask_bed: ""
+  #set to true if probe data is not available. this means you do not need to provide
+  #a probes.csv file, but disables trimming of primers, stats_reads etc.
+  use_raw_reads: false
 
 #settings for FASTQ read parsing
 parse_reads:
@@ -80,8 +83,6 @@ pileup:
   validate_probe_targets: false
   #filter reads with softclipped bases (but still consider mate)
   filter_softclipped: false
-  #set to true if probe data is not provided in read names
-  no_probe_data: false
   #only group reads together if they also have the same mate start positions (in addition to their UMI matching)
   group_with_mate_positions: false
 

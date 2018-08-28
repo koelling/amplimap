@@ -130,8 +130,8 @@ def get_alignment_index_filename(real_path):
 rule all:
     input:
         "analysis/reads_parsed/stats_samples.csv",
-        "analysis/reads_parsed/stats_reads.csv" if not config['pileup']['no_probe_data'] else [],
-        "analysis/stats_alignment/stats_alignment.csv" if not config['pileup']['no_probe_data'] else [],
+        "analysis/reads_parsed/stats_reads.csv" if not config['general']['use_raw_reads'] else [],
+        "analysis/stats_alignment/stats_alignment.csv" if not config['general']['use_raw_reads'] else [],
 
 ##### CHECKING
 rule start_analysis:
@@ -413,7 +413,62 @@ rule bam_to_fastq:
         r1 = "reads_in/{sample_full}_L001_R1_001.fastq.gz",
         r2 = "reads_in/{sample_full}_L001_R2_001.fastq.gz",
     run:
-        shell("%s bedtools bamtofastq -i {input[0]:q} -fq {output[r1]:q} -fq2 {output[r2]:q}" % load_module_command('bedtools', config))    
+        shell("%s bedtools bamtofastq -i {input[0]:q} -fq {output[r1]:q} -fq2 {output[r2]:q}" % load_module_command('bedtools', config))   
+
+
+##### MERGE RAW READS 
+rule merge_raw_reads:
+    input:
+        r1 = ["{analysis_dir}/reads_in/{sample_full}_L%03d_R1_001.fastq.gz" % (lane+1) for lane in range(config['general']['lanes_actual'])],
+        r2 = ["{analysis_dir}/reads_in/{sample_full}_L%03d_R2_001.fastq.gz" % (lane+1) for lane in range(config['general']['lanes_actual'])],
+        config_check = rules.start_analysis.output #make sure we copied the config we used
+    output:
+        r1 = "{analysis_dir}/reads_merged/{sample_full}__MERGED__R1_001.fastq.gz",
+        r2 = "{analysis_dir}/reads_merged/{sample_full}__MERGED__R2_001.fastq.gz",
+        #note that we only provide stats_samples if we actually have use_raw_reads set, otherwise we might accidentally use this rule instead of parse_reads
+        stats_samples = "{analysis_dir}/reads_parsed/stats_samples__sample_{sample_full}.csv" if config['general']['use_raw_reads'] else [],
+    run:
+        import os
+        assert len(input['r1']) == len(input['r2'])
+
+        n_files = len(input['r1'])
+
+        for read_number in ['r1', 'r2']:
+            if n_files == 1:
+                #we don't actually need to merge, just symlink
+                os.symlink(os.path.join("..", input[read_number][0]), output[read_number])
+            else:
+                #merge files
+                with open(output[read_number], 'wb') as wfd:
+                    for f in input[read_number]:
+                        with open(f, 'rb') as fd:
+                            #use shutil to copy 10MB chunks at a time
+                            shutil.copyfileobj(fd, wfd, 1024*1024*10)
+
+        #count reads by looping through (merged) R1 file
+        import gzip
+        opener = gzip.open if output['r1'].endswith('.gz') else open
+        n_fastq_lines = -1
+        with opener(output['r1'], 'rt') as hdl1:
+            for n_fastq_lines, l in enumerate(f):
+                pass
+        n_fastq_lines += 1
+        #we should have four lines per read
+        assert n_fastq_lines % 4 == 0
+        n_reads = n_fastq_lines / 4
+
+        #align_pe rule expects stats_samples.csv, which is made from per-sample stats_samples.csv
+        #we will just fake this for now
+        import amplimap.parse_reads
+        amplimap.parse_reads.output_stats_samples(output['stats_samples'], {
+            'sample': [wildcards['sample_full']],
+            'files': [n_files],
+            'pairs_total': [n_reads//2],
+            'pairs_unknown_arms': [0],
+            'pairs_good_arms': [n_reads//2],
+            'pairs_r1_too_short': [0],
+            'pairs_r2_too_short': [0]
+        })
 
 ##### TAGGED, ALIGNED BAMS
 rule link_tagged_bams:
@@ -463,9 +518,10 @@ rule unmapped_bam_to_fastqs:
     input:
         "{analysis_dir}/bam_unmapped/{sample_full}.bam",
     output:
-        "{analysis_dir}/reads_parsed/fastq/{sample_full}.UNTAGGED__MIP_TRIMMED__R1_001.fastq.gz",
-        "{analysis_dir}/reads_parsed/fastq/{sample_full}.UNTAGGED__MIP_TRIMMED__R2_001.fastq.gz",
-        stats_samples = "{analysis_dir}/reads_parsed/stats_samples__sample_{sample_full}.csv",
+        "{analysis_dir}/reads_merged/{sample_full}.UNTAGGED__MERGED__R1_001.fastq.gz",
+        "{analysis_dir}/reads_merged/{sample_full}.UNTAGGED__MERGED__R2_001.fastq.gz",
+        #note that we only provide stats_samples if we actually have use_raw_reads set, otherwise we might accidentally use this rule instead of parse_reads
+        stats_samples = "{analysis_dir}/reads_parsed/stats_samples__sample_{sample_full}.csv" if config['general']['use_raw_reads'] else [],
     run:
         shell("""
             %s
@@ -568,10 +624,6 @@ rule parse_reads_pe:
     output:
         r1 = "{analysis_dir}/reads_parsed/fastq/{sample_full}__MIP_TRIMMED__R1_001.fastq.gz",
         r2 = "{analysis_dir}/reads_parsed/fastq/{sample_full}__MIP_TRIMMED__R2_001.fastq.gz",
-        # consensus_fastqs = [
-        #     "{analysis_dir}/reads_parsed/fastq/consensus/{sample_full}__MIP_TRIMMED_CONSENSUS__R1_001.fastq.gz",
-        #     "{analysis_dir}/reads_parsed/fastq/consensus/{sample_full}__MIP_TRIMMED_CONSENSUS__R2_001.fastq.gz"
-        # ] if not config['general']['ignore_umis'] else [],
         stats_samples = "{analysis_dir}/reads_parsed/stats_samples__sample_{sample_full}.csv",
         stats_reads = "{analysis_dir}/reads_parsed/stats_reads__sample_{sample_full}.csv"
     run:
@@ -689,8 +741,11 @@ rule stats_reads_agg:
 
 rule align_pe:
     input:
-        "{analysis_dir}/reads_parsed/fastq/{sample_full}__MIP_TRIMMED__R1_001.fastq.gz",
-        "{analysis_dir}/reads_parsed/fastq/{sample_full}__MIP_TRIMMED__R2_001.fastq.gz",
+        #use either _MIP_TRIMMED_ or merged raw fastq files here, depending on config
+        "{analysis_dir}/reads_merged/{sample_full}__MERGED__R1_001.fastq.gz" if config['general']['use_raw_reads'] \
+            else "{analysis_dir}/reads_parsed/fastq/{sample_full}__MIP_TRIMMED__R1_001.fastq.gz",
+        "{analysis_dir}/reads_merged/{sample_full}__MERGED__R2_001.fastq.gz" if config['general']['use_raw_reads'] \
+            else "{analysis_dir}/reads_parsed/fastq/{sample_full}__MIP_TRIMMED__R2_001.fastq.gz",
         get_alignment_index_filename(real_path = True),
         "{analysis_dir}/reads_parsed/stats_samples.csv", #to make sure this gets generated and checked first
         probes = "{analysis_dir}/probes.csv" if config['align']['aligner'] == 'naive' else [] #the naive aligner also needs probes
@@ -931,7 +986,7 @@ rule do_pileup:
         "{analysis_dir}/bam/{sample_full}.bam.bai",
         rules.check_target_overlaps.output,
         targets = "{analysis_dir}/targets.bed",
-        probes = "{analysis_dir}/probes.csv" if config['pileup']['validate_probe_targets'] else []
+        probes = "{analysis_dir}/probes.csv" if config['pileup']['validate_probe_targets'] and not config['general']['use_raw_reads'] else []
     output:
         "{analysis_dir}/pileup/{sample_full}.pileup.csv",
         "{analysis_dir}/pileup/{sample_full}.targets.csv"
@@ -942,10 +997,10 @@ rule do_pileup:
             output = "{}/pileup/{}".format(wildcards['analysis_dir'], wildcards['sample_full']),
             reference_type = 'genome',
             subsample_reads = config['pileup']['subsample_reads'],
-            probes_file = input['probes'] if config['pileup']['validate_probe_targets'] else None,
+            probes_file = input['probes'] if config['pileup']['validate_probe_targets'] and not config['general']['use_raw_reads'] else None,
             snps_file = None, #different from other pileup command
             targets_file = input['targets'], #different from other pileup command
-            validate_probe_targets = config['pileup']['validate_probe_targets'],
+            validate_probe_targets = config['pileup']['validate_probe_targets'] and not config['general']['use_raw_reads'],
             filter_softclipped = config['pileup']['filter_softclipped'],
             fasta_file = get_path('fasta'),
             min_mapq = config['pileup']['min_mapq'],
@@ -955,7 +1010,7 @@ rule do_pileup:
             min_consensus_count = config['general']['umi_min_consensus_count'],
 
             #to allow running straight from tagged bams:
-            no_probe_data = config['pileup']['no_probe_data'],
+            no_probe_data = config['general']['use_raw_reads'],
             umi_tag_name = config['general']['umi_tag_name'],
         )
 
@@ -984,7 +1039,7 @@ rule do_pileup_snps:
         "{analysis_dir}/bam/{sample_full}.bam", # if config['general']['ignore_umis'] else rules.umi_group.output,
         "{analysis_dir}/bam/{sample_full}.bam.bai",
         snps = "{analysis_dir}/snps.txt",
-        probes = "{analysis_dir}/probes.csv" if config['pileup']['validate_probe_targets'] else []
+        probes = "{analysis_dir}/probes.csv" if config['pileup']['validate_probe_targets'] and not config['general']['use_raw_reads'] else []
     output:
         "{analysis_dir}/pileup_snps/{sample_full}.pileup.csv"
     run:
@@ -994,10 +1049,10 @@ rule do_pileup_snps:
             output = "{}/pileup_snps/{}".format(wildcards['analysis_dir'], wildcards['sample_full']),
             reference_type = 'genome',
             subsample_reads = config['pileup']['subsample_reads'],
-            probes_file = input['probes'] if config['pileup']['validate_probe_targets'] else None,
+            probes_file = input['probes'] if config['pileup']['validate_probe_targets'] and not config['general']['use_raw_reads'] else None,
             snps_file = input['snps'], #different from other pileup command
             targets_file = None, #different from other pileup command
-            validate_probe_targets = config['pileup']['validate_probe_targets'],
+            validate_probe_targets = config['pileup']['validate_probe_targets'] and not config['general']['use_raw_reads'],
             filter_softclipped = config['pileup']['filter_softclipped'],
             fasta_file = get_path('fasta'),
             min_mapq = config['pileup']['min_mapq'],
@@ -1007,7 +1062,7 @@ rule do_pileup_snps:
             min_consensus_count = config['general']['umi_min_consensus_count'],
 
             #to allow running straight from tagged bams:
-            no_probe_data = config['pileup']['no_probe_data'],
+            no_probe_data = config['general']['use_raw_reads'],
             umi_tag_name = config['general']['umi_tag_name'],
         )
 

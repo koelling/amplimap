@@ -48,9 +48,8 @@ To run this, create a working directory containing the
 
 ::
 
-    pileup:
-      validate_probe_targets: false
-      no_probe_data: true
+    general:
+      use_raw_reads: true
 
 Then, create a subdirectory called ``unmapped_bams_in`` inside your
 working directory and place your unmapped .bam files
@@ -62,9 +61,7 @@ using BAM tag and the corresponding tag should be given in the config file, eg.:
 
     general:
       umi_tag_name: RX
-    pileup:
-      validate_probe_targets: false
-      no_probe_data: true
+      use_raw_reads: true
 
 Now you can run amplimap as usual,
 for example to generate pileups:
