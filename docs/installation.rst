@@ -35,7 +35,7 @@ Requirements
 ~~~~~~~~~~~~~~~
 
 - Linux environment (should also work on MacOS, Windows 10 Linux Subsystem)
-- Python 3 with setuptools, Cython and numpy
+- Python 3.5+ with setuptools, Cython and numpy
 
   - Further Python dependencies will be installed automatically
 
@@ -43,23 +43,23 @@ Requirements
 
 - Required software:
 
-  - At least one read aligner: bwa, Bowtie2, STAR
-  - bedtools
-  - samtools
+  - At least one read aligner: bwa (tested with v0.7.12), Bowtie2 (tested with v2.2.5), STAR (tested with v2.5.1b)
+  - bedtools (tested with v2.27.1)
+  - samtools (tested with v1.5)
 
 - Additional software for germline variant analysis (optional):
 
   - At least one variant caller: Platypus 0.8.1+, GATK 4+
-  - Annovar
-  - bcftools
+  - Annovar (tested with v2015-06-17)
+  - bcftools (tested with v1.5)
 
 - Additional software for somatic variant analysis (optional):
 
-  - Mutect2 (from GATK 4)
+  - Mutect2 (from GATK 4, tested with v4.0)
 
 - Additional software for capture probe processing (optional):
 
-  - Picard Tools
+  - Picard Tools 2+ (tested with v2.3.0)
 
 If you do not have these required tools available yet, see :doc:`extended_installation`
 for details on how to install them.
