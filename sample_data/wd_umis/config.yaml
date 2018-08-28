@@ -1,0 +1,6 @@
+align:
+  aligner: "naive"
+
+parse_reads:
+  umi_one: 3
+  umi_two: 4

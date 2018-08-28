@@ -139,8 +139,12 @@ def process_pileup_read(
     if ignore_groups:
         #we haven't pre-parsed the read yet, so let's do it now
         read_umi = None
+
         #parse info from read name (should be bowtie2 compatible)
-        _, read_probe, _ = parse_extended_read_name(read_name)
+        if no_probe_data:
+            read_probe = None
+        else:
+            _, read_probe, _ = parse_extended_read_name(read_name)
     else:
         #get read metadata from before (will raise if we didn't see this before, but we should always have)
         alignment_tuple = (read_name, mate_starts)

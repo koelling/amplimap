@@ -449,13 +449,14 @@ rule merge_raw_reads:
         import gzip
         opener = gzip.open if output['r1'].endswith('.gz') else open
         n_fastq_lines = -1
-        with opener(output['r1'], 'rt') as hdl1:
-            for n_fastq_lines, l in enumerate(f):
+        with opener(output['r1'], 'rt') as fmerged:
+            for n_fastq_lines, _ in enumerate(fmerged):
                 pass
         n_fastq_lines += 1
+
         #we should have four lines per read
-        assert n_fastq_lines % 4 == 0
-        n_reads = n_fastq_lines / 4
+        assert n_fastq_lines % 4 == 0, 'encountered fastq file with %d lines, which is not a multiple of four' % (n_fastq_lines)
+        n_pairs = int(n_fastq_lines // 4)
 
         #align_pe rule expects stats_samples.csv, which is made from per-sample stats_samples.csv
         #we will just fake this for now
@@ -463,9 +464,9 @@ rule merge_raw_reads:
         amplimap.parse_reads.output_stats_samples(output['stats_samples'], {
             'sample': [wildcards['sample_full']],
             'files': [n_files],
-            'pairs_total': [n_reads//2],
+            'pairs_total': [n_pairs],
             'pairs_unknown_arms': [0],
-            'pairs_good_arms': [n_reads//2],
+            'pairs_good_arms': [n_pairs],
             'pairs_r1_too_short': [0],
             'pairs_r2_too_short': [0]
         })

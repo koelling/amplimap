@@ -3,7 +3,7 @@ This does some basic testing of the whole pipeline. Note this needs to be run th
 """
 
 #make sure we can import from package directory
-import sys, os
+import sys, os, re, gzip
 packagedir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, packagedir) 
 
@@ -20,7 +20,7 @@ os.system("cythonize -i {}".format(os.path.join(packagedir, "amplimap", "parse_r
 #set config
 os.environ['AMPLIMAP_CONFIG'] = os.path.join(packagedir, "sample_data", "config_default.yaml")
 
-def init_wd(path, reads_in_path):
+def init_wd(path, reads_in_path, umi_one = 0, umi_two = 0):
     assert os.path.isdir(path)
 
     #remove previous output
@@ -31,8 +31,31 @@ def init_wd(path, reads_in_path):
     os.mkdir(os.path.join(path, 'reads_in'))
 
     #turn .fastq files into .fastq.gz
-    for file in os.listdir(reads_in_path):
-        os.system("gzip -c {} > {}".format(os.path.join(reads_in_path, file), os.path.join(path, 'reads_in', '{}.gz'.format(file))))
+    for file in os.listdir(reads_in_path):        
+        if umi_one > 0 and '_R1' in file:
+            umi_len = umi_one
+        elif umi_two > 0 and '_R2' in file:
+            umi_len = umi_two
+        else:
+            umi_len = 0
+
+        next_umi = None
+        with open(os.path.join(reads_in_path, file), 'rt') as fin, gzip.open(os.path.join(path, 'reads_in', '{}.gz'.format(file)), 'wt') as fout:
+            for ix, line in enumerate(fin):
+                assert line.startswith('@') or ix % 4 != 0
+                assert line.startswith('+') or ix % 4 != 2
+
+                if umi_len > 0:
+                    if ix % 4 == 0: #name
+                        match = re.search(r'_UMI-([^_]+)', line)
+                        assert match, 'UMI missing: %s' % line
+                        next_umi = match.group(1)
+                    elif ix % 4 == 1: #seq
+                        line = '{}{}'.format(next_umi[0:umi_len], line)
+                    elif ix % 4 == 3: #qual
+                        line = '{}{}'.format('A' * umi_len, line)
+
+                fout.write(line)
 
 def test_version(capsys):
     amplimap.run.main(['--version'])
@@ -46,6 +69,43 @@ def test_config(capsys):
     # with capsys.disabled():
     #     sys.stdout.write(captured.err)
     #     sys.stdout.write(captured.out)
+
+def check_default_stats(wd_path):
+    samples = pd.read_csv(os.path.join(wd_path, 'analysis', 'reads_parsed', 'stats_samples.csv'))
+    assert len(samples) == 1
+
+    assert samples.loc[0, 'sample'] == 'S1'
+    assert samples.loc[0, 'files'] == 2
+    assert samples.loc[0, 'pairs_total'] == 7
+    assert samples.loc[0, 'pairs_good_arms'] == 6
+    assert samples.loc[0, 'pairs_r1_too_short'] == 1
+
+def check_default_pileups(wd_path, expected_coverage = 5, include_too_short = False):
+    pileups = pd.read_csv(os.path.join(wd_path, 'analysis', 'pileup', 'pileups_long.csv'))
+
+    #we covered 11bp
+    assert len(pileups) == 11
+
+    #we should have 5 reads, except for the raw alignments where we include the pair with short r1/r2
+    pileups['expected_coverage'] = expected_coverage
+    if include_too_short:
+        pileups.loc[(pileups.pos <= 32) | (pileups.pos >= 39), 'expected_coverage'] += 1
+
+    #everything but 35/37 should be ref
+    assert pileups.loc[~pileups.pos.isin([35,37]), 'alts'].isnull().all()
+    assert (pileups.loc[~pileups.pos.isin([35,37]), 'ref_hq_count'] == pileups.loc[~pileups.pos.isin([35,37]), 'expected_coverage']).all()
+    assert (pileups.loc[~pileups.pos.isin([35,37]), 'nonref_hq_count'] == 0).all()
+
+    #only these should be nonref (36 is low-quality in one read)
+    assert pileups.loc[pileups.pos.isin([35,37]), 'alts'].notnull().all()
+    #one read from L001, one from L002
+    assert (pileups.loc[pileups.pos == 35, 'nonref_hq_count'] == 2).all()
+    assert (pileups.loc[pileups.pos == 35, 'ref_hq_count'] == pileups.loc[pileups.pos == 35, 'expected_coverage'] - 2).all()
+    assert (set(pileups.loc[pileups.pos == 35, 'alts'].iloc[0].split(';')) == set(['A', 'G'])) #explicitly use iloc and no .all() here
+    #just one in L001
+    assert (pileups.loc[pileups.pos == 37, 'nonref_hq_count'] == 1).all()
+    assert (pileups.loc[pileups.pos == 37, 'ref_hq_count'] == pileups.loc[pileups.pos == 37, 'expected_coverage'] - 1).all()
+    assert (set(pileups.loc[pileups.pos == 37, 'alts'].iloc[0].split(';')) == set(['G'])) #explicitly use iloc and no .all() here
 
 def test_naive_pileups(capsys):
     wd_path = os.path.join(packagedir, "sample_data", "wd_naive")
@@ -61,27 +121,8 @@ def test_naive_pileups(capsys):
     captured = capsys.readouterr()
     assert '{} {} finished!'.format(amplimap.run.__title__, amplimap.run.__version__) in captured.err.strip()
 
-    #check sample stats
-    samples = pd.read_csv(os.path.join(wd_path, 'analysis', 'reads_parsed', 'stats_samples.csv'))
-    assert len(samples) == 1
-
-    assert samples.loc[0, 'sample'] == 'S1'
-    assert samples.loc[0, 'files'] == 1
-    assert samples.loc[0, 'pairs_total'] == 6
-    assert samples.loc[0, 'pairs_good_arms'] == 5
-
-    #check pileups
-    pileups = pd.read_csv(os.path.join(wd_path, 'analysis', 'pileup', 'pileups_long.csv'))
-    assert len(pileups) == 11
-
-    assert pileups.loc[~pileups.pos.isin([35,37]), 'alts'].isnull().all()
-    assert (pileups.loc[~pileups.pos.isin([35,37]), 'ref_hq_count'] == 4).all()
-    assert (pileups.loc[~pileups.pos.isin([35,37]), 'nonref_hq_count'] == 0).all()
-
-    #only these should be nonref (36 is low-quality in one read)
-    assert pileups.loc[pileups.pos.isin([35,37]), 'alts'].notnull().all()
-    assert (pileups.loc[pileups.pos.isin([35,37]), 'ref_hq_count'] == 3).all()
-    assert (pileups.loc[pileups.pos.isin([35,37]), 'nonref_hq_count'] == 1).all()
+    check_default_stats(wd_path)
+    check_default_pileups(wd_path)
 
 def test_bwa_pileups(capsys):
     wd_path = os.path.join(packagedir, "sample_data", "wd_bwa")
@@ -97,27 +138,8 @@ def test_bwa_pileups(capsys):
     captured = capsys.readouterr()
     assert '{} {} finished!'.format(amplimap.run.__title__, amplimap.run.__version__) in captured.err.strip()
 
-    #check sample stats
-    samples = pd.read_csv(os.path.join(wd_path, 'analysis', 'reads_parsed', 'stats_samples.csv'))
-    assert len(samples) == 1
-
-    assert samples.loc[0, 'sample'] == 'S1'
-    assert samples.loc[0, 'files'] == 1
-    assert samples.loc[0, 'pairs_total'] == 6
-    assert samples.loc[0, 'pairs_good_arms'] == 5
-
-    #check pileups
-    pileups = pd.read_csv(os.path.join(wd_path, 'analysis', 'pileup', 'pileups_long.csv'))
-    assert len(pileups) == 11
-
-    assert pileups.loc[~pileups.pos.isin([35,37]), 'alts'].isnull().all()
-    assert (pileups.loc[~pileups.pos.isin([35,37]), 'ref_hq_count'] == 4).all()
-    assert (pileups.loc[~pileups.pos.isin([35,37]), 'nonref_hq_count'] == 0).all()
-
-    #only these should be nonref (36 is low-quality in one read)
-    assert pileups.loc[pileups.pos.isin([35,37]), 'alts'].notnull().all()
-    assert (pileups.loc[pileups.pos.isin([35,37]), 'ref_hq_count'] == 3).all()
-    assert (pileups.loc[pileups.pos.isin([35,37]), 'nonref_hq_count'] == 1).all()
+    check_default_stats(wd_path)
+    check_default_pileups(wd_path)
 
 def test_raw_read_pileups(capsys):
     wd_path = os.path.join(packagedir, "sample_data", "wd_bwa_raw")
@@ -133,24 +155,41 @@ def test_raw_read_pileups(capsys):
     captured = capsys.readouterr()
     assert '{} {} finished!'.format(amplimap.run.__title__, amplimap.run.__version__) in captured.err.strip()
 
-    #check sample stats
+    #check custom stats
     samples = pd.read_csv(os.path.join(wd_path, 'analysis', 'reads_parsed', 'stats_samples.csv'))
     assert len(samples) == 1
 
     assert samples.loc[0, 'sample'] == 'S1'
-    assert samples.loc[0, 'files'] == 1
-    assert samples.loc[0, 'pairs_total'] == 6
-    assert samples.loc[0, 'pairs_good_arms'] == 6
+    assert samples.loc[0, 'files'] == 2
+    assert samples.loc[0, 'pairs_total'] == 7
+    assert samples.loc[0, 'pairs_good_arms'] == 7
+    assert samples.loc[0, 'pairs_r1_too_short'] == 0
 
-    #check pileups
-    pileups = pd.read_csv(os.path.join(wd_path, 'analysis', 'pileup', 'pileups_long.csv'))
-    assert len(pileups) == 11
+    check_default_pileups(wd_path, include_too_short = True)
 
-    assert pileups.loc[~pileups.pos.isin([35,37]), 'alts'].isnull().all()
-    assert (pileups.loc[~pileups.pos.isin([35,37]), 'ref_hq_count'] == 4).all()
-    assert (pileups.loc[~pileups.pos.isin([35,37]), 'nonref_hq_count'] == 0).all()
+def test_umi_pileups(capsys):
+    wd_path = os.path.join(packagedir, "sample_data", "wd_umis")
+    init_wd(wd_path, os.path.join(packagedir, "sample_data", "sample_reads_in"), umi_one = 3, umi_two = 4)
 
-    #only these should be nonref (36 is low-quality in one read)
-    assert pileups.loc[pileups.pos.isin([35,37]), 'alts'].notnull().all()
-    assert (pileups.loc[pileups.pos.isin([35,37]), 'ref_hq_count'] == 3).all()
-    assert (pileups.loc[pileups.pos.isin([35,37]), 'nonref_hq_count'] == 1).all()
+    #dry-run
+    amplimap.run.main(['--working-directory={}'.format(wd_path), 'pileups'])
+    captured = capsys.readouterr()
+    assert '{} {} dry run successful.'.format(amplimap.run.__title__, amplimap.run.__version__) in captured.err.strip()
+
+    #full run
+    amplimap.run.main(['--working-directory={}'.format(wd_path), 'pileups', '--run'])
+    captured = capsys.readouterr()
+    assert '{} {} finished!'.format(amplimap.run.__title__, amplimap.run.__version__) in captured.err.strip()
+
+    check_default_stats(wd_path)
+    check_default_pileups(wd_path, expected_coverage=4) #one less, because two read pairs have same umi!
+
+    #check umi-specific stats
+    stats_reads = pd.read_csv(os.path.join(wd_path, 'analysis', 'reads_parsed', 'stats_reads.csv'))
+    assert len(stats_reads) == 1
+    assert stats_reads.loc[0, 'sample'] == 'S1'
+    assert stats_reads.loc[0, 'probe'] == 'Probe1'
+    assert stats_reads.loc[0, 'read_pairs'] == 6
+    assert stats_reads.loc[0, 'umis_total'] == 5
+    assert stats_reads.loc[0, 'umis_coverage_max'] == 2
+
