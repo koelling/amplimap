@@ -60,7 +60,7 @@ using BAM tag and the corresponding tag should be given in the config file, eg.:
 ::
 
     general:
-      umi_tag_name: RX
+      umi_tag_name: "RX"
       use_raw_reads: true
 
 Now you can run amplimap as usual,
