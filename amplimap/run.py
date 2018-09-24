@@ -7,7 +7,7 @@ import argparse
 import yaml
 
 from .version import __title__, __version__
-from .reader import AmplimapReaderException, read_new_probe_design, read_targets, read_snps_txt
+from .reader import AmplimapReaderException, read_new_probe_design, read_and_convert_mipgen_probes, read_and_convert_heatseq_probes, read_targets, read_snps_txt
 
 def check_config_keys(default_config, my_config, path = []):
     """Recursively check that config keys provided in my_config also exist in default_config (ignoring 'paths' and 'clusters')."""
