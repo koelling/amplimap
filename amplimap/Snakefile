@@ -810,9 +810,9 @@ rule align_pe:
             else "{analysis_dir}/reads_parsed/fastq/{sample_full}__MIP_TRIMMED__R2_001.fastq.gz",
         get_alignment_index_filename(real_path = True),
         "{analysis_dir}/reads_parsed/stats_samples.csv", #to make sure this gets generated and checked first
-        probes = "{analysis_dir}/probes.csv" if config['align']['aligner'] == 'naive' else [], #the naive aligner also needs probes
         "{analysis_dir}/versions/%s.txt" % config['align']['aligner'],
         "{analysis_dir}/versions/samtools.txt",
+        probes = "{analysis_dir}/probes.csv" if config['align']['aligner'] == 'naive' else [], #the naive aligner also needs probes
     output:
         "{analysis_dir}/bam/{sample_full}.bam",
         "{analysis_dir}/bam/{sample_full}.bam.bai",
@@ -1176,8 +1176,8 @@ rule calc_coverage:
     input:
         "{analysis_dir}/{bamdir}/{file}.bam",
         "{analysis_dir}/{bamdir}/{file}.bam.bai",
-        targets = "{analysis_dir}/targets.bed",
         "{analysis_dir}/versions/bedtools.txt",
+        targets = "{analysis_dir}/targets.bed",
     output:
         "{analysis_dir}/{bamdir}/coverage/{file}.coverage_raw.txt",
     shell:        
@@ -1194,8 +1194,8 @@ rule calc_coverage_mapq:
     input:
         "{analysis_dir}/{bamdir}/{file}.bam",
         "{analysis_dir}/{bamdir}/{file}.bam.bai",
-        targets = "{analysis_dir}/targets.bed",
         "{analysis_dir}/versions/bedtools.txt",
+        targets = "{analysis_dir}/targets.bed",
     output:
         "{analysis_dir}/{bamdir}/coverage_mapq/{file}.coverage_raw.txt",
     shell:
@@ -1241,8 +1241,8 @@ rule call_variants_raw:
     input:
         "{analysis_dir}/bam/{sample_full}.bam",
         "{analysis_dir}/bam/{sample_full}.bam.bai",
-        targets = "{analysis_dir}/targets_merged.bed",
         "{analysis_dir}/versions/%s.txt" % config['variants']['caller'],
+        targets = "{analysis_dir}/targets_merged.bed",
     output:
         "{analysis_dir}/variants_raw/{sample_full}.vcf"
     run:
@@ -1283,7 +1283,7 @@ rule call_variants_umi:
     input:
         rules.umi_dedup.output,
         targets = "{analysis_dir}/targets_merged.bed",
-        "{analysis_dir}/versions/%s.txt" % config['variants']['caller'],
+        version = "{analysis_dir}/versions/%s.txt" % config['variants']['caller'],
     output:
         "{analysis_dir}/variants_umi/{sample_full}.vcf"
     run:
@@ -1322,7 +1322,7 @@ rule call_variants_low_frequency:
         "{analysis_dir}/bam/{sample_full}.bam",
         "{analysis_dir}/bam/{sample_full}.bam.bai",
         targets = "{analysis_dir}/targets_merged.bed",
-        "{analysis_dir}/versions/%s.txt" % config['variants']['caller_low_frequency'],
+        version = "{analysis_dir}/versions/%s.txt" % config['variants']['caller_low_frequency'],
     output:
         "{analysis_dir}/variants_low_frequency/{sample_full}.vcf",
         "{analysis_dir}/variants_low_frequency_unfiltered/{sample_full}.vcf"
