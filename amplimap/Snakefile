@@ -283,6 +283,8 @@ rule tool_version:
             commands += 'bowtie2 --version > {output}'
         elif tool_name == 'star':
             commands += 'STAR --version > {output}'
+        elif tool_name == 'naive':
+            commands += 'amplimap --version > {output}'
 
         elif tool_name == 'samtools':
             commands += 'samtools --version > {output}'
