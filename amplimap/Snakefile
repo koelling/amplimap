@@ -263,7 +263,7 @@ rule test_pileups:
 ##### TOOL CHECKING AND VERSIONS
 rule tool_version:
     output:
-        "{analysis_dir}/versions/{wildcards.tool}.txt"
+        "{analysis_dir}/versions/{tool}.txt"
     run:
         print('Checking version for {} and writing output to {}'.format(
             wildcards['tool'],
