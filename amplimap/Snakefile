@@ -465,7 +465,6 @@ rule mask_genome_index_star:
 rule bam_to_fastq:
     input:
         "bams_in/{sample_full}.bam",
-        "{analysis_dir}/versions/bedtools.txt",
     output:
         r1 = "reads_in/{sample_full}_L001_R1_001.fastq.gz",
         r2 = "reads_in/{sample_full}_L001_R2_001.fastq.gz",
