@@ -327,7 +327,7 @@ rule tool_version:
             else:
                 shell(commands)
 
-        except e:
+        except Exception as e:
             raise Exception('Failed to run tool {}:\n{}\nPlease check that it is available.'.format(
                 wildcards['tool'],
                 str(e)
