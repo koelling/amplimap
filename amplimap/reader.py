@@ -260,6 +260,11 @@ def read_new_probe_design(path: str, reference_type: str = 'genome') -> pd.DataF
         design['capture_size'] = design['probe_end'] - design['probe_start_0']
         design['target_length'] = design['target_end'] - design['target_start_0']
 
+        invalid_coords = ~(design['target_length'] > 0)
+        if invalid_coords.any():
+            print(design.loc[invalid_coords, ['id', 'chr', 'probe_start', 'probe_end', 'strand']])
+            raise Exception('Encountered probe regions with invalid target coordinates. Please check the input file and the output above. Note that the probe_end position must always be greater than the probe_start.')
+
         # #chr should start with chr
         # if reference_type == 'genome':
         #     design.loc[~design['chr'].str.startswith('chr'), 'chr'] = ['chr' + c for c in design.loc[~design['chr'].str.startswith('chr'), 'chr']]
