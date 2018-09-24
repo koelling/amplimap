@@ -272,39 +272,39 @@ rule tool_version:
 
         if wildcards['tool'] == 'mutect2':
             tool_name = 'gatk'
-        else::
+        else:
             tool_name = wildcards['tool']
 
         commands = load_module_command(tool_name, config)
 
-        if wildcards['tool'] == 'bwa':
+        if tool_name == 'bwa':
             commands += 'bwa 2> {output}'
-        elif wildcards['tool'] == 'bowtie2':
+        elif tool_name == 'bowtie2':
             commands += 'bowtie2 --version > {output}'
-        elif wildcards['tool'] == 'star':
+        elif tool_name == 'star':
             commands += 'STAR --version > {output}'
 
-        elif wildcards['tool'] == 'samtools':
+        elif tool_name == 'samtools':
             commands += 'samtools --version > {output}'
-        elif wildcards['tool'] == 'bedtools':
+        elif tool_name == 'bedtools':
             commands += 'bedtools --version > {output}'
-        elif wildcards['tool'] == 'bcftools':
+        elif tool_name == 'bcftools':
             commands += 'bcftools --version > {output}'
-        elif wildcards['tool'] == 'picard':
+        elif tool_name == 'picard':
             commands += 'SamToFastq --version > {output}'
 
-        elif wildcards['tool'] == 'annovar':
+        elif tool_name == 'annovar':
             commands += 'table_annovar.pl > {output}'
 
-        elif wildcards['tool'] == 'platypus':
+        elif tool_name == 'platypus':
             commands += 'platypus > {output}'
-        elif wildcards['tool'] == 'gatk':
+        elif tool_name == 'gatk':
             commands += 'gatk HaplotypeCaller --version > {output}'
-        elif wildcards['tool'] == 'mutect2':
+        elif tool_name == 'mutect2':
             commands += 'gatk Mutect2 --version > {output}'
         else:
-            raise Exception('Unexpected tool: {}. Please report this bug.'.format(
-                wildcards['tool']
+            raise Exception('Unexpected tool: {}/{}. Please report this bug.'.format(
+                tool_name, wildcards['tool']
             ))
 
         try:
