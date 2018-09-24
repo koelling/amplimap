@@ -7,7 +7,7 @@ import argparse
 import yaml
 
 from .version import __title__, __version__
-from .reader import AmplimapReaderException, read_new_probe_design, read_and_convert_mipgen_probes, read_and_convert_heatseq_probes, read_targets, read_snps_txt
+from .reader import AmplimapReaderException, read_new_probe_design, process_probe_design, read_and_convert_mipgen_probes, read_and_convert_heatseq_probes, read_targets, read_snps_txt
 
 def check_config_keys(default_config, my_config, path = []):
     """Recursively check that config keys provided in my_config also exist in default_config (ignoring 'paths' and 'clusters')."""
@@ -201,9 +201,9 @@ def main(argv = None):
         if os.path.isfile(os.path.join(args.working_directory, 'probes.csv')):
             read_new_probe_design(os.path.join(args.working_directory, 'probes.csv'), reference_type = 'genome')
         if os.path.isfile(os.path.join(args.working_directory, 'probes_mipgen.csv')):
-            read_and_convert_mipgen_probes(os.path.join(args.working_directory, 'probes_mipgen.csv'))
+            process_probe_design(read_and_convert_mipgen_probes(os.path.join(args.working_directory, 'probes_mipgen.csv')))
         if os.path.isfile(os.path.join(args.working_directory, 'probes_heatseq.tsv')):
-            read_and_convert_heatseq_probes(os.path.join(args.working_directory, 'probes_heatseq.tsv'))
+            process_probe_design(read_and_convert_heatseq_probes(os.path.join(args.working_directory, 'probes_heatseq.tsv')))
         if os.path.isfile(os.path.join(args.working_directory, 'targets.csv')):
             #note: this will fail on overlapping targets
             read_targets(os.path.join(args.working_directory, 'targets.csv'), check_overlaps=True, reference_type = 'genome', file_type = 'csv')
