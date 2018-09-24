@@ -142,6 +142,7 @@ def make_trimmed_read(
         if not dist <= check_sequence_mismatches:
             return ''
 
+    assert target_len > 0, 'invalid (negative) target length for probe %s' % probe
     if trim_primers:
         primer_trim_start = (umi_len + arm_len)
         primer_trim_end = (umi_len + arm_len + target_len)
