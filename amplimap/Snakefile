@@ -265,6 +265,8 @@ rule tool_version:
     output:
         "{analysis_dir}/versions/{tool}.txt"
     run:
+        import subprocess
+
         print('Checking version for {} and writing output to {}'.format(
             wildcards['tool'],
             output[0]
@@ -278,7 +280,7 @@ rule tool_version:
         commands = load_module_command(tool_name, config)
 
         if tool_name == 'bwa':
-            commands += 'bwa 2> {output}'
+            commands += 'bwa'
         elif tool_name == 'bowtie2':
             commands += 'bowtie2 --version > {output}'
         elif tool_name == 'star':
@@ -310,10 +312,25 @@ rule tool_version:
             ))
 
         try:
-            shell(commands)
-        except:
-            raise Exception('Failed to run tool: {}. Please check that it is available.'.format(
-                wildcards['tool']
+            if tool_name == 'bwa':
+                #bwa will return an error code if we run it like this, but it's the only way to get the version
+                result = subprocess.run(commands, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check = False)
+
+                #did we get a version number
+                if re.search(r'^Version:\s+.*$', result.stderr):
+                    with open(output[0], 'wb') as f:
+                        f.write(result.stdout)
+                else:
+                    raise Exception('Failed to run bwa: {}\n{}'.format(
+                        result.returncode, result.stderr
+                    ))
+            else:
+                shell(commands)
+
+        except e:
+            raise Exception('Failed to run tool {}:\n{}\nPlease check that it is available.'.format(
+                wildcards['tool'],
+                str(e)
             ))
 
 
