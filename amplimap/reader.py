@@ -424,14 +424,20 @@ def read_targets(path: str, check_overlaps: bool = False, reference_type: str = 
 
         #check for overlaps
         if check_overlaps:
-            for ixrow1 in range(len(targets)-1):
-                for ixrow2 in range(ixrow1+1, len(targets)):
-                    row1 = targets.iloc[ixrow1]
-                    row2 = targets.iloc[ixrow2]
-                    if row1['chr'] == row2['chr'] and row1['start_0'] <= row2['end'] and row1['end'] >= row2['start_0']:
-                        print(row1)
-                        print(row2)
-                        raise Exception('Invalid target table: target regions %s and %s overlap! Please merge them or shorten one of the regions' % (row1['id'], row2['id']))
+            targets_dict = targets.to_dict()
+            for ixrow1 in range(len(targets_dict['chr'])-1):
+                for ixrow2 in range(ixrow1+1, len(targets_dict['chr'])):
+                    if targets_dict['chr'][ixrow1] == targets_dict['chr'][ixrow2] \
+                    and targets_dict['start_0'][ixrow1] <= targets_dict['end'][ixrow2] \
+                    and targets_dict['end'][ixrow1] >= targets_dict['start_0'][ixrow2]:
+                        print(targets.iloc[ixrow1])
+                        print(targets.iloc[ixrow2])
+                        raise Exception(
+                            'Invalid target table: target regions %s and %s overlap! Please merge them or shorten one of the regions' % (
+                                targets_dict['id'][ixrow1],
+                                targets_dict['id'][ixrow2]
+                            )
+                        )
 
         #chr should always start with chr
         targets['chr_original'] = targets['chr']
