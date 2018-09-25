@@ -299,7 +299,7 @@ rule tool_version:
             commands += 'SamToFastq --version > "%s"' % (output[0])
 
         elif tool_name == 'annovar':
-            commands += 'table_annovar.pl > "%s"' % (output[0])
+            commands += 'table_annovar.pl' % (output[0])
 
         elif tool_name == 'platypus':
             commands += 'platypus > "%s"' % (output[0])
@@ -324,12 +324,19 @@ rule tool_version:
 
         #normally we just check for a 0 exit status
         if result.returncode != 0:
-            #bwa will return an error code if we run it like this, but it's the only way to get the version
-            if tool_name == 'bwa':
-                #did we get a version number
-                if re.search(r'^Version:\s+.*$', result.stderr.decode('utf-8'), re.MULTILINE):
+            #bwa and annovar will return an error code if we run it like this, but it's the only way to get the version
+            if tool_name in ['bwa', 'annovar']:
+                #bwa has version number in stdERR
+                if tool_name == 'bwa' \
+                and re.search(r'^Version:\s+.*$', result.stderr.decode('utf-8'), re.MULTILINE):
                     with open(output[0], 'wb') as f:
                         f.write(result.stderr)
+                #annovar has version number in stdOUT
+                elif tool_name == 'annovar' \
+                and re.search(r'^\s*Version:\s+.*$', result.stdout.decode('utf-8'), re.MULTILINE):
+                    with open(output[0], 'wb') as f:
+                        f.write(result.stdout)
+                #didn't get a version number, so tool may just not be available
                 else:
                     raise Exception(
                         '\nFailed to run tool {} and find version number (code={})\n{}\nPlease check that {} is available.\n'.format(
