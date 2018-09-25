@@ -327,9 +327,9 @@ rule tool_version:
                     with open(output[0], 'wb') as f:
                         f.write(result.stderr)
                 else:
-                    raise Exception('Output:\n{} ({})'.format(
-                        result.stderr.decode('utf-8'),
+                    raise Exception('Failed to run process and find version number (code={})\n{}'.format(
                         result.returncode,
+                        result.stderr.decode('utf-8'),
                     ))
             else:
                 shell(commands)
