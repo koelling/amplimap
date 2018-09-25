@@ -283,30 +283,30 @@ rule tool_version:
         if tool_name == 'bwa':
             commands += 'bwa'
         elif tool_name == 'bowtie2':
-            commands += 'bowtie2 --version > {output}'
+            commands += 'bowtie2 --version > "%s"' % (output[0])
         elif tool_name == 'star':
-            commands += 'STAR --version > {output}'
+            commands += 'STAR --version > "%s"' % (output[0])
         elif tool_name == 'naive':
-            commands += 'amplimap --version > {output}'
+            commands += 'amplimap --version > "%s"' % (output[0])
 
         elif tool_name == 'samtools':
-            commands += 'samtools --version > {output}'
+            commands += 'samtools --version > "%s"' % (output[0])
         elif tool_name == 'bedtools':
-            commands += 'bedtools --version > {output}'
+            commands += 'bedtools --version > "%s"' % (output[0])
         elif tool_name == 'bcftools':
-            commands += 'bcftools --version > {output}'
+            commands += 'bcftools --version > "%s"' % (output[0])
         elif tool_name == 'picard':
-            commands += 'SamToFastq --version > {output}'
+            commands += 'SamToFastq --version > "%s"' % (output[0])
 
         elif tool_name == 'annovar':
-            commands += 'table_annovar.pl > {output}'
+            commands += 'table_annovar.pl > "%s"' % (output[0])
 
         elif tool_name == 'platypus':
-            commands += 'platypus > {output}'
+            commands += 'platypus > "%s"' % (output[0])
         elif tool_name == 'gatk':
-            commands += 'gatk HaplotypeCaller --version > {output}'
+            commands += 'gatk HaplotypeCaller --version > "%s"' % (output[0])
         elif tool_name == 'mutect2':
-            commands += 'gatk Mutect2 --version > {output}'
+            commands += 'gatk Mutect2 --version > "%s"' % (output[0])
         else:
             raise Exception('Unexpected tool: {}/{}. Please report this bug.'.format(
                 tool_name, wildcards['tool']
