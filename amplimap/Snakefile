@@ -325,7 +325,7 @@ rule tool_version:
                 )
 
                 #did we get a version number
-                if re.search(r'^Version:\s+.*$', result.stderr):
+                if re.search(r'^Version:\s+.*$', result.stderr.decode('utf-8')):
                     with open(output[0], 'wb') as f:
                         f.write(result.stderr)
                 else:
@@ -336,9 +336,10 @@ rule tool_version:
                 shell(commands)
 
         except Exception as e:
-            raise Exception('Failed to find version for tool "{}":\n\n{}\n\nPlease check that it is available.'.format(
+            raise Exception('Failed to find version for tool "{}":\n\n{} {}\n\nPlease check that it is available.'.format(
                 wildcards['tool'],
-                str(e)
+                e.__class__.__name__,
+                str(e),
             ))
 
 
