@@ -299,7 +299,7 @@ rule tool_version:
             commands += 'SamToFastq --version > "%s"' % (output[0])
 
         elif tool_name == 'annovar':
-            commands += 'table_annovar.pl' % (output[0])
+            commands += 'table_annovar.pl'
 
         elif tool_name == 'platypus':
             commands += 'platypus > "%s"' % (output[0])
