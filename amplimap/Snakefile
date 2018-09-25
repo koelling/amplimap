@@ -311,36 +311,44 @@ rule tool_version:
                 tool_name, wildcards['tool']
             ))
 
-        try:
-            if tool_name == 'bwa':
-                #bwa will return an error code if we run it like this, but it's the only way to get the version
-                result = subprocess.run(
-                    commands,
-                    stdout = subprocess.PIPE,
-                    stderr = subprocess.PIPE,
-                    shell = True,
-                    check = False
-                )
+        #run command and then manually check result, so that we can handle cases like
+        #bwa and we can provide stderr if we get a returncode != 0
+        result = subprocess.run(
+            commands,
+            stdout = subprocess.PIPE,
+            stderr = subprocess.PIPE,
+            shell = True,
+            check = False
+        )
 
+        #normally we just check for a 0 exit status
+        if result.returncode != 0:
+            #bwa will return an error code if we run it like this, but it's the only way to get the version
+            if tool_name == 'bwa':
                 #did we get a version number
                 if re.search(r'^Version:\s+.*$', result.stderr.decode('utf-8'), re.MULTILINE):
                     with open(output[0], 'wb') as f:
                         f.write(result.stderr)
                 else:
-                    raise Exception('Failed to run process and find version number (code={})\n{}'.format(
+                    raise Exception(
+                        '\nFailed to run tool {} and find version number (code={})\n{}\nPlease check that {} is available.\n'.format(
+                            wildcards['tool'],
+                            result.returncode,
+                            result.stderr.decode('utf-8'),
+                            wildcards['tool'],
+                        )
+                    )
+            else:
+                raise Exception(
+                    '\nFailed to run tool {} (code={})\n{}\nPlease check that {} is available.\n'.format(
+                        wildcards['tool'],
                         result.returncode,
                         result.stderr.decode('utf-8'),
-                    ))
-            else:
-                shell(commands)
-
-        except Exception as e:
-            raise Exception(
-                '\nFailed to find version for tool "{}":\n\n{}\nPlease check that {} is available.\n'.format(
-                wildcards['tool'],
-                str(e),
-                wildcards['tool'],
-            ))
+                        wildcards['tool'],
+                    )
+                )
+        else:
+            pass #we succeeded
 
 
 ##### TARGET CONVERSION
