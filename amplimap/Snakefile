@@ -928,6 +928,7 @@ rule align_pe:
                 bowtie2 \
                     %s \
                     --rg-id {wildcards.sample_full:q} \
+                    --rg 'SM:{wildcards.sample_full}' \
                     --threads {threads} \
                     -x "%s" \
                     -1 {input[0]:q} \
@@ -1019,6 +1020,7 @@ rule align_pe_CONSENSUS:
                 bowtie2 \
                     %s \
                     --rg-id {wildcards.sample_full:q} \
+                    --rg 'SM:{wildcards.sample_full}' \
                     --threads {threads} \
                     -x "%s" \
                     -1 {input[0]:q} \
