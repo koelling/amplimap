@@ -323,7 +323,7 @@ rule tool_version:
                 )
 
                 #did we get a version number
-                if re.search(r'^Version:\s+.*$', result.stderr.decode('utf-8')):
+                if re.search(r'^Version:\s+.*$', result.stderr.decode('utf-8'), re.MULTILINE):
                     with open(output[0], 'wb') as f:
                         f.write(result.stderr)
                 else:
