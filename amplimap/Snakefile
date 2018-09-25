@@ -335,10 +335,11 @@ rule tool_version:
                 shell(commands)
 
         except Exception as e:
-            raise Exception('Failed to find version for tool "{}":\n\n{}: {}\n\nPlease check that it is available.'.format(
+            raise Exception('Failed to find version for tool "{}":\n\n{}: {}\n\nPlease check that {} is available.'.format(
                 wildcards['tool'],
                 e.__class__.__name__,
                 str(e),
+                wildcards['tool'],
             ))
 
 
