@@ -1,6 +1,10 @@
+.. image:: amplimap_logo_400px.png
+	:width: 400px
+
 ==========================================================
 amplimap: amplicon mapping and analysis pipeline
 ==========================================================
+
 
 amplimap is a pipeline to process and analyse short-read sequencing
 data from **smMIP-panels** or **PCR-based amplicons**. It was designed
