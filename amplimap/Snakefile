@@ -634,7 +634,7 @@ rule unmapped_bam_to_fastqs:
         shell("""
             %s
             SamToFastq \
-                INPUT={input:q} \
+                INPUT={input[0]:q} \
                 FASTQ={output[0]:q} \
                 SECOND_END_FASTQ={output[1]:q} \
                 INCLUDE_NON_PF_READS=false \
