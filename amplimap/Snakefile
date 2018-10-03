@@ -266,8 +266,6 @@ rule tool_version:
     output:
         "{analysis_dir}/versions/{tool}.txt"
     run:
-        import subprocess
-
         print('Checking version for {} and writing output to {}'.format(
             wildcards['tool'],
             output[0]
@@ -278,74 +276,87 @@ rule tool_version:
         else:
             tool_name = wildcards['tool']
 
-        commands = load_module_command(tool_name, config)
-
-        if tool_name == 'bwa':
-            commands += 'bwa'
-        elif tool_name == 'bowtie2':
-            commands += 'bowtie2 --version > "%s"' % (output[0])
-        elif tool_name == 'star':
-            commands += 'STAR --version > "%s"' % (output[0])
-        elif tool_name == 'naive':
-            commands += 'amplimap --version > "%s"' % (output[0])
-
-        elif tool_name == 'samtools':
-            commands += 'samtools --version > "%s"' % (output[0])
-        elif tool_name == 'bedtools':
-            commands += 'bedtools --version > "%s"' % (output[0])
-        elif tool_name == 'bcftools':
-            commands += 'bcftools --version > "%s"' % (output[0])
-        elif tool_name == 'picard':
-            commands += 'SamToFastq --version'
-
-        elif tool_name == 'annovar':
-            commands += 'table_annovar.pl'
-
-        elif tool_name == 'platypus':
-            commands += 'platypus > "%s"' % (output[0])
-        elif tool_name == 'gatk':
-            commands += 'gatk HaplotypeCaller --version > "%s"' % (output[0])
-        elif tool_name == 'mutect2':
-            commands += 'gatk Mutect2 --version > "%s"' % (output[0])
+        if tool_name == 'naive':
+            with open(output[0], 'wb') as f:
+                f.write(__version__.encode('utf-8'))
         else:
-            raise Exception('Unexpected tool: {}/{}. Please report this bug.'.format(
-                tool_name, wildcards['tool']
-            ))
+            import subprocess
 
-        #run command and then manually check result, so that we can handle cases like
-        #bwa and we can provide stderr if we get a returncode != 0
-        result = subprocess.run(
-            commands,
-            stdout = subprocess.PIPE,
-            stderr = subprocess.PIPE,
-            shell = True,
-            check = False
-        )
+            commands = load_module_command(tool_name, config)
 
-        #normally we just check for a 0 exit status
-        if result.returncode != 0:
-            #bwa and annovar will return an error code if we run it like this, but it's the only way to get the version
-            if tool_name in ['bwa', 'annovar', 'picard']:
-                #bwa has version number in stdERR
-                if tool_name == 'bwa' \
-                and re.search(r'^Version:\s+.*$', result.stderr.decode('utf-8'), re.MULTILINE):
-                    with open(output[0], 'wb') as f:
-                        f.write(result.stderr)
-                #annovar has version number in stdOUT
-                elif tool_name == 'annovar' \
-                and re.search(r'^\s*Version:\s+.*$', result.stdout.decode('utf-8'), re.MULTILINE):
-                    with open(output[0], 'wb') as f:
-                        f.write(result.stdout)
-                #picard has version number in stdERR, should return 1 and version number should be only result
-                elif tool_name == 'picard' \
-                and result.returncode == 1 \
-                and re.match(r'^[0-9.]+\(.*\)$', result.stderr.decode('utf-8')):
-                    with open(output[0], 'wb') as f:
-                        f.write(result.stderr)
-                #didn't get a version number, so tool may just not be available
+            if tool_name == 'bwa':
+                commands += 'bwa'
+            elif tool_name == 'bowtie2':
+                commands += 'bowtie2 --version > "%s"' % (output[0])
+            elif tool_name == 'star':
+                commands += 'STAR --version > "%s"' % (output[0])
+
+            elif tool_name == 'samtools':
+                commands += 'samtools --version > "%s"' % (output[0])
+            elif tool_name == 'bedtools':
+                commands += 'bedtools --version > "%s"' % (output[0])
+            elif tool_name == 'bcftools':
+                commands += 'bcftools --version > "%s"' % (output[0])
+            elif tool_name == 'picard':
+                commands += 'SamToFastq --version'
+
+            elif tool_name == 'annovar':
+                commands += 'table_annovar.pl'
+
+            elif tool_name == 'platypus':
+                commands += 'platypus > "%s"' % (output[0])
+            elif tool_name == 'gatk':
+                commands += 'gatk HaplotypeCaller --version > "%s"' % (output[0])
+            elif tool_name == 'mutect2':
+                commands += 'gatk Mutect2 --version > "%s"' % (output[0])
+            else:
+                raise Exception('Unexpected tool: {}/{}. Please report this bug.'.format(
+                    tool_name, wildcards['tool']
+                ))
+
+            #run command and then manually check result, so that we can handle cases like
+            #bwa and we can provide stderr if we get a returncode != 0
+            result = subprocess.run(
+                commands,
+                stdout = subprocess.PIPE,
+                stderr = subprocess.PIPE,
+                shell = True,
+                check = False
+            )
+
+            #normally we just check for a 0 exit status
+            if result.returncode != 0:
+                #bwa and annovar will return an error code if we run it like this, but it's the only way to get the version
+                if tool_name in ['bwa', 'annovar', 'picard']:
+                    #bwa has version number in stdERR
+                    if tool_name == 'bwa' \
+                    and re.search(r'^Version:\s+.*$', result.stderr.decode('utf-8'), re.MULTILINE):
+                        with open(output[0], 'wb') as f:
+                            f.write(result.stderr)
+                    #annovar has version number in stdOUT
+                    elif tool_name == 'annovar' \
+                    and re.search(r'^\s*Version:\s+.*$', result.stdout.decode('utf-8'), re.MULTILINE):
+                        with open(output[0], 'wb') as f:
+                            f.write(result.stdout)
+                    #picard has version number in stdERR, should return 1 and version number should be only result
+                    elif tool_name == 'picard' \
+                    and result.returncode == 1 \
+                    and re.match(r'^[0-9.]+\(.*\)$', result.stderr.decode('utf-8')):
+                        with open(output[0], 'wb') as f:
+                            f.write(result.stderr)
+                    #didn't get a version number, so tool may just not be available
+                    else:
+                        raise Exception(
+                            '\nFailed to run tool {} and find version number (code={})\n{}\nPlease check that {} is available.\n'.format(
+                                wildcards['tool'],
+                                result.returncode,
+                                result.stderr.decode('utf-8'),
+                                wildcards['tool'],
+                            )
+                        )
                 else:
                     raise Exception(
-                        '\nFailed to run tool {} and find version number (code={})\n{}\nPlease check that {} is available.\n'.format(
+                        '\nFailed to run tool {} (code={})\n{}\nPlease check that {} is available.\n'.format(
                             wildcards['tool'],
                             result.returncode,
                             result.stderr.decode('utf-8'),
@@ -353,16 +364,7 @@ rule tool_version:
                         )
                     )
             else:
-                raise Exception(
-                    '\nFailed to run tool {} (code={})\n{}\nPlease check that {} is available.\n'.format(
-                        wildcards['tool'],
-                        result.returncode,
-                        result.stderr.decode('utf-8'),
-                        wildcards['tool'],
-                    )
-                )
-        else:
-            pass #we succeeded
+                pass #we succeeded
 
 
 ##### TARGET CONVERSION
