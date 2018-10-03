@@ -118,6 +118,26 @@ def check_default_pileups(wd_path, expected_coverage = 5, include_too_short = Fa
     assert (pileups.loc[pileups.pos == 37, 'ref_hq_count'] == pileups.loc[pileups.pos == 37, 'expected_coverage'] - 1).all()
     assert (set(pileups.loc[pileups.pos == 37, 'alts'].iloc[0].split(';')) == set(['G'])) #explicitly use iloc and no .all() here
 
+def test_naive_pileups_simulation(capsys):
+    wd_path = os.path.join(packagedir, "sample_data", "wd_naive")
+    init_wd(wd_path, os.path.join(packagedir, "sample_data", "sample_reads_in"))
+    shutil.rmtree(os.path.join(wd_path, 'test__GGCAATATGT_GGCAATCTGT_100'), ignore_errors=True) #make sure this doesn't exist
+
+    #run simulation, replacing A@30 to C
+    amplimap.run.main(['--working-directory={}'.format(wd_path), 'test__GGCAATATGT_GGCAATCTGT_100/test_pileups.done', '--run'])
+    captured = capsys.readouterr()
+    assert '{} {} finished!'.format(amplimap.run.__title__, amplimap.run.__version__) in captured.err.strip()
+
+    pileups = pd.read_csv(os.path.join(wd_path, 'test__GGCAATATGT_GGCAATCTGT_100', 'pileup', 'pileups_long.csv'))    
+    assert len(pileups) == 11
+
+    #we should have an A>C SNP at pos 30, in addition to the others
+    assert pileups.loc[~pileups.pos.isin([30, 35, 37]), 'alts'].isnull().all()
+    assert (pileups.loc[pileups.pos == 30, 'nonref_hq_count'] == 5).all()
+    assert (pileups.loc[pileups.pos == 30, 'ref_hq_count'] == 0).all()
+    assert (set(pileups.loc[pileups.pos == 30, 'alts'].iloc[0].split(';')) == set(['C'])) #explicitly use iloc and no .all() here
+
+
 def test_naive_pileups(capsys):
     wd_path = os.path.join(packagedir, "sample_data", "wd_naive")
     init_wd(wd_path, os.path.join(packagedir, "sample_data", "sample_reads_in"))
