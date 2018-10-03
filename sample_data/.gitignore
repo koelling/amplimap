@@ -1,3 +1,5 @@
 wd*/analysis/
+wd*/test__*/
 wd*/.snakemake/
 wd*/reads_in/
+wd_naive/checks/
