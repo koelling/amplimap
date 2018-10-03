@@ -4,7 +4,7 @@ Advanced usage
 Merging runs
 ~~~~~~~~~~~~
 
-To merge data from multiple runs together, use the ``merge_folders.py``
+To merge data from multiple runs together, use the ``amplimap_merge``
 script. You can run ``merge_folders.py --help`` to see the parameters.
 Here is an example:
 
