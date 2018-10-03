@@ -1354,8 +1354,6 @@ rule call_variants_umi:
                 """ % (load_module_command('platypus', config), get_path('fasta'))
             )
         elif config['variants']['caller'] == 'gatk':   
-            #TODO: should we add https://software.broadinstitute.org/gatk/documentation/tooldocs/current/org_broadinstitute_hellbender_tools_walkers_bqsr_BaseRecalibrator.php
-            #TODO: include Mutect2?    https://software.broadinstitute.org/gatk/documentation/tooldocs/current/org_broadinstitute_hellbender_tools_walkers_mutect_Mutect2.php
             shell("""
                 %s
                 gatk HaplotypeCaller \
