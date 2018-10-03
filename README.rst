@@ -40,5 +40,8 @@ Links
 
 Basic installation
 -------------------
+::
 
 	pip install amplimap
+
+Requires Python 3.5+
