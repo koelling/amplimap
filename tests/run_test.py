@@ -70,6 +70,17 @@ def test_config(capsys):
     #     sys.stdout.write(captured.err)
     #     sys.stdout.write(captured.out)
 
+def check_run(wd_path):
+    #dry-run
+    amplimap.run.main(['--working-directory={}'.format(wd_path), 'pileups'])
+    captured = capsys.readouterr()
+    assert '{} {} dry run successful.'.format(amplimap.run.__title__, amplimap.run.__version__) in captured.err.strip()
+
+    #full run
+    amplimap.run.main(['--working-directory={}'.format(wd_path), 'pileups', '--run'])
+    captured = capsys.readouterr()
+    assert '{} {} finished!'.format(amplimap.run.__title__, amplimap.run.__version__) in captured.err.strip()    
+
 def check_default_stats(wd_path):
     samples = pd.read_csv(os.path.join(wd_path, 'analysis', 'reads_parsed', 'stats_samples.csv'))
     assert len(samples) == 1
@@ -111,16 +122,7 @@ def test_naive_pileups(capsys):
     wd_path = os.path.join(packagedir, "sample_data", "wd_naive")
     init_wd(wd_path, os.path.join(packagedir, "sample_data", "sample_reads_in"))
 
-    #dry-run
-    amplimap.run.main(['--working-directory={}'.format(wd_path), 'pileups'])
-    captured = capsys.readouterr()
-    assert '{} {} dry run successful.'.format(amplimap.run.__title__, amplimap.run.__version__) in captured.err.strip()
-
-    #full run
-    amplimap.run.main(['--working-directory={}'.format(wd_path), 'pileups', '--run'])
-    captured = capsys.readouterr()
-    assert '{} {} finished!'.format(amplimap.run.__title__, amplimap.run.__version__) in captured.err.strip()
-
+    check_run(wd_path)
     check_default_stats(wd_path)
     check_default_pileups(wd_path)
 
@@ -128,16 +130,7 @@ def test_bwa_pileups(capsys):
     wd_path = os.path.join(packagedir, "sample_data", "wd_bwa")
     init_wd(wd_path, os.path.join(packagedir, "sample_data", "sample_reads_in"))
 
-    #dry-run
-    amplimap.run.main(['--working-directory={}'.format(wd_path), 'pileups'])
-    captured = capsys.readouterr()
-    assert '{} {} dry run successful.'.format(amplimap.run.__title__, amplimap.run.__version__) in captured.err.strip()
-
-    #full run
-    amplimap.run.main(['--working-directory={}'.format(wd_path), 'pileups', '--run'])
-    captured = capsys.readouterr()
-    assert '{} {} finished!'.format(amplimap.run.__title__, amplimap.run.__version__) in captured.err.strip()
-
+    check_run(wd_path)
     check_default_stats(wd_path)
     check_default_pileups(wd_path)
 
@@ -145,15 +138,7 @@ def test_raw_read_pileups(capsys):
     wd_path = os.path.join(packagedir, "sample_data", "wd_bwa_raw")
     init_wd(wd_path, os.path.join(packagedir, "sample_data", "sample_reads_in"))
 
-    #dry-run
-    amplimap.run.main(['--working-directory={}'.format(wd_path), 'pileups'])
-    captured = capsys.readouterr()
-    assert '{} {} dry run successful.'.format(amplimap.run.__title__, amplimap.run.__version__) in captured.err.strip()
-
-    #full run
-    amplimap.run.main(['--working-directory={}'.format(wd_path), 'pileups', '--run'])
-    captured = capsys.readouterr()
-    assert '{} {} finished!'.format(amplimap.run.__title__, amplimap.run.__version__) in captured.err.strip()
+    check_run(wd_path)
 
     #check custom stats
     samples = pd.read_csv(os.path.join(wd_path, 'analysis', 'reads_parsed', 'stats_samples.csv'))
@@ -171,16 +156,7 @@ def test_umi_pileups(capsys):
     wd_path = os.path.join(packagedir, "sample_data", "wd_umis")
     init_wd(wd_path, os.path.join(packagedir, "sample_data", "sample_reads_in"), umi_one = 3, umi_two = 4)
 
-    #dry-run
-    amplimap.run.main(['--working-directory={}'.format(wd_path), 'pileups'])
-    captured = capsys.readouterr()
-    assert '{} {} dry run successful.'.format(amplimap.run.__title__, amplimap.run.__version__) in captured.err.strip()
-
-    #full run
-    amplimap.run.main(['--working-directory={}'.format(wd_path), 'pileups', '--run'])
-    captured = capsys.readouterr()
-    assert '{} {} finished!'.format(amplimap.run.__title__, amplimap.run.__version__) in captured.err.strip()
-
+    check_run(wd_path)
     check_default_stats(wd_path)
     check_default_pileups(wd_path, expected_coverage=4) #one less, because two read pairs have same umi!
 
