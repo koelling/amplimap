@@ -170,6 +170,7 @@ rule check_python_packages:
         import umi_tools
         print('Python libraries checked.')
 
+#DEPRECATED: we now always check for overlaps in run.py so this is no longer required
 rule check_target_overlaps:
     input:
         targets = "{analysis_dir}/targets.bed"
@@ -1103,7 +1104,6 @@ rule do_pileup:
     input:
         "{analysis_dir}/bam/{sample_full}.bam", # if config['general']['ignore_umis'] else rules.umi_group.output,
         "{analysis_dir}/bam/{sample_full}.bam.bai",
-        rules.check_target_overlaps.output,
         targets = "{analysis_dir}/targets.bed",
         probes = "{analysis_dir}/probes.csv" if config['pileup']['validate_probe_targets'] and not config['general']['use_raw_reads'] else []
     output:
