@@ -1,5 +1,5 @@
 ==========================================================
-amplimap documentation (v|version|)
+amplimap documentation, version |version|
 ==========================================================
 
 An amplicon mapping and analysis pipeline
