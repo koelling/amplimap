@@ -8,15 +8,15 @@ paths:
     #path to bwa index prefix, if bwa is used as aligner
     bwa: ""
     #path to bowtie2 index prefix, if bowtie2 is used as aligner
-    bowtie2: "/PATH/TO/Bowtie2Index/genome"
+    bowtie2: ""
     #path to STAR genome directory, if STAR is used as aligner
-    star: "/PATH/TO/STAR/"
+    star: ""
     #path to reference genome FASTA file (indexed using samtools faidx)
-    fasta: "/PATH/TO/genome.fa"
+    fasta: ""
     #path to directory with annovar indices
-    annovar: '/PATH/TO/annovar/indices'
+    annovar: ""
     #reference genome name used by annovar (leave empty if same as name above)
-    annovar_name: ''
+    annovar_name: ""
 
   #second reference genome
   mm10:
