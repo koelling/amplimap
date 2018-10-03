@@ -277,8 +277,8 @@ rule tool_version:
             tool_name = wildcards['tool']
 
         if tool_name == 'naive':
-            with open(output[0], 'wb') as f:
-                f.write(__version__.encode('utf-8'))
+            with open(output[0], 'wt') as f:
+                f.write('naive aligner from {} {}\n'.format(__name__, __version__))
         else:
             import subprocess
 
