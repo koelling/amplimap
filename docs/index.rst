@@ -1,5 +1,5 @@
 ==========================================================
-amplimap documentation (Version |version|)
+amplimap documentation (v|version|)
 ==========================================================
 
 An amplicon mapping and analysis pipeline
@@ -39,11 +39,11 @@ Contents
    quickstart
    usage
    configuration
+   tutorials
    advanced
    extended_installation
    code
    references
-   tutorials
 
 Citation and License
 --------------------
