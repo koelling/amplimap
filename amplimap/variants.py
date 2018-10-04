@@ -441,9 +441,9 @@ def make_summary_dataframe(
     #columns to remove
     ignored_cols = ['GeneDetail.refGene']
 
-    #select and reorder columns        
+    #select and reorder columns
+    merged.sort_values(['Sample', 'Chr', 'Start'], inplace=True)     
     merged = merged[first_cols + [c for c in merged.columns if not c in first_cols + last_cols + ignored_cols] + last_cols]
-    merged.sort_values(['Sample', 'Chr', 'Start'], inplace=True)
 
     #output
     return merged
