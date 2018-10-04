@@ -178,7 +178,13 @@ def find_closest_exon(row: pd.Series, gexs: dict) -> int:
 
 #see: /hts/data6/smcgowan/hts_scripts/TableAnnovar_to_spreadsheet.pl
 def calculate_del_score(merged: pd.DataFrame):
-    """Add a column DeleteriousScore to dataframe which contains a count of how many tools have assigned this variant a deletious scores."""
+    """
+    Add a column DeleteriousScore to dataframe which contains a count of how many tools have assigned this variant a deletious scores.
+
+    Score ranges from 0-6, corresponding to the tools SIFT, Polyphen2, LRT, MutationTaster, GERP++ and phyloP100way_vertebrate.
+
+    Additionally, any stopgain, frameshift or splicing variants are always set to 6.
+    """
     assert merged['GERP++_RS'].dtype == float
     assert merged['phyloP100way_vertebrate'].dtype == float
         
@@ -224,197 +230,223 @@ def merge_variants(input, output):
         print('Merged data shape:', str(merged.shape))
         merged.to_csv(output[0], index = False)
 
-def make_summary(input, output, config, exon_table_path):
-    """Process merged Annovar CSV files into a large summary table."""
+def make_summary(input: list, output: list, config: dict, exon_table_path: str = None):
+    """Load merged Annovar CSV file (plus targets and sample info), process them and output a new CSV file."""
 
     #load targets (to add a targets column)
-    target_intervals = None
+    targets = None
     if len(input['targets']) > 0:
         targets = read_targets(input['targets'], file_type = 'bed', reference_type = 'genome')
-        target_intervals = collections.defaultdict(interlap.InterLap)
-        for target in targets.itertuples():
-            target_intervals[target.chr].add( (int(target.start_0), int(target.end), target) ) #note the double parentheses!
 
     #load sample information table
     sample_info = None
-    sample_info_columns = []
     if len(input['sample_info']) > 0:
         sample_info = read_sample_info(input['sample_info'][0])
-        sample_info_columns = list(sample_info.columns)
 
-    #check if we need to include some additional columns
-    include_gbrowse_links = 'include_gbrowse_links' in config['annotate'] and config['annotate']['include_gbrowse_links']
-    include_exon_distance = 'include_exon_distance' in config['annotate'] and config['annotate']['include_exon_distance']
-    include_score = 'include_score' in config['annotate'] and config['annotate']['include_score']
-
+    #load merged variant table, process it and write to CSV
     try:
         merged = pd.read_csv(input['merged'][0], index_col = False, dtype = variants_dtypes, na_values = variants_na_values)
-
-        vcf = merged['Otherinfo'].apply(lambda x: pd.Series(x.split('\t')))
-        vcf.replace('.', np.nan, inplace=True) #replace dots with NAs again
-        vcf.columns = ['Chr', 'Pos', 'ID', 'Ref', 'Alt', 'Qual', 'Filter', 'Info', 'Fields', 'SampleData']
-        assert (merged['Chr'] == vcf['Chr']).all(), 'chr mismatch'
-
-        #We are using the approach from /hts/data6/smcgowan/hts_scripts/TableAnnovar_to_spreadsheet.pl, which only looks for exons
-        #for the given gene (as annotated by Annovar). This should work fine, but is a bit inefficient.
-        #See here for better, more general solutions: https://www.biostars.org/p/53561/
-        #or actually just use the same approach as for targest (interlap.InterLap)
-        if include_exon_distance:
-            assert 'Gene.refGene' in merged.columns, 'The Annovar refGene database is required to calculate the distance to the nearest exon.'
-
-            merged['DistanceNearestExon'] = merged.apply(find_closest_exon, axis = 1, gexs = load_gene_exons(
-                exon_table_path,
-                merged.loc[merged['Func.refGene'].isin(['intronic', 'upstream', 'downstream']), 'Gene.refGene']))
-
-        #get gt info
-        vcf_sample = pd.DataFrame([ dict( zip( row.Fields.split(':'), row.SampleData.split(':') ) ) for row in vcf.itertuples() ])
-        vcf_sample.replace('.', np.nan, inplace=True) #replace dots with NAs again
-
-        #parse out some fields
-        vcf_infos = vcf['Info'].apply(lambda x: pd.Series(dict( [ tuple(pair.split('=')) if '=' in pair else (pair, True) for pair in x.split(';') ] )))
-        #handle multiple alt alleles (not usually expected)
-        if 'TR' in vcf_infos:
-            vcf_infos.loc[vcf_infos['TR'].str.contains(','), 'TR'] = '-1' 
-            vcf_infos.loc[vcf_infos['NF'].str.contains(','), 'NF'] = '-1' 
-            vcf_infos.loc[vcf_infos['NR'].str.contains(','), 'NR'] = '-1' 
-        if 'NR' in vcf_sample:
-            vcf_sample.loc[vcf_sample['NR'].str.contains(','), 'NR'] = '-1' #also need to fix this, for assertion below
-            vcf_sample.loc[vcf_sample['NV'].str.contains(','), 'NV'] = '-1' #also need to fix this, for assertion below
-        #now rename coverage fields and convert to ints
-        have_fwd_ref = False
-        vcf_infos['Total_Coverage'] = -1
-        vcf_infos['Total_Coverage_fwd'] = -1
-        vcf_infos['Total_Coverage_rev'] = -1
-        vcf_infos['Total_Reads_Alt'] = -1
-        vcf_infos['Total_Reads_Alt_fwd'] = -1
-        vcf_infos['Total_Reads_Alt_rev'] = -1
-
-        #PLATYPUS will give us TC/TR
-        if 'TC' in vcf_infos:
-            have_fwd_ref = True
-            vcf_infos['Total_Coverage'] = vcf_infos['TC'].astype(int)
-            vcf_infos['Total_Coverage_fwd'] = vcf_infos['TCF'].astype(int)
-            vcf_infos['Total_Coverage_rev'] = vcf_infos['TCR'].astype(int)
-        if 'TR' in vcf_infos:
-            vcf_infos['Total_Reads_Alt'] = vcf_infos['TR'].astype(int)
-            vcf_infos['Total_Reads_Alt_fwd'] = vcf_infos['NF'].astype(int)
-            vcf_infos['Total_Reads_Alt_rev'] = vcf_infos['NR'].astype(int)
-
-        #GATK will give us an AD value
-        if 'AD' in vcf_sample:
-            have_fwd_ref = False
-            vcf_infos['Total_Reads_Ref'] = [int(x.split(',')[0]) for x in vcf_sample['AD']]
-            vcf_infos['Total_Reads_Alt'] = [int(x.split(',')[1]) for x in vcf_sample['AD']]
-            if 'DP' in vcf_sample:
-                #gatk will give us DP
-                vcf_infos['Total_Coverage'] = vcf_sample['DP'].astype(int)
-            else:
-                #mutect2 won't
-                vcf_infos['Total_Coverage'] = [int(x.split(',')[0]) + int(x.split(',')[1]) for x in vcf_sample['AD']]
-
-        #some error checking
-        if ((vcf_infos['Total_Coverage_fwd'] != -1) & (vcf_infos['Total_Coverage_rev'] != -1)).any():
-            assert (vcf_infos['Total_Coverage'] == vcf_infos['Total_Coverage_fwd'] + vcf_infos['Total_Coverage_rev']).all(), 'total coverage mismatch'
-        if ((vcf_infos['Total_Reads_Alt_fwd'] != -1) & (vcf_infos['Total_Reads_Alt_rev'] != -1)).any():
-            assert ((vcf_infos['Total_Reads_Alt'] == -1) | (vcf_infos['Total_Reads_Alt'] == vcf_infos['Total_Reads_Alt_fwd'] + vcf_infos['Total_Reads_Alt_rev'])).all(), 'variant coverage mismatch'
-        if 'NR' in vcf_sample:
-            assert ((vcf_infos['Total_Reads_Alt'] == -1) | (vcf_infos['Total_Coverage'] == vcf_sample['NR'].astype(int))).all(), 'coverage match'
-        if 'NV' in vcf_sample:
-            assert ((vcf_infos['Total_Reads_Alt'] == -1) | (vcf_infos['Total_Reads_Alt'] == vcf_sample['NV'].astype(int))).all(), 'variant coverage match'
-
-        #add info from VCF to table
-        merged['Var_Zygosity'] = ['HOM' if gt == '1/1' else 'Het' if gt in ['0/1', '1/0'] else '???' for gt in vcf_sample['GT']]
-        merged['Var_FailedFilters'] = ['' if (filt == 'PASS' or filt == '.') else filt for filt in vcf['Filter']]
-        #mutect2 gives us AF
-        if 'AF' in vcf_sample:
-            merged['Var_AltFraction'] = [float(x.split(',')[0]) for x in vcf_sample['AF']]
-        else:
-            merged['Var_AltFraction'] = 1.0 * vcf_infos['Total_Reads_Alt'] / vcf_infos['Total_Coverage']
-            merged.loc[vcf_infos['Total_Reads_Alt'] == -1, 'Var_AltFraction'] = None
-        merged['Var_TotalCoverage'] = vcf_infos['Total_Coverage']
-        if have_fwd_ref:
-            merged['Var_Ref_fwd'] = (vcf_infos['Total_Coverage_fwd'] - vcf_infos['Total_Reads_Alt_fwd'])
-            merged['Var_Ref_rev'] = (vcf_infos['Total_Coverage_rev'] - vcf_infos['Total_Reads_Alt_rev'])
-        merged['Var_Alt'] = vcf_infos['Total_Reads_Alt']
-        if have_fwd_ref:
-            merged['Var_Alt_fwd'] = vcf_infos['Total_Reads_Alt_fwd']
-            merged['Var_Alt_rev'] = vcf_infos['Total_Reads_Alt_rev']
-        merged['Var_QualVariant'] = vcf['Qual'].astype(float)
-        if 'GQ' in vcf_sample:
-            merged['Var_QualSample'] = vcf_sample['GQ'].astype(float)
-        else:
-            merged['Var_QualSample'] = None
-        merged['Comments'] = ''
-
-        #manually add filter status for low coverage
-        merged.loc[merged['Var_TotalCoverage'] < 10, 'Var_FailedFilters'] = [filt + ';CovLt10' if len(filt) > 0 else 'CovLt10' for filt in merged.loc[merged['Var_TotalCoverage'] < 10, 'Var_FailedFilters']]
-
-        #calculate the deleterious score
-        if include_score:
-            calculate_del_score(merged)
-
-        #add gbrowse and regionseq links
-        if include_gbrowse_links:
-            merged['GBrowse'] = ""
-            merged['RegionSeq'] = ""
-            if config['general']['genome_name'] == 'hg19':
-                merged['GBrowse'] = [ '=HYPERLINK("https://gbrowse2.molbiol.ox.ac.uk/fgb2/gbrowse/CRANIOFACIAL_GRCh37/?name=%s:%d-%d", "GBrowse")' % (
-                    row.Chr, row.Start - 25, row.End + 25
-                ) for row in merged[['Chr', 'Start', 'End']].itertuples()]
-                merged['RegionSeq'] = [ '=HYPERLINK("https://gbrowse2.molbiol.ox.ac.uk/cgi-bin/varSeqRegion.cgi?var_chr=%s&var_posn=%d&ref=%s&var=%s&rm=mode_2", "RegionSeq")' % (
-                    row.Chr, row.Start, row.Ref, row.Alt
-                ) for row in merged[['Chr', 'Start', 'Ref', 'Alt']].itertuples()]
-            elif config['general']['genome_name'] == 'hg38':
-                merged['GBrowse'] = [ '=HYPERLINK("https://gbrowse2.molbiol.ox.ac.uk/fgb2/gbrowse/CRANIOFACIAL_GRCh38/?name=%s:%d-%d", "GBrowse")' % (
-                     row.Chr, row.Start - 25, row.End + 25
-                ) for row in merged[['Chr', 'Start', 'End']].itertuples()]
-            else:
-                print('Not generating GBrowse/RegionSeq columns since reference build is neither hg19 nor hg38.')
-
-        #NB: always take the first one
-        if target_intervals is not None:
-            merged['Target'] = [ (
-                next(target_range[2].id for target_range in target_intervals[row.Chr].find( (row.Start, row.End) )) #note the double parenthesis for tuple
-            ) for row in merged[['Chr', 'Start', 'End']].itertuples()]
-
-        #join sample_info
-        if sample_info is not None:
-            merged = merged.join(sample_info, on = ['Sample', 'Target'], how = 'left')
-
-        #drop useless columns
-        merged.drop(['Otherinfo'], axis=1, inplace=True)
-        #drop extra populations from ExAC/gnomAD (all columns that start with ExAC/gnomAD and don't end with _ALL)
-        for db_prefix in ['ExAC', 'gnomAD_genome', 'gnomAD_exome']:
-            merged.drop([column for column in merged.columns if column.startswith(db_prefix) and not column.endswith('_ALL')], axis=1, inplace=True)
-
-        #first columns
-        first_cols = []
-        if include_score:
-            first_cols.append('DeleteriousScore')
-        if 'Gene.refGene' in merged.columns:
-            first_cols += ['Gene.refGene', 'Func.refGene', 'ExonicFunc.refGene', 'AAChange.refGene']
-        if include_exon_distance:
-            first_cols.append('DistanceNearestExon')
-        first_cols = first_cols + [c for c in merged.columns if c.startswith('Var_') and c != 'Var_Qual']
-
-        #last columns
-        last_cols = ['Chr', 'Start', 'End', 'Ref', 'Alt']
-        if include_gbrowse_links:
-            last_cols.append('GBrowse')
-        last_cols += ['Sample'] + sample_info_columns + ['Comments']
-
-        #columns to remove
-        ignored_cols = ['GeneDetail.refGene']
-
-        #select and reorder columns        
-        merged = merged[first_cols + [c for c in merged.columns if not c in first_cols + last_cols + ignored_cols] + last_cols]
-        merged.sort_values(['Sample', 'Chr', 'Start'], inplace=True)
-
-        #output
+        merged = make_summary_dataframe(
+            merged,
+            targets,
+            sample_info,
+            genome_name = config['general']['genome_name'],
+            include_gbrowse_links = 'include_gbrowse_links' in config['annotate'] and config['annotate']['include_gbrowse_links'],
+            include_exon_distance = 'include_exon_distance' in config['annotate'] and config['annotate']['include_exon_distance'],
+            include_score = 'include_score' in config['annotate'] and config['annotate']['include_score'],
+            exon_table_path = exon_table_path,
+        )
         merged.to_csv(output[0], index = False)
     except pd.io.common.EmptyDataError:
         print('No variants found, creating empty file!')
         open(output[0], 'a').close()
+
+def make_summary_dataframe(
+        merged: pd.DataFrame,
+        targets: pd.DataFrame = None,
+        sample_info: pd.DataFrame = None,
+        genome_name: str = None,
+        include_gbrowse_links: bool = False,
+        include_exon_distance: bool = False,
+        include_score: bool = False,
+        exon_table_path: str = None,
+    ) -> pd.DataFrame:
+    """Process merged Annovar dataframe (with optional targets and sample_info data frames) into a large summary table."""
+
+    #process targets (to add a targets column)
+    target_intervals = None
+    if targets:
+        target_intervals = collections.defaultdict(interlap.InterLap)
+        for target in targets.itertuples():
+            target_intervals[target.chr].add( (int(target.start_0), int(target.end), target) ) #note the double parentheses!
+
+    #process sample information table
+    sample_info_columns = []
+    if sample_info:
+        sample_info_columns = list(sample_info.columns)
+
+    vcf = merged['Otherinfo'].apply(lambda x: pd.Series(x.split('\t')))
+    vcf.replace('.', np.nan, inplace=True) #replace dots with NAs again
+    vcf.columns = ['Chr', 'Pos', 'ID', 'Ref', 'Alt', 'Qual', 'Filter', 'Info', 'Fields', 'SampleData']
+    assert (merged['Chr'] == vcf['Chr']).all(), 'chr mismatch'
+
+    #We are using the approach from /hts/data6/smcgowan/hts_scripts/TableAnnovar_to_spreadsheet.pl, which only looks for exons
+    #for the given gene (as annotated by Annovar). This should work fine, but is a bit inefficient.
+    #See here for better, more general solutions: https://www.biostars.org/p/53561/
+    #or actually just use the same approach as for targest (interlap.InterLap)
+    if include_exon_distance:
+        assert 'Gene.refGene' in merged.columns, 'The Annovar refGene database is required to calculate the distance to the nearest exon.'
+
+        merged['DistanceNearestExon'] = merged.apply(find_closest_exon, axis = 1, gexs = load_gene_exons(
+            exon_table_path,
+            merged.loc[merged['Func.refGene'].isin(['intronic', 'upstream', 'downstream']), 'Gene.refGene']))
+
+    #get gt info
+    vcf_sample = pd.DataFrame([ dict( zip( row.Fields.split(':'), row.SampleData.split(':') ) ) for row in vcf.itertuples() ])
+    vcf_sample.replace('.', np.nan, inplace=True) #replace dots with NAs again
+
+    #parse out some fields
+    vcf_infos = vcf['Info'].apply(lambda x: pd.Series(dict( [ tuple(pair.split('=')) if '=' in pair else (pair, True) for pair in x.split(';') ] )))
+    #handle multiple alt alleles (not usually expected)
+    if 'TR' in vcf_infos:
+        vcf_infos.loc[vcf_infos['TR'].str.contains(','), 'TR'] = '-1' 
+        vcf_infos.loc[vcf_infos['NF'].str.contains(','), 'NF'] = '-1' 
+        vcf_infos.loc[vcf_infos['NR'].str.contains(','), 'NR'] = '-1' 
+    if 'NR' in vcf_sample:
+        vcf_sample.loc[vcf_sample['NR'].str.contains(','), 'NR'] = '-1' #also need to fix this, for assertion below
+        vcf_sample.loc[vcf_sample['NV'].str.contains(','), 'NV'] = '-1' #also need to fix this, for assertion below
+    #now rename coverage fields and convert to ints
+    have_fwd_ref = False
+    vcf_infos['Total_Coverage'] = -1
+    vcf_infos['Total_Coverage_fwd'] = -1
+    vcf_infos['Total_Coverage_rev'] = -1
+    vcf_infos['Total_Reads_Alt'] = -1
+    vcf_infos['Total_Reads_Alt_fwd'] = -1
+    vcf_infos['Total_Reads_Alt_rev'] = -1
+
+    #PLATYPUS will give us TC/TR
+    if 'TC' in vcf_infos:
+        have_fwd_ref = True
+        vcf_infos['Total_Coverage'] = vcf_infos['TC'].astype(int)
+        vcf_infos['Total_Coverage_fwd'] = vcf_infos['TCF'].astype(int)
+        vcf_infos['Total_Coverage_rev'] = vcf_infos['TCR'].astype(int)
+    if 'TR' in vcf_infos:
+        vcf_infos['Total_Reads_Alt'] = vcf_infos['TR'].astype(int)
+        vcf_infos['Total_Reads_Alt_fwd'] = vcf_infos['NF'].astype(int)
+        vcf_infos['Total_Reads_Alt_rev'] = vcf_infos['NR'].astype(int)
+
+    #GATK will give us an AD value
+    if 'AD' in vcf_sample:
+        have_fwd_ref = False
+        vcf_infos['Total_Reads_Ref'] = [int(x.split(',')[0]) for x in vcf_sample['AD']]
+        vcf_infos['Total_Reads_Alt'] = [int(x.split(',')[1]) for x in vcf_sample['AD']]
+        if 'DP' in vcf_sample:
+            #gatk will give us DP
+            vcf_infos['Total_Coverage'] = vcf_sample['DP'].astype(int)
+        else:
+            #mutect2 won't
+            vcf_infos['Total_Coverage'] = [int(x.split(',')[0]) + int(x.split(',')[1]) for x in vcf_sample['AD']]
+
+    #some error checking
+    if ((vcf_infos['Total_Coverage_fwd'] != -1) & (vcf_infos['Total_Coverage_rev'] != -1)).any():
+        assert (vcf_infos['Total_Coverage'] == vcf_infos['Total_Coverage_fwd'] + vcf_infos['Total_Coverage_rev']).all(), 'total coverage mismatch'
+    if ((vcf_infos['Total_Reads_Alt_fwd'] != -1) & (vcf_infos['Total_Reads_Alt_rev'] != -1)).any():
+        assert ((vcf_infos['Total_Reads_Alt'] == -1) | (vcf_infos['Total_Reads_Alt'] == vcf_infos['Total_Reads_Alt_fwd'] + vcf_infos['Total_Reads_Alt_rev'])).all(), 'variant coverage mismatch'
+    if 'NR' in vcf_sample:
+        assert ((vcf_infos['Total_Reads_Alt'] == -1) | (vcf_infos['Total_Coverage'] == vcf_sample['NR'].astype(int))).all(), 'coverage match'
+    if 'NV' in vcf_sample:
+        assert ((vcf_infos['Total_Reads_Alt'] == -1) | (vcf_infos['Total_Reads_Alt'] == vcf_sample['NV'].astype(int))).all(), 'variant coverage match'
+
+    #add info from VCF to table
+    merged['Var_Zygosity'] = ['HOM' if gt == '1/1' else 'Het' if gt in ['0/1', '1/0'] else '???' for gt in vcf_sample['GT']]
+    merged['Var_FailedFilters'] = ['' if (filt == 'PASS' or filt == '.') else filt for filt in vcf['Filter']]
+    #mutect2 gives us AF
+    if 'AF' in vcf_sample:
+        merged['Var_AltFraction'] = [float(x.split(',')[0]) for x in vcf_sample['AF']]
+    else:
+        merged['Var_AltFraction'] = 1.0 * vcf_infos['Total_Reads_Alt'] / vcf_infos['Total_Coverage']
+        merged.loc[vcf_infos['Total_Reads_Alt'] == -1, 'Var_AltFraction'] = None
+    merged['Var_TotalCoverage'] = vcf_infos['Total_Coverage']
+    if have_fwd_ref:
+        merged['Var_Ref_fwd'] = (vcf_infos['Total_Coverage_fwd'] - vcf_infos['Total_Reads_Alt_fwd'])
+        merged['Var_Ref_rev'] = (vcf_infos['Total_Coverage_rev'] - vcf_infos['Total_Reads_Alt_rev'])
+    merged['Var_Alt'] = vcf_infos['Total_Reads_Alt']
+    if have_fwd_ref:
+        merged['Var_Alt_fwd'] = vcf_infos['Total_Reads_Alt_fwd']
+        merged['Var_Alt_rev'] = vcf_infos['Total_Reads_Alt_rev']
+    merged['Var_QualVariant'] = vcf['Qual'].astype(float)
+    if 'GQ' in vcf_sample:
+        merged['Var_QualSample'] = vcf_sample['GQ'].astype(float)
+    else:
+        merged['Var_QualSample'] = None
+    merged['Comments'] = ''
+
+    #manually add filter status for low coverage
+    merged.loc[merged['Var_TotalCoverage'] < 10, 'Var_FailedFilters'] = [filt + ';CovLt10' if len(filt) > 0 else 'CovLt10' for filt in merged.loc[merged['Var_TotalCoverage'] < 10, 'Var_FailedFilters']]
+
+    #calculate the deleterious score
+    if include_score:
+        calculate_del_score(merged)
+
+    #add gbrowse and regionseq links
+    if include_gbrowse_links:
+        merged['GBrowse'] = ""
+        merged['RegionSeq'] = ""
+        if genome_name == 'hg19':
+            merged['GBrowse'] = [ '=HYPERLINK("https://gbrowse2.molbiol.ox.ac.uk/fgb2/gbrowse/CRANIOFACIAL_GRCh37/?name=%s:%d-%d", "GBrowse")' % (
+                row.Chr, row.Start - 25, row.End + 25
+            ) for row in merged[['Chr', 'Start', 'End']].itertuples()]
+            merged['RegionSeq'] = [ '=HYPERLINK("https://gbrowse2.molbiol.ox.ac.uk/cgi-bin/varSeqRegion.cgi?var_chr=%s&var_posn=%d&ref=%s&var=%s&rm=mode_2", "RegionSeq")' % (
+                row.Chr, row.Start, row.Ref, row.Alt
+            ) for row in merged[['Chr', 'Start', 'Ref', 'Alt']].itertuples()]
+        elif genome_name == 'hg38':
+            merged['GBrowse'] = [ '=HYPERLINK("https://gbrowse2.molbiol.ox.ac.uk/fgb2/gbrowse/CRANIOFACIAL_GRCh38/?name=%s:%d-%d", "GBrowse")' % (
+                 row.Chr, row.Start - 25, row.End + 25
+            ) for row in merged[['Chr', 'Start', 'End']].itertuples()]
+        else:
+            print('Not generating GBrowse/RegionSeq columns since reference build is neither hg19 nor hg38.')
+
+    #NB: always take the first one
+    if target_intervals is not None:
+        merged['Target'] = [ (
+            next(target_range[2].id for target_range in target_intervals[row.Chr].find( (row.Start, row.End) )) #note the double parenthesis for tuple
+        ) for row in merged[['Chr', 'Start', 'End']].itertuples()]
+
+    #join sample_info
+    if sample_info is not None:
+        merged = merged.join(sample_info, on = ['Sample', 'Target'], how = 'left')
+
+    #drop useless columns
+    merged.drop(['Otherinfo'], axis=1, inplace=True)
+    #drop extra populations from ExAC/gnomAD (all columns that start with ExAC/gnomAD and don't end with _ALL)
+    for db_prefix in ['ExAC', 'gnomAD_genome', 'gnomAD_exome']:
+        merged.drop([column for column in merged.columns if column.startswith(db_prefix) and not column.endswith('_ALL')], axis=1, inplace=True)
+
+    #first columns
+    first_cols = []
+    if include_score:
+        first_cols.append('DeleteriousScore')
+    if 'Gene.refGene' in merged.columns:
+        first_cols += ['Gene.refGene', 'Func.refGene', 'ExonicFunc.refGene', 'AAChange.refGene']
+    if include_exon_distance:
+        first_cols.append('DistanceNearestExon')
+    first_cols = first_cols + [c for c in merged.columns if c.startswith('Var_') and c != 'Var_Qual']
+
+    #last columns
+    last_cols = ['Chr', 'Start', 'End', 'Ref', 'Alt']
+    if include_gbrowse_links:
+        last_cols.append('GBrowse')
+    last_cols += ['Sample'] + sample_info_columns + ['Comments']
+
+    #columns to remove
+    ignored_cols = ['GeneDetail.refGene']
+
+    #select and reorder columns        
+    merged = merged[first_cols + [c for c in merged.columns if not c in first_cols + last_cols + ignored_cols] + last_cols]
+    merged.sort_values(['Sample', 'Chr', 'Start'], inplace=True)
+
+    #output
+    return merged
 
 def make_summary_condensed(input, output):
     """Make condensed summary table that only contains a subset of columns."""
