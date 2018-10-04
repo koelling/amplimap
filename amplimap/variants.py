@@ -275,14 +275,14 @@ def make_summary_dataframe(
 
     #process targets (to add a targets column)
     target_intervals = None
-    if targets:
+    if targets is not None:
         target_intervals = collections.defaultdict(interlap.InterLap)
         for target in targets.itertuples():
             target_intervals[target.chr].add( (int(target.start_0), int(target.end), target) ) #note the double parentheses!
 
     #process sample information table
     sample_info_columns = []
-    if sample_info:
+    if sample_info is not None:
         sample_info_columns = list(sample_info.columns)
 
     vcf = merged['Otherinfo'].apply(lambda x: pd.Series(x.split('\t')))
