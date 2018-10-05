@@ -7,7 +7,7 @@ import argparse
 import yaml
 
 from .version import __title__, __version__
-from .reader import AmplimapReaderException, read_new_probe_design, read_targets, read_snps_txt
+from .reader import AmplimapReaderException, read_new_probe_design, process_probe_design, read_and_convert_mipgen_probes, read_and_convert_heatseq_probes, read_targets, read_snps_txt
 
 def check_config_keys(default_config, my_config, path = []):
     """Recursively check that config keys provided in my_config also exist in default_config (ignoring 'paths' and 'clusters')."""
@@ -159,9 +159,6 @@ def main(argv = None):
         #     or os.path.isfile(os.path.join(args.working_directory, 'probes_heatseq.tsv')), 'probes.csv, probes_mipgen.csv, or probes_heatseq.tsv file missing'
 
         #check some basic settings
-        if not config['general']['reference_type'] in ['genome', 'transcriptome']:
-            raise Exception('general: reference_type must be genome or transcriptome!')
-
         aligners = ['naive', 'bwa', 'bowtie2', 'star']
         if not config['align']['aligner'] in aligners:
             raise Exception('align: aligner must be one of {}!'.format(','.join(aligners)))
@@ -170,10 +167,10 @@ def main(argv = None):
         if not config['variants']['caller'] in callers:
             raise Exception('variants: caller must be one of {}!'.format(','.join(callers)))
 
-        if config['general']['quality_trim_threshold'] != False:
-            if not isinstance(config['general']['quality_trim_threshold'], float):
+        if config['parse_reads']['quality_trim_threshold'] != False:
+            if not isinstance(config['parse_reads']['quality_trim_threshold'], float):
                 raise Exception('quality_trim_threshold must be a decimal number!')
-            if not config['general']['quality_trim_threshold'] > 0 and config['general']['quality_trim_threshold'] < 1:
+            if not config['parse_reads']['quality_trim_threshold'] > 0 and config['parse_reads']['quality_trim_threshold'] < 1:
                 raise Exception('quality_trim_threshold must be either "false" or above 0 and below 1!')
 
         if not (config['parse_reads']['min_percentage_good'] >= 0 and config['parse_reads']['min_percentage_good'] <= 100):
@@ -191,7 +188,7 @@ def main(argv = None):
             config['general']['ignore_umis'] = True
 
         #check we have proper paths
-        if not config['general']['genome_name'] in config['paths']:
+        if not config['general']['genome_name'] in config['paths'] or not isinstance(config['paths'][config['general']['genome_name']], dict):
             raise Exception('Could not find list of paths for genome_name: "{}". Please add the paths to your default configuration or your local config.yaml file.'.format(config['general']['genome_name']))
 
         for name, path in config['paths'][config['general']['genome_name']].items():
@@ -202,13 +199,19 @@ def main(argv = None):
         #check input files
         sys.stderr.write('Checking input files...\n')
         if os.path.isfile(os.path.join(args.working_directory, 'probes.csv')):
-            read_new_probe_design(os.path.join(args.working_directory, 'probes.csv'), reference_type = config['general']['reference_type'])
+            read_new_probe_design(os.path.join(args.working_directory, 'probes.csv'), reference_type = 'genome')
+        if os.path.isfile(os.path.join(args.working_directory, 'probes_mipgen.csv')):
+            process_probe_design(read_and_convert_mipgen_probes(os.path.join(args.working_directory, 'probes_mipgen.csv')))
+        if os.path.isfile(os.path.join(args.working_directory, 'probes_heatseq.tsv')):
+            process_probe_design(read_and_convert_heatseq_probes(os.path.join(args.working_directory, 'probes_heatseq.tsv')))
         if os.path.isfile(os.path.join(args.working_directory, 'targets.csv')):
-            read_targets(os.path.join(args.working_directory, 'targets.csv'), reference_type = config['general']['reference_type'], file_type = 'csv')
+            #note: this will fail on overlapping targets
+            read_targets(os.path.join(args.working_directory, 'targets.csv'), check_overlaps=True, reference_type = 'genome', file_type = 'csv')
         if os.path.isfile(os.path.join(args.working_directory, 'targets.bed')):
-            read_targets(os.path.join(args.working_directory, 'targets.bed'), reference_type = config['general']['reference_type'], file_type = 'bed')
+            #note: this will fail on overlapping targets
+            read_targets(os.path.join(args.working_directory, 'targets.bed'), check_overlaps=True, reference_type = 'genome', file_type = 'bed')
         if os.path.isfile(os.path.join(args.working_directory, 'snps.txt')):
-            read_snps_txt(os.path.join(args.working_directory, 'snps.txt'), reference_type = config['general']['reference_type'])
+            read_snps_txt(os.path.join(args.working_directory, 'snps.txt'), reference_type = 'genome')
 
         #provide our source dir name to snakefile
         config['general']['amplimap_dir'] = basedir
@@ -284,7 +287,7 @@ def main(argv = None):
         cluster_command_sync = None
 
         if args.cluster:
-            if args.cluster in config['clusters']:
+            if args.cluster in config['clusters'] and isinstance(config['clusters'][args.cluster], dict):
                 if 'command_sync' in config['clusters'][args.cluster]:
                     cluster_command_sync = config['clusters'][args.cluster]['command_sync']
                 elif 'command_nosync' in config['clusters'][args.cluster]:
@@ -332,7 +335,11 @@ def main(argv = None):
                 sys.stderr.write('{} {} finished!\n'.format(__title__, __version__))
             return 0
         else:
-            sys.stderr.write('{} {} failed! Please see output above or cluster logs for details.\n'.format(__title__,  __version__))
+            if args.cluster:
+                sys.stderr.write('{} {} failed! Please see output above or cluster logs for details.\n'.format(__title__,  __version__))
+            else:
+                sys.stderr.write('{} {} failed! Please see output above for details.\n'.format(__title__,  __version__))
+
             return 1
     except AmplimapReaderException as e:
         if args.debug:

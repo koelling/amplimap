@@ -137,10 +137,16 @@ def process_pileup_read(
     read_name = pr.alignment.query_name
     mate_starts = get_al_mate_starts(pr.alignment) if group_with_mate_positions else None
     if ignore_groups:
-        read_probe = None
+        #we haven't pre-parsed the read yet, so let's do it now
         read_umi = None
+
+        #parse info from read name (should be bowtie2 compatible)
+        if no_probe_data:
+            read_probe = None
+        else:
+            _, read_probe, _ = parse_extended_read_name(read_name)
     else:
-        #get read metadata (will raise if we didn't see this before, but we should always have)
+        #get read metadata from before (will raise if we didn't see this before, but we should always have)
         alignment_tuple = (read_name, mate_starts)
         read_name, read_probe, read_umi, _ = read_metadata[alignment_tuple]
 
@@ -746,6 +752,7 @@ def aggregate(folder, snps_file, ref, generate_calls):
     #figure out columns for detailed output
     agg_long_detailed_columns += ['count_hq_%s' % call for call in call_types]
     agg_long_detailed_columns.append('number_called_hq')
+    agg_long_detailed_columns += ['%s_fraction' % count_col for count_col in agg_long_count_cols]
     agg_long_detailed_columns.append('filter')
 
     #output long table
@@ -842,6 +849,7 @@ def process_file(input, output, probes_file, snps_file, targets_file, validate_p
         log.info('Loaded reference genome fasta from %s', fasta_file)
 
     #figure out actual ends
+    #TODO: this is actually no longer in use, since reference_type is forced to 'genome' now.
     if reference_type == 'transcriptome' and targets is not None:
         if ref is None:
             raise Exception('Error: need reference fasta file to do pileup on transcriptome!')

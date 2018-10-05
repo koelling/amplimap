@@ -109,7 +109,9 @@ def quality_trim_read(read_seq, read_qual_raw, phred_base: int = 33, p_threshold
         #return empty result, this should be filtered out downstream
         return 0, '', ''
 
-def make_trimmed_read(read, probe,
+def make_trimmed_read(
+        read_id,
+        read, probe,
         target_len,
         umi, umi_len,
         arm_len, other_arm_len,
@@ -128,7 +130,6 @@ def make_trimmed_read(read, probe,
             - int: change after quality trimming
             - int: trimmed length
     """
-    read_id = read[0].split(' ')[0]
 
     if check_sequence is not None:
         raise Exception('not implemented fully')
@@ -402,7 +403,12 @@ def parse_read_pairs(
                     if ' ' in second_id:
                         second_id = second_id[:second_id.index(' ')]
                     assert len(first_id) > 0, 'Encountered read with missing read name, stopping! Read #%d' % counters['pairs_total']
-                    assert first_id == second_id, 'Encountered mismatching read IDs between R1 and R2, stopping! Read #%d %s/%s' % (counters['pairs_total'], first_id, second_id)
+                    #trim off /1 and /2
+                    if first_id.endswith('/1') and second_id.endswith('/2'):
+                        first_id = first_id[:-2]
+                        second_id = second_id[:-2]
+                    assert first_id == second_id, 'Encountered mismatching read IDs between R1 and R2, stopping! Read #%d R1=%s / R2=%s' % (counters['pairs_total'], first_id, second_id)
+                    pair_id = first_id
 
                     for match in matches:
                         probe = match[0]
@@ -412,6 +418,7 @@ def parse_read_pairs(
                             second_len = len(probes_dict['second_primer_5to3'][probe])
 
                             r1_trimmed, r1_primer_trim_end, r1_long_enough, r1_quality_trimmed_difference, r1_trimmed_len = make_trimmed_read(
+                                pair_id,
                                 first_read, probe, probes_dict['target_length'][probe], first_umi+second_umi,
                                 umi_one,
                                 first_len, second_len,
@@ -424,6 +431,7 @@ def parse_read_pairs(
                             )
 
                             r2_trimmed, r2_primer_trim_end, r2_long_enough, r2_quality_trimmed_difference, r2_trimmed_len = make_trimmed_read(
+                                pair_id,
                                 second_read, probe, probes_dict['target_length'][probe], first_umi+second_umi, 
                                 umi_two,
                                 second_len, first_len,

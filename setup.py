@@ -38,6 +38,7 @@ setup(
         'console_scripts': [
             'amplimap = amplimap.run:main',
             'amplimap_merge = amplimap.merge_folders:main',
+            'amplimap_setup = amplimap.run_setup:main',
             #'amplimap_pileup = amplimap.pileup:main',
         ]
     },

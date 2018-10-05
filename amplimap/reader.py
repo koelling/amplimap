@@ -223,84 +223,92 @@ def read_new_probe_design(path: str, reference_type: str = 'genome') -> pd.DataF
             #read the probes file again in old mipgen format and convert
             design = read_and_convert_mipgen_probes(path)
 
-        #now drop empty rows
-        original_len = len(design)
-        design.dropna(axis=0, how='all', inplace=True)
-        if original_len != len(design):
-            log.info('%d probes after dropping empty rows', len(design))
-        assert len(design) > 0, 'Probe design table is empty!'
-
-        #make sure we have all the columns we expect
-        for column in probe_columns:
-            if not column in design.columns:
-                raise Exception('invalid probe design table: column %s is missing!' % column)
-
-        #fix data types
-        design = design.astype(
-            {
-                'id': str,
-                'chr': str,
-                'strand': str,
-                'first_primer_5to3': str,
-                'second_primer_5to3': str,
-                #these need to be int instead of uint, otherwise they'll get turned into floats when subtracting an int (as we do below)
-                'target_start': int,
-                'target_end': int,
-            },
-            errors = 'raise'
-        )
-
-        #calculate some additional columns
-        design.loc[design['strand'] == '+', 'probe_start'] = design.loc[design['strand'] == '+', 'target_start'] - design.loc[design['strand'] == '+', 'first_primer_5to3'].str.len()
-        design.loc[design['strand'] == '-', 'probe_start'] = design.loc[design['strand'] == '-', 'target_start'] - design.loc[design['strand'] == '-', 'second_primer_5to3'].str.len()
-        design.loc[design['strand'] == '+', 'probe_end'] = design.loc[design['strand'] == '+', 'target_end'] + design.loc[design['strand'] == '+', 'second_primer_5to3'].str.len()
-        design.loc[design['strand'] == '-', 'probe_end'] = design.loc[design['strand'] == '-', 'target_end'] + design.loc[design['strand'] == '-', 'first_primer_5to3'].str.len()
-        design['target_start_0'] = design['target_start'] - 1 #we have 1-based coords now
-        design['probe_start_0'] = design['probe_start'] - 1 #we have 1-based coords now
-        design['capture_size'] = design['probe_end'] - design['probe_start_0']
-        design['target_length'] = design['target_end'] - design['target_start_0']
-
-        invalid_coords = ~(design['target_length'] > 0)
-        if invalid_coords.any():
-            print(design.loc[invalid_coords, ['id', 'chr', 'probe_start', 'probe_end', 'strand']])
-            raise Exception('Encountered probe regions with invalid target coordinates. Please check the input file and the output above. Note that the probe_end position must always be greater than the probe_start.')
-
-        # #chr should start with chr
-        # if reference_type == 'genome':
-        #     design.loc[~design['chr'].str.startswith('chr'), 'chr'] = ['chr' + c for c in design.loc[~design['chr'].str.startswith('chr'), 'chr']]
-
-        #check that probe ids don't contain unexpected characters (space breaks bam files for example, since umi will be added as tag)
-        assert design['id'].str.contains(r'^[a-zA-Z0-9._:+-]*$').all(), 'probe names may only contain alphanumeric characters and ._:+-'
-
-        #check for dupes
-        any_dup = design.duplicated(subset = ['chr', 'probe_start', 'probe_end', 'strand'], keep = False)
-        if any_dup.any():
-            print('These lines in the design are duplicated:')
-            print(design.loc[any_dup, ['chr', 'probe_start', 'probe_end', 'id', 'strand']])
-
-            dup = design.duplicated(subset = ['chr', 'probe_start', 'probe_end', 'strand'], keep = 'first')
-            log.warn('Dropping %d/%d duplicated rows', dup.sum(), len(design))
-            design = design[~dup]
-            log.warn('Now have %d rows after dropping duplicates', len(design))
-
-            raise Exception('Stopping because of duplicate rows in probes.csv!')
-
-        #make sure probes are uppercase
-        design['first_primer_5to3'] = design['first_primer_5to3'].str.upper()
-        design['second_primer_5to3'] = design['second_primer_5to3'].str.upper()
-
-        #check strand
-        if 'strand' in design.columns:
-            assert (design['strand'].isin(['+', '-'])).all(), 'strand must be + or -'
-
-        #get reverse complement of sequence for smart trimming and matching to arms reverse read
-        for c in ['first_primer_5to3', 'second_primer_5to3']:
-            design['%s__rc' % c] = [str(Bio.Seq.Seq(s).reverse_complement()) for s in design[c]]
-
-        #set the index to the probe id (useful for probe stats)
-        design.set_index('id', drop = False, inplace = True, verify_integrity = True)
+        design = process_probe_design(design, reference_type)
     except Exception as e:
         raise AmplimapReaderException(e, filename = path,  should_have_header = True).with_traceback(sys.exc_info()[2])
+
+    return design
+
+def process_probe_design(design: pd.DataFrame, reference_type: str = 'genome') -> pd.DataFrame:
+    """
+    Read amplimap probes.csv file and return pandas dataframe.
+    """
+    #now drop empty rows
+    original_len = len(design)
+    design.dropna(axis=0, how='all', inplace=True)
+    if original_len != len(design):
+        log.info('%d probes after dropping empty rows', len(design))
+    assert len(design) > 0, 'Probe design table is empty!'
+
+    #make sure we have all the columns we expect
+    for column in probe_columns:
+        if not column in design.columns:
+            raise Exception('invalid probe design table: column %s is missing!' % column)
+
+    #fix data types
+    design = design.astype(
+        {
+            'id': str,
+            'chr': str,
+            'strand': str,
+            'first_primer_5to3': str,
+            'second_primer_5to3': str,
+            #these need to be int instead of uint, otherwise they'll get turned into floats when subtracting an int (as we do below)
+            'target_start': int,
+            'target_end': int,
+        },
+        errors = 'raise'
+    )
+
+    #calculate some additional columns
+    design.loc[design['strand'] == '+', 'probe_start'] = design.loc[design['strand'] == '+', 'target_start'] - design.loc[design['strand'] == '+', 'first_primer_5to3'].str.len()
+    design.loc[design['strand'] == '-', 'probe_start'] = design.loc[design['strand'] == '-', 'target_start'] - design.loc[design['strand'] == '-', 'second_primer_5to3'].str.len()
+    design.loc[design['strand'] == '+', 'probe_end'] = design.loc[design['strand'] == '+', 'target_end'] + design.loc[design['strand'] == '+', 'second_primer_5to3'].str.len()
+    design.loc[design['strand'] == '-', 'probe_end'] = design.loc[design['strand'] == '-', 'target_end'] + design.loc[design['strand'] == '-', 'first_primer_5to3'].str.len()
+    design['target_start_0'] = design['target_start'] - 1 #we have 1-based coords now
+    design['probe_start_0'] = design['probe_start'] - 1 #we have 1-based coords now
+    design['capture_size'] = design['probe_end'] - design['probe_start_0']
+    design['target_length'] = design['target_end'] - design['target_start_0']
+
+    invalid_coords = ~(design['target_length'] > 0)
+    if invalid_coords.any():
+        print(design.loc[invalid_coords, ['id', 'chr', 'probe_start', 'probe_end', 'strand']])
+        raise Exception('Encountered probe regions with invalid target coordinates. Please check the input file and the output above. Note that the probe_end position must always be greater than the probe_start.')
+
+    # #chr should start with chr
+    # if reference_type == 'genome':
+    #     design.loc[~design['chr'].str.startswith('chr'), 'chr'] = ['chr' + c for c in design.loc[~design['chr'].str.startswith('chr'), 'chr']]
+
+    #check that probe ids don't contain unexpected characters (space breaks bam files for example, since umi will be added as tag)
+    assert design['id'].str.contains(r'^[a-zA-Z0-9._:+-]*$').all(), 'probe names may only contain alphanumeric characters and ._:+-'
+
+    #check for dupes
+    any_dup = design.duplicated(subset = ['chr', 'probe_start', 'probe_end', 'strand'], keep = False)
+    if any_dup.any():
+        print('These lines in the design are duplicated:')
+        print(design.loc[any_dup, ['chr', 'probe_start', 'probe_end', 'id', 'strand']])
+
+        dup = design.duplicated(subset = ['chr', 'probe_start', 'probe_end', 'strand'], keep = 'first')
+        log.warn('Dropping %d/%d duplicated rows', dup.sum(), len(design))
+        design = design[~dup]
+        log.warn('Now have %d rows after dropping duplicates', len(design))
+
+        raise Exception('Stopping because of duplicate rows in probes.csv!')
+
+    #make sure probes are uppercase
+    design['first_primer_5to3'] = design['first_primer_5to3'].str.upper()
+    design['second_primer_5to3'] = design['second_primer_5to3'].str.upper()
+
+    #check strand
+    if 'strand' in design.columns:
+        assert (design['strand'].isin(['+', '-'])).all(), 'strand must be + or -'
+
+    #get reverse complement of sequence for smart trimming and matching to arms reverse read
+    for c in ['first_primer_5to3', 'second_primer_5to3']:
+        design['%s__rc' % c] = [str(Bio.Seq.Seq(s).reverse_complement()) for s in design[c]]
+
+    #set the index to the probe id (useful for probe stats)
+    design.set_index('id', drop = False, inplace = True, verify_integrity = True)
 
     return design
 
@@ -379,14 +387,14 @@ def read_targets(path: str, check_overlaps: bool = False, reference_type: str = 
                 targets['id'] = ['target_%d' % i for i in range(len(targets))]
             else:
                 print(targets)
-                raise Exception('Invalid target BED file -- expected to find either 6, 4 or 3 columns separated by tabs.')
+                raise Exception('Invalid target BED file: expected to find either 6, 4 or 3 columns separated by tabs.')
         elif file_type == 'csv':
             targets = pd.read_csv(path)
 
             #check columns
             if not ('chr' in targets.columns and 'start' in targets.columns and 'end' in targets.columns):
                 print(targets)
-                raise Exception('Invalid target CSV -- first line should contain column names, which must include "chr", "start" and "end".')
+                raise Exception('Invalid target CSV: first line should contain column names, which must include "chr", "start" and "end".')
 
             #add id if need be
             if not 'id' in targets.columns:
@@ -412,18 +420,24 @@ def read_targets(path: str, check_overlaps: bool = False, reference_type: str = 
         #make sure we have no duplicated ids
         if targets.duplicated('id').any():
             print(targets[targets.duplicated('id', keep=False)])
-            raise Exception('Invalid target table -- found duplicated target ID(s)!')
+            raise Exception('Invalid target table: found duplicated target ID(s)!')
 
         #check for overlaps
         if check_overlaps:
-            for ixrow1 in range(len(targets)-1):
-                for ixrow2 in range(ixrow1+1, len(targets)):
-                    row1 = targets.iloc[ixrow1]
-                    row2 = targets.iloc[ixrow2]
-                    if row1['chr'] == row2['chr'] and row1['start_0'] <= row2['end'] and row1['end'] >= row2['start_0']:
-                        print(row1)
-                        print(row2)
-                        raise Exception('Invalid target table -- target regions %s and %s overlap!' % (row1['id'], row2['id']))
+            targets_dict = targets.to_dict()
+            for ixrow1 in range(len(targets_dict['chr'])-1):
+                for ixrow2 in range(ixrow1+1, len(targets_dict['chr'])):
+                    if targets_dict['chr'][ixrow1] == targets_dict['chr'][ixrow2] \
+                    and targets_dict['start_0'][ixrow1] <= targets_dict['end'][ixrow2] \
+                    and targets_dict['end'][ixrow1] >= targets_dict['start_0'][ixrow2]:
+                        print(targets.iloc[ixrow1])
+                        print(targets.iloc[ixrow2])
+                        raise Exception(
+                            'Invalid target table: target regions %s and %s overlap! Please merge them or shorten one of the regions' % (
+                                targets_dict['id'][ixrow1],
+                                targets_dict['id'][ixrow2]
+                            )
+                        )
 
         #chr should always start with chr
         targets['chr_original'] = targets['chr']
@@ -435,7 +449,7 @@ def read_targets(path: str, check_overlaps: bool = False, reference_type: str = 
         targets_wrong_length = targets['length'] <= 0
         if targets_wrong_length.any():
             print(targets[targets_wrong_length])
-            raise Exception('Invalid target table -- found targets with length <= 0')
+            raise Exception('Invalid target table: found targets with length <= 0! Please check start and end coordinates.')
 
         targets['type'] = 'target'
     except Exception as e:
@@ -461,6 +475,13 @@ def read_snps_txt(path: str, reference_type: str = 'genome') -> pd.DataFrame:
     try:
         log.info('Loading SNPs from %s', path)
         snps = pd.read_table(path, header = None) #pos is 1-based!
+
+        #detect potential issues with spaces instead of tabs
+        if snps.shape[1] == 1:
+            if ' ' in snps.iloc[0, 0]:
+                log.info('SNP table does not seem to be tab-separated, trying again with spaces')
+                snps = pd.read_table(path, header = None, sep='\s+')
+
         if snps.shape[1] == 5:
             snps.columns = ['chr', 'pos', 'id', 'snp_ref', 'snp_alt']
         elif snps.shape[1] == 4:

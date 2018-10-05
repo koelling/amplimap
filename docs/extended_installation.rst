@@ -77,9 +77,10 @@ To find out where this file is located, run:
 
     amplimap --basedir
 
-Open the file ``config_default.yaml`` at this location and look for the settings that start with "/PATH/TO"
-under ``paths:``. Replace these with the full paths to your files. If you haven't generated the corresponding
-file, delete the line. For example, if you generated indices for bwa and bowtie2 (but not STAR or Annovar)
+Open the file ``config_default.yaml`` at this location and look for the settings under ``paths:``
+corresponding to the indices you created.
+Replace these with the full paths to your files. If you haven't generated the corresponding
+file, leave the setting empty. For example, if you generated indices for bwa and bowtie2 (but not STAR or Annovar)
 and always used the same FASTA filename as the prefix:
 
 ::
@@ -97,9 +98,9 @@ If you are using Annovar, make sure you also provide the path to its indices dir
 and adjust the protocols/operations under ``annotate: annovar: protocols:`` to match the indices you
 have downloaded.
 
-Save the file and confirm that the settings are being read correctly using ``amplimap --print-config``.
+Save the file and confirm that the settings are being read correctly by looking at the output of ``amplimap --print-config``.
 
-7. Run amplimap!
+6. Run amplimap!
 -------------------
 Now you are ready to run amplimap! When you start a new session, activate the conda environment
 as described above and then run the amplimap commands as usual:
