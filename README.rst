@@ -1,4 +1,4 @@
-.. image:: amplimap_logo_400px.png
+.. image:: https://raw.githubusercontent.com/koelling/amplimap/master/amplimap_logo_400px.png
 	:width: 400px
 
 ==========================================================
