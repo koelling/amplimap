@@ -1404,6 +1404,7 @@ rule annotate_variants:
     input:
         "{analysis_dir}/{variants_dir}/{sample_full}.vcf",
         "{analysis_dir}/versions/annovar.txt",
+        "{analysis_dir}/versions/bcftools.txt",
     output:
         "{analysis_dir}/{variants_dir}/{sample_full}.vcf."+get_annovar_name()+"_multianno.csv",
         temp("{analysis_dir}/{variants_dir}/{sample_full}.for_annovar.vcf.gz"),
