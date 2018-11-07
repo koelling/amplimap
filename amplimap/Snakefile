@@ -10,7 +10,6 @@ from amplimap.version import __title__, __version__
 #list of rules that don't run on the cluster
 localrules: all, \
     start_analysis, check_python_packages, check_test_variant, check_target_overlaps, check_sample_info, \
-    tool_version, \
     copy_probes, copy_snps, copy_targets_bed, convert_targets_csv,
     link_tagged_bais_1, link_tagged_bais_2, link_tagged_bams, link_unmapped_bams, \
     convert_mipgen_probes, convert_heatseq_probes, \
