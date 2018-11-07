@@ -82,8 +82,8 @@ def get_path(name, my_config = None, default = None):
     or my_config['paths'][my_config['general']['genome_name']][name] is None \
     or len(my_config['paths'][my_config['general']['genome_name']][name]) == 0:
         if default is None:
-            raise Exception('\nCould not find path for "%s"! Please specify this in your configuration file under \npaths:\n  %s:\n    %s: /my/path\n' % (
-                name, my_config['general']['genome_name'], name))
+            raise Exception('\nCould not find path for "%s" for genome "%s"! Please specify this in your configuration file under:\n\npaths:\n  %s:\n    %s: /my/path\n' % (
+                name, my_config['general']['genome_name'], my_config['general']['genome_name'], name))
         else:
             return default
     else:
