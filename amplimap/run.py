@@ -97,6 +97,10 @@ def main(argv = None):
         if os.path.isfile(default_config_path):
             with open(default_config_path, 'r') as config_file:
                 default_config = yaml.safe_load(config_file.read())
+                
+                #make sure we always get an empty dict, yaml.safe_load may give us None for an empty file
+                if default_config is None:
+                    default_config = {}
         else:
             raise Exception('config_default.yaml file missing!')
 
@@ -108,6 +112,10 @@ def main(argv = None):
                 sys.stderr.write('Reading additional configuration from: {}\n'.format(etc_config_path))
             with open(etc_config_path, 'r') as config_file:
                 etc_config = yaml.safe_load(config_file.read())
+                
+                #make sure we always get an empty dict, yaml.safe_load may give us None for an empty file
+                if etc_config is None:
+                    etc_config = {}
 
         #override with data from $AMPLIMAP_CONFIG, if exists
         env_config = {}
@@ -118,6 +126,10 @@ def main(argv = None):
                     sys.stderr.write('Reading additional configuration from: {}\n'.format(env_config_path))
                 with open(env_config_path, 'r') as config_file:
                     env_config = yaml.safe_load(config_file.read())
+                
+                #make sure we always get an empty dict, yaml.safe_load may give us None for an empty file
+                if env_config is None:
+                    env_config = {}
         except KeyError:
             pass
 
@@ -127,6 +139,10 @@ def main(argv = None):
         if os.path.isfile(local_config_path):
             with open(local_config_path, 'r') as config_file:
                 local_config = yaml.safe_load(config_file.read())
+                
+                #make sure we always get an empty dict, yaml.safe_load may give us None for an empty file
+                if local_config is None:
+                    local_config = {}
         else:
             sys.stderr.write('No local config.yaml found, using default configuration.\n')
 
