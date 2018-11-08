@@ -223,7 +223,7 @@ def record_read_in_group(read_calls, my_call, my_phred, my_umi, read_name):
         read_calls[read_name] = my_call_data
         return False
 
-def get_group_consensus(group_calls, min_consensus_count, min_consensus_fraction, ignore_groups, debug = False):
+def get_group_consensus(group_calls, min_consensus_count = 1, min_consensus_fraction = 0.51, ignore_groups = False, debug = False):
     """
     Calculate consensus call, count and phred for UMI group.
     """
@@ -238,7 +238,7 @@ def get_group_consensus(group_calls, min_consensus_count, min_consensus_fraction
     #find call with highest count
     #note: as long as min_consensus_fraction is >0.5 we should never end up with a duplicate call
     #in the end, since if we have a duplicate its fraction has to be <= 50%
-    group_consensus_call, group_consensus_count = None, 0
+    group_consensus_call, group_consensus_count = None, 0    
     for my_call, my_count in group_call_counts.items():
         if my_count > group_consensus_count:
             group_consensus_call = my_call
@@ -424,6 +424,7 @@ def process_pileup_base(
     region_index,
     pileup_base,
     min_consensus_count,
+    min_consensus_fraction,
     min_mapq,
     min_baseq,
     ignore_groups,
@@ -1070,6 +1071,7 @@ def process_file(input, output, probes_file, snps_file, targets_file, validate_p
                     region_index,
                     pileup_base,
                     min_consensus_count,
+                    min_consensus_fraction,
                     min_mapq,        
                     min_baseq,              
                     ignore_groups,

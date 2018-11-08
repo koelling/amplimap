@@ -234,6 +234,8 @@ class Pileups(unittest.TestCase):
         with self.assertRaises(PileupGroupFilterException): #15+10+10
             get_group_consensus( [('G', 20, None)]*15 + [('A', 30, None)]*10 + [('C', 30, None)]*10, min_consensus_count = 2, ignore_groups = False )
         #but fine if we ignore groups
+        #but note: we just take the first value here, which happens to be G. not ideal, but should be a rare case
+        #however, this should never happen in practise because if ignore_groups is true then we should only get one call per group (group=read)
         self.assertEqual( ('G', 10, 20), get_group_consensus( [('G', 20, None), ('A', 30, None)]*10, min_consensus_count = 2, ignore_groups = True ) )
 
         #min consensus count
@@ -241,6 +243,28 @@ class Pileups(unittest.TestCase):
             get_group_consensus( [('A', 30, None)], min_consensus_count = 2, ignore_groups = False )
         #but fine if we ignore groups
         self.assertEqual( ('A', 1, 30), get_group_consensus( [('A', 30, None)], min_consensus_count = 100, ignore_groups = True ))
+
+        #min consensus fraction
+        #check default - min 51%
+        self.assertEqual( ('A', 2, 30), get_group_consensus( [('A', 25, None), ('G', 20, None), ('A', 30, None)] )) #1+2
+        self.assertEqual( ('A', 3, 35), get_group_consensus( [('A', 25, None), ('G', 20, None), ('A', 30, None), ('A', 35, None)] )) #1+3
+        with self.assertRaises(PileupGroupFilterException):
+            get_group_consensus( [('G', 20, None), ('A', 30, None)] ) #1+1
+        with self.assertRaises(PileupGroupFilterException):
+            get_group_consensus( [('G', 20, None), ('A', 30, None)]*2 ) #2+2
+        self.assertEqual( ('G', 11, 20), get_group_consensus( [('G', 20, None), ('A', 30, None)]*10 + [('G', 20, None)] )) #11+10
+        with self.assertRaises(PileupGroupFilterException):
+            get_group_consensus( [('G', 20, None), ('A', 30, None)]*10 ) #10+10
+        #check with 75%
+        self.assertEqual( ('A', 30, 31), get_group_consensus( [('G', 20, None), ('A', 30, None)]*10 + [('A', 31, None)]*20, min_consensus_fraction = 0.75 )) #30+10
+        with self.assertRaises(PileupGroupFilterException):
+            get_group_consensus( [('G', 20, None), ('A', 30, None)]*10 + [('A', 30, None)]*20, min_consensus_fraction = 0.76 ) #30+10
+        #check with 0% (just get the first one for ties)
+        self.assertEqual( ('G', 1, 20), get_group_consensus( [('G', 20, None), ('A', 30, None)], min_consensus_fraction = 0.0 )) #1+1
+        #...but still the correct one for two
+        self.assertEqual( ('A', 2, 30), get_group_consensus( [('A', 25, None), ('G', 20, None), ('A', 30, None)], min_consensus_fraction = 0.0 )) #1+2
+        #check with 100%
+        self.assertEqual( ('G', 1, 20), get_group_consensus( [('G', 20, None)], min_consensus_fraction = 1.0 )) #1+1
 
     def umi_groups_check(self, output, groups):
         seen = []
