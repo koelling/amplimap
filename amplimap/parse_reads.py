@@ -261,6 +261,7 @@ def parse_read_pairs(
     allow_multiple_probes,
     consensus_fastqs = None,   
     min_consensus_count = 1,
+    min_consensus_fraction = 0.51,
     debug = False, debug_probe = False
 ):
     """
@@ -627,7 +628,7 @@ def parse_read_pairs(
             max_base = base_counts.argmax(axis = 3)
             max_base_count = base_counts.max(axis = 3)
             #set to N if number of reads supporting this base is < 50% of all reads
-            no_consensus = max_base_count < n_reads_per_base * 0.5
+            no_consensus = max_base_count < n_reads_per_base * min_consensus_fraction
             log.info('Found %d bases with no consensus, setting to N', no_consensus.sum())
             max_base[no_consensus] = 0
             log.info('Called consensus bases')
@@ -995,6 +996,7 @@ def main():
             fastq_out1 = os.path.join(fastq_directory, '%s__MIP_TRIMMED__%s_R%d_001.fastq.gz' % (sample, read_files['R1']['Lane'], 1))
             fastq_out2 = os.path.join(fastq_directory, '%s__MIP_TRIMMED__%s_R%d_001.fastq.gz' % (sample, read_files['R2']['Lane'], 2))
 
+        min_consensus_fraction = 0.51 #just set this here for now, this code path isn't used anymore anyway
         parse_read_pairs(
             sample,
             [file1],
@@ -1011,6 +1013,7 @@ def main():
             args.allow_multiple_probes,
             None,
             min_consensus_count,
+            min_consensus_fraction,
             args.debug, args.debug_probe
         )
 

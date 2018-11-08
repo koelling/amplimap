@@ -28,11 +28,10 @@ general:
   genome_name: "hg38"
   #whether to ignore UMIs during pileups and alignment stats (if any)
   ignore_umis: false
-  #minimum number of reads supporting the consensus call a UMI group
+  #minimum number of reads supporting the consensus call in a UMI group
   umi_min_consensus_count: 1
-  #only consider consensus calls where more than this fraction of reads in the UMI group agree
-  #(NOTE: no consensus will be called if the fraction is smaller all equal to this value)
-  umi_min_consensus_fraction: 0.5
+  #minimum fraction of reads supporting the consensus call in a UMI group
+  umi_min_consensus_percentage: 51
   #when using FASTQs as input: number of lanes (should be detected automatically if set to 0)
   lanes: 0
   #when using unmapped BAMs as input: tag in which the UMI has been saved

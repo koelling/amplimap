@@ -775,7 +775,8 @@ rule parse_reads_pe:
             quality_trim_phred_base = config['parse_reads']['quality_trim_phred_base'],
             allow_multiple_probes = False,
             consensus_fastqs = None, #output['consensus_fastqs'],
-            min_consensus_count = config['general']['umi_min_consensus_count']
+            min_consensus_count = config['general']['umi_min_consensus_count'],
+            min_consensus_fraction = config['general']['umi_min_consensus_percentage'] / 100.0
         )
 
         #output stats files
@@ -1128,7 +1129,7 @@ rule do_pileup:
             ignore_groups = config['general']['ignore_umis'],
             group_with_mate_positions = config['pileup']['group_with_mate_positions'],
             min_consensus_count = config['general']['umi_min_consensus_count'],
-            min_consensus_fraction = config['general']['umi_min_consensus_fraction'],
+            min_consensus_fraction = config['general']['umi_min_consensus_percentage'] / 100.0,
 
             #to allow running straight from tagged bams:
             no_probe_data = config['general']['use_raw_reads'],
@@ -1181,7 +1182,7 @@ rule do_pileup_snps:
             ignore_groups = config['general']['ignore_umis'],
             group_with_mate_positions = config['pileup']['group_with_mate_positions'],
             min_consensus_count = config['general']['umi_min_consensus_count'],
-            min_consensus_fraction = config['general']['umi_min_consensus_fraction'],
+            min_consensus_fraction = config['general']['umi_min_consensus_percentage'] / 100.0,
 
             #to allow running straight from tagged bams:
             no_probe_data = config['general']['use_raw_reads'],

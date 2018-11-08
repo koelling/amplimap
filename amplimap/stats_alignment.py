@@ -181,7 +181,7 @@ def process_file(design, input, output,
             #supplementary alignments mess up the assumption that each mate has one other mate
             #so we ignore them for now
             if x.is_supplementary:
-                log.warn('Ignorning supplemental alignment for %s', x.query_name)
+                #log.warn('Ignorning supplementary alignment for %s', x.query_name)
                 continue
 
             #only count rows after this to fulfil assumption later

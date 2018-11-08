@@ -189,6 +189,9 @@ def main(argv = None):
             if not config['parse_reads']['quality_trim_threshold'] > 0 and config['parse_reads']['quality_trim_threshold'] < 1:
                 raise Exception('quality_trim_threshold must be either "false" or above 0 and below 1!')
 
+        if not (config['general']['umi_min_consensus_percentage'] >= 0 and config['general']['umi_min_consensus_percentage'] <= 100):
+            raise Exception('umi_min_consensus_percentage must be between 0 and 100')
+
         if not (config['parse_reads']['min_percentage_good'] >= 0 and config['parse_reads']['min_percentage_good'] <= 100):
             raise Exception('min_percentage_good must be between 0 and 100')
 
