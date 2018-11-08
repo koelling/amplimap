@@ -203,9 +203,9 @@ rule coverages:
 rule pileups_only:
     input:
         rules.start_analysis.output, #enforce packages (and thus also config) check here
-        "analysis/pileup/pileups_long.csv" if os.path.isfile("targets.bed") or os.path.isfile("targets.csv") else [],
-        "analysis/pileup/target_coverage_long.csv" if os.path.isfile("targets.bed") or os.path.isfile("targets.csv") else [],
-        "analysis/pileup_snps/target_snps_pileups_long.csv" if os.path.isfile("snps.txt") else []
+        "analysis/pileups/pileups_long.csv" if os.path.isfile("targets.bed") or os.path.isfile("targets.csv") else [],
+        "analysis/pileups/target_coverage_long.csv" if os.path.isfile("targets.bed") or os.path.isfile("targets.csv") else [],
+        "analysis/pileups_snps/target_snps_pileups_long.csv" if os.path.isfile("snps.txt") else []
 
 rule pileups:
     input:
@@ -216,7 +216,7 @@ rule pileups:
 rule pileups_snps:
     input:
         rules.all.input,
-        "analysis/pileup_snps/target_snps_pileups_long.csv",
+        "analysis/pileups_snps/target_snps_pileups_long.csv",
 
 rule variants:
     input:
@@ -264,7 +264,7 @@ rule test_variants:
 rule test_pileups:
     input:
         "test__{search}_{replace}_{percentage}/stats_replacements/stats_replacements.csv",
-        "test__{search}_{replace}_{percentage}/pileup/pileups_long.csv"
+        "test__{search}_{replace}_{percentage}/pileups/pileups_long.csv"
     output:
         touch("test__{search}_{replace}_{percentage}/test_pileups.done")
 
@@ -1115,13 +1115,13 @@ rule do_pileup:
         targets = "{analysis_dir}/targets.bed",
         probes = "{analysis_dir}/probes.csv" if config['pileup']['validate_probe_targets'] and not config['general']['use_raw_reads'] else []
     output:
-        "{analysis_dir}/pileup/{sample_full}.pileup.csv",
-        "{analysis_dir}/pileup/{sample_full}.targets.csv"
+        "{analysis_dir}/pileups/{sample_full}.pileup.csv",
+        "{analysis_dir}/pileups/{sample_full}.targets.csv"
     run:
         import amplimap.pileup
         amplimap.pileup.process_file(
             input = input[0],
-            output = "{}/pileup/{}".format(wildcards['analysis_dir'], wildcards['sample_full']),
+            output = "{}/pileups/{}".format(wildcards['analysis_dir'], wildcards['sample_full']),
             reference_type = 'genome',
             subsample_reads = config['pileup']['subsample_reads'],
             probes_file = input['probes'] if config['pileup']['validate_probe_targets'] and not config['general']['use_raw_reads'] else None,
@@ -1144,18 +1144,18 @@ rule do_pileup:
 
 rule pileup_agg:
     input:
-        csvs = expand("{{analysis_dir}}/pileup/{sample_full}.pileup.csv", sample_full = SAMPLES),
+        csvs = expand("{{analysis_dir}}/pileups/{sample_full}.pileup.csv", sample_full = SAMPLES),
         targets = "{analysis_dir}/targets.bed"
     output:
-        "{analysis_dir}/pileup/pileups_long.csv",
-        "{analysis_dir}/pileup/pileups_long_detailed.csv",
-        "{analysis_dir}/pileup/pileups_wide.csv",
-        "{analysis_dir}/pileup/target_coverage.csv",
-        "{analysis_dir}/pileup/target_coverage_long.csv"
+        "{analysis_dir}/pileups/pileups_long.csv",
+        "{analysis_dir}/pileups/pileups_long_detailed.csv",
+        "{analysis_dir}/pileups/pileups_wide.csv",
+        "{analysis_dir}/pileups/target_coverage.csv",
+        "{analysis_dir}/pileups/target_coverage_long.csv"
     run:
         import amplimap.pileup
         amplimap.pileup.aggregate(
-            folder = "{}/pileup/".format(wildcards['analysis_dir']),
+            folder = "{}/pileups/".format(wildcards['analysis_dir']),
             snps_file = None,
             ref = True,
             generate_calls = False
@@ -1169,12 +1169,12 @@ rule do_pileup_snps:
         snps = "{analysis_dir}/snps.txt",
         probes = "{analysis_dir}/probes.csv" if config['pileup']['validate_probe_targets'] and not config['general']['use_raw_reads'] else []
     output:
-        "{analysis_dir}/pileup_snps/{sample_full}.pileup.csv"
+        "{analysis_dir}/pileups_snps/{sample_full}.pileup.csv"
     run:
         import amplimap.pileup
         amplimap.pileup.process_file(
             input = input[0],
-            output = "{}/pileup_snps/{}".format(wildcards['analysis_dir'], wildcards['sample_full']),
+            output = "{}/pileups_snps/{}".format(wildcards['analysis_dir'], wildcards['sample_full']),
             reference_type = 'genome',
             subsample_reads = config['pileup']['subsample_reads'],
             probes_file = input['probes'] if config['pileup']['validate_probe_targets'] and not config['general']['use_raw_reads'] else None,
@@ -1197,16 +1197,16 @@ rule do_pileup_snps:
 
 rule pileup_snps_agg:
     input:
-        csvs = expand("{{analysis_dir}}/pileup_snps/{sample_full}.pileup.csv", sample_full = SAMPLES),
+        csvs = expand("{{analysis_dir}}/pileups_snps/{sample_full}.pileup.csv", sample_full = SAMPLES),
         snps = "{analysis_dir}/snps.txt"
     output:
-        "{analysis_dir}/pileup_snps/target_snps_pileups_long.csv",
-        "{analysis_dir}/pileup_snps/target_snps_pileups_long_detailed.csv",
-        "{analysis_dir}/pileup_snps/target_snps_pileups_wide.csv"
+        "{analysis_dir}/pileups_snps/target_snps_pileups_long.csv",
+        "{analysis_dir}/pileups_snps/target_snps_pileups_long_detailed.csv",
+        "{analysis_dir}/pileups_snps/target_snps_pileups_wide.csv"
     run:
         import amplimap.pileup
         amplimap.pileup.aggregate(
-            folder = "{}/pileup_snps/".format(wildcards['analysis_dir']),
+            folder = "{}/pileups_snps/".format(wildcards['analysis_dir']),
             snps_file = input['snps'],
             ref = True,
             generate_calls = False
