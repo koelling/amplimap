@@ -212,6 +212,12 @@ rule pileups:
         rules.all.input,
         rules.pileups_only.input,
 
+#separate rule to only run SNP pileups
+rule pileups_snps:
+    input:
+        rules.all.input,
+        "analysis/pileup_snps/target_snps_pileups_long.csv",
+
 rule variants:
     input:
         rules.all.input,
