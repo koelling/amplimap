@@ -223,7 +223,7 @@ def record_read_in_group(read_calls, my_call, my_phred, my_umi, read_name):
         read_calls[read_name] = my_call_data
         return False
 
-def get_group_consensus(group_calls, min_consensus_count, ignore_groups, debug = False):
+def get_group_consensus(group_calls, min_consensus_count, min_consensus_fraction, ignore_groups, debug = False):
     """
     Calculate consensus call, count and phred for UMI group.
     """
@@ -250,7 +250,7 @@ def get_group_consensus(group_calls, min_consensus_count, ignore_groups, debug =
         if debug:
             print('-> Below min count -- ', group_consensus_call, ' (', group_consensus_count, 'x ), max Q =', group_consensus_phred)
         raise PileupGroupFilterException('group_below_min')
-    elif not ignore_groups and (group_consensus_count <= len(group_calls) * 0.5):
+    elif not ignore_groups and (group_consensus_count <= len(group_calls) * min_consensus_fraction):
         if debug:
             print('-> No majority call -- ', group_consensus_call, ' (', group_consensus_count, 'x ), max Q =', group_consensus_phred)
         raise PileupGroupFilterException('group_no_majority')
@@ -271,6 +271,7 @@ def process_pileup_row(
         snps_dict,
         ignore_groups,
         min_consensus_count,
+        min_consensus_fraction,
         min_baseq,
         ref,        
         debug = False):
@@ -292,7 +293,11 @@ def process_pileup_row(
             #find consensus for this group
             group_consensus_call, group_consensus_count, group_consensus_phred = get_group_consensus(
                 my_group.values(),
-                min_consensus_count = min_consensus_count, ignore_groups = ignore_groups, debug = debug)
+                min_consensus_count = min_consensus_count,
+                min_consensus_fraction = min_consensus_fraction,
+                ignore_groups = ignore_groups,
+                debug = debug
+            )
 
             #record phreds
             phreds.append(group_consensus_phred)
@@ -500,6 +505,7 @@ def process_pileup_base(
         snps_dict = snps_dict,
         ignore_groups = ignore_groups,
         min_consensus_count = min_consensus_count,
+        min_consensus_fraction = min_consensus_fraction,
         min_baseq = min_baseq,
         ref = ref,
         debug = debug
@@ -801,7 +807,9 @@ def aggregate(folder, snps_file, ref, generate_calls):
 
 def process_file(input, output, probes_file, snps_file, targets_file, validate_probe_targets,
     fasta_file,
-    min_mapq, min_baseq, ignore_groups, min_consensus_count,
+    min_mapq, min_baseq, ignore_groups,
+    min_consensus_count,
+    min_consensus_fraction = 0.5,
     group_with_mate_positions = False,
     filter_softclipped = True,
     ignore_duplicates = False,
@@ -1201,6 +1209,7 @@ def main():
     parser.add_argument("--ignore-groups", help="ignore the UMI group entirely", action='store_true')
     parser.add_argument("--group-with-mate-positions", help="only group read pairs if the aligned start positions of both mates are the same", action='store_true')
     parser.add_argument("--min-consensus-count", help="minimum number of consistent read pairs supporting a UMI", default=2, type=int)
+    parser.add_argument("--min-consensus-fraction", help="only consider consensus calls where more than this fraction of reads agree (NOTE: no consensus will be called if the fraction is smaller all equal to this value)", default=0.5, type=float)
 
     parser.add_argument("--min-mapq", help="minimum mapping quality (remove read pairs with either read having mapq < X)", default=20, type=int)
     parser.add_argument("--min-baseq", help="minimum base quality (ignore calls from groups below baseq < X at this position)", default=30, type=int)
@@ -1231,6 +1240,7 @@ def main():
             ignore_groups = args.ignore_groups,
             group_with_mate_positions = args.group_with_mate_positions,
             min_consensus_count = args.min_consensus_count,
+            min_consensus_fraction = args.min_consensus_fraction,
             filter_softclipped = not args.no_filter_softclipped,
             ignore_duplicates = args.ignore_duplicates,
             no_probe_data = args.no_probe_data,

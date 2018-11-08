@@ -1127,6 +1127,7 @@ rule do_pileup:
             ignore_groups = config['general']['ignore_umis'],
             group_with_mate_positions = config['pileup']['group_with_mate_positions'],
             min_consensus_count = config['general']['umi_min_consensus_count'],
+            min_consensus_fraction = config['general']['umi_min_consensus_fraction'],
 
             #to allow running straight from tagged bams:
             no_probe_data = config['general']['use_raw_reads'],
@@ -1179,6 +1180,7 @@ rule do_pileup_snps:
             ignore_groups = config['general']['ignore_umis'],
             group_with_mate_positions = config['pileup']['group_with_mate_positions'],
             min_consensus_count = config['general']['umi_min_consensus_count'],
+            min_consensus_fraction = config['general']['umi_min_consensus_fraction'],
 
             #to allow running straight from tagged bams:
             no_probe_data = config['general']['use_raw_reads'],
