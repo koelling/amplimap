@@ -30,9 +30,16 @@ Built on top of Snakemake and Python 3, amplimap is entirely
 automated and can be run on a single machine as well as on a HPC cluster
 (eg. LSF, SGE).
 
+Tutorials
+---------
+
+- `Calling germline variants in amplicon-based resequencing data <https://github.com/koelling/amplimap/blob/master/tutorials/tutorial_TLK2.ipynb>`_
+- `Identifying low-frequency somatic mutations in FGFR2 with UMI-tagged smMIPs <https://github.com/koelling/amplimap/blob/master/tutorials/tutorial_FGFR2.ipynb>`_
+- `Quantifying allele-specific expression <https://github.com/koelling/amplimap/blob/master/tutorials/tutorial_TLK2_ASE.ipynb>`_
+
 Links
 --------
-
+ 
 - Package: https://pypi.org/project/amplimap/
 - Code: https://github.com/koelling/amplimap/
 - Documentation: https://amplimap.readthedocs.io/
@@ -44,4 +51,9 @@ Basic installation
 
 	pip install amplimap
 
-Requires Python 3.5+
+Requires Python 3.5+. `More details here. <https://amplimap.readthedocs.io/en/latest/installation.html>`_
+
+amplimap requires an aligner (BWA/Bowtie2/STAR), a variant caller (Platypus/GATK), bedtools, samtools, bcftools and Annovar.
+If you do not have these installed, please see
+`instructions for installing required tools through conda <https://amplimap.readthedocs.io/en/latest/extended_installation.html>`_.
+
