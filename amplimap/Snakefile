@@ -707,7 +707,8 @@ rule attach_tags_from_unmapped:
             ;
 
             #fix the read groups, which will otherwise come from unmapped bam
-            #note lenient stringency to deal with invalid read groups from before
+            #note SILENT stringency to deal with invalid read groups from before
+            #(LENIENT would still spam the logs with errors)
             AddOrReplaceReadGroups \
                 I={output[2]:q} \
                 O={output[0]:q} \
@@ -716,7 +717,7 @@ rule attach_tags_from_unmapped:
                 RGPL=illumina \
                 RGPU={wildcards.sample_full:q} \
                 RGSM={wildcards.sample_full:q} \
-                VALIDATION_STRINGENCY=LENIENT \
+                VALIDATION_STRINGENCY=SILENT \
             ;
 
             samtools index {output[0]:q};
