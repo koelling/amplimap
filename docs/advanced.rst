@@ -3,11 +3,11 @@ Advanced usage
 
 .. _running-capture:
 
-Ignoring UMIs
+Ignoring UMI groups
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Even when your reads contain unique molecular identifiers (UMIs) you
 may want to ignore them to perform a pileup on the raw reads.
-To do that, set ``ignore_groups: true`` under ``general:``
+To do this, set ``ignore_groups: true`` under ``general:``
 
 ::
 
