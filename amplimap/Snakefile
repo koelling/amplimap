@@ -197,8 +197,8 @@ rule check_sample_info:
 rule coverages:
     input:
         rules.all.input,
-        "analysis/bam/coverage/coverage_full.csv",
-        "analysis/umi_dedup/coverage/coverage_full.csv" if not config['general']['ignore_umis'] else []
+        "analysis/bams/coverages/coverage_full.csv",
+        "analysis/bams_umi_dedup/coverages/coverage_full.csv" if not config['general']['ignore_umis'] else []
 
 rule pileups_only:
     input:
@@ -239,20 +239,20 @@ rule variants_low_frequency:
 rule bams:
     input:
         rules.all.input,
-        expand("analysis/bam/{sample_full}.bam", sample_full = SAMPLES),
-        expand("analysis/bam/{sample_full}.bam.bai", sample_full = SAMPLES)
+        expand("analysis/bams/{sample_full}.bam", sample_full = SAMPLES),
+        expand("analysis/bams/{sample_full}.bam.bai", sample_full = SAMPLES)
 
 rule consensus_bams:
     input:
         rules.all.input,
-        expand("analysis/bam_consensus/{sample_full}_CONSENSUS.bam", sample_full = SAMPLES),
-        expand("analysis/bam_consensus/{sample_full}_CONSENSUS.bam.bai", sample_full = SAMPLES)
+        expand("analysis/bams_consensus/{sample_full}_CONSENSUS.bam", sample_full = SAMPLES),
+        expand("analysis/bams_consensus/{sample_full}_CONSENSUS.bam.bai", sample_full = SAMPLES)
 
 rule dedup_bams:
     input:
         rules.all.input,
-        expand("analysis/umi_dedup/{sample_full}.bam", sample_full = SAMPLES),
-        expand("analysis/umi_dedup/{sample_full}.bam.bai", sample_full = SAMPLES)
+        expand("analysis/bams_umi_dedup/{sample_full}.bam", sample_full = SAMPLES),
+        expand("analysis/bams_umi_dedup/{sample_full}.bam.bai", sample_full = SAMPLES)
 
 rule test_variants:
     input:
@@ -593,7 +593,7 @@ rule link_tagged_bams:
         "tagged_bams_in/{sample_full}.bam",
         config_check = rules.start_analysis.output
     output:
-        "{analysis_dir}/bam/{sample_full}.bam",
+        "{analysis_dir}/bams/{sample_full}.bam",
     run:
         import os
         #could use os.path.abspath() here, but then we can't move working directory without breaking things
@@ -603,7 +603,7 @@ rule link_tagged_bais_1:
     input:
         "tagged_bams_in/{sample_full}.bam.bai",
     output:
-        "{analysis_dir}/bam/{sample_full}.bam.bai",
+        "{analysis_dir}/bams/{sample_full}.bam.bai",
     run:
         import os
         #could use os.path.abspath() here, but then we can't move working directory without breaking things
@@ -613,7 +613,7 @@ rule link_tagged_bais_2:
     input:
         "tagged_bams_in/{sample_full}.bai",
     output:
-        "{analysis_dir}/bam/{sample_full}.bam.bai",
+        "{analysis_dir}/bams/{sample_full}.bam.bai",
     run:
         import os
         #could use os.path.abspath() here, but then we can't move working directory without breaking things
@@ -625,7 +625,7 @@ rule link_unmapped_bams:
         "unmapped_bams_in/{sample_full}.bam",
         config_check = rules.start_analysis.output
     output:
-        "{analysis_dir}/bam_unmapped/{sample_full}.bam",
+        "{analysis_dir}/bams_unmapped/{sample_full}.bam",
     run:
         import os
         #could use os.path.abspath() here, but then we can't move working directory without breaking things
@@ -633,7 +633,7 @@ rule link_unmapped_bams:
 
 rule unmapped_bam_to_fastqs:
     input:
-        "{analysis_dir}/bam_unmapped/{sample_full}.bam",
+        "{analysis_dir}/bams_unmapped/{sample_full}.bam",
         "{analysis_dir}/versions/picard.txt",
     output:
         "{analysis_dir}/reads_merged/{sample_full}.UNTAGGED__MERGED__R1_001.fastq.gz",
@@ -676,18 +676,18 @@ rule unmapped_bam_to_fastqs:
 
 rule attach_tags_from_unmapped:
     input:
-        "{analysis_dir}/bam_unmapped/{sample_full}.bam",
+        "{analysis_dir}/bams_unmapped/{sample_full}.bam",
         #TODO: this uses the normal align_pe rule for the alignment, which includes coordinate sorting
         #the merge scripts wants queryname sort, but detects and fixes that automatically.
         #just a bit of a waste...
-        "{analysis_dir}/bam/{sample_full}.UNTAGGED.bam",
-        "{analysis_dir}/bam/{sample_full}.UNTAGGED.bam.bai",
+        "{analysis_dir}/bams/{sample_full}.UNTAGGED.bam",
+        "{analysis_dir}/bams/{sample_full}.UNTAGGED.bam.bai",
         "{analysis_dir}/versions/picard.txt",
         "{analysis_dir}/versions/samtools.txt",
     output:
-        "{analysis_dir}/bam/{sample_full}.bam",
-        "{analysis_dir}/bam/{sample_full}.bam.bai",
-        temp("{analysis_dir}/bam/{sample_full}.attach_tags_tmp.bam")
+        "{analysis_dir}/bams/{sample_full}.bam",
+        "{analysis_dir}/bams/{sample_full}.bam.bai",
+        temp("{analysis_dir}/bams/{sample_full}.attach_tags_tmp.bam")
     run:
         shell("""
             %s%s
@@ -875,8 +875,8 @@ rule align_pe:
         "{analysis_dir}/versions/samtools.txt",
         probes = "{analysis_dir}/probes.csv" if config['align']['aligner'] == 'naive' else [], #the naive aligner also needs probes
     output:
-        "{analysis_dir}/bam/{sample_full}.bam",
-        "{analysis_dir}/bam/{sample_full}.bam.bai",
+        "{analysis_dir}/bams/{sample_full}.bam",
+        "{analysis_dir}/bams/{sample_full}.bam.bai",
     threads: 4
     run:
         cmds = """
@@ -998,8 +998,8 @@ rule align_pe_CONSENSUS:
         "{analysis_dir}/versions/samtools.txt",
     output:
         #note the `,.*` to allow empty subdir
-        "{analysis_dir}/bam_consensus/{sample_full}_CONSENSUS.bam",
-        "{analysis_dir}/bam_consensus/{sample_full}_CONSENSUS.bam.bai",
+        "{analysis_dir}/bams_consensus/{sample_full}_CONSENSUS.bam",
+        "{analysis_dir}/bams_consensus/{sample_full}_CONSENSUS.bam.bai",
     threads: 4
     run:
         cmds = """
@@ -1081,8 +1081,8 @@ rule align_pe_CONSENSUS:
 rule stats_alignment:
     version: VERSIONS['stats_alignment']
     input:
-        "{analysis_dir}/bam/{sample_full}.bam",
-        "{analysis_dir}/bam/{sample_full}.bam.bai",
+        "{analysis_dir}/bams/{sample_full}.bam",
+        "{analysis_dir}/bams/{sample_full}.bam.bai",
         probes = "{analysis_dir}/probes.csv"
     output:
         "{analysis_dir}/stats_alignment/{sample_full}.stats_alignment.csv"
@@ -1111,8 +1111,8 @@ rule stats_alignment_agg:
 rule do_pileup:
     version: VERSIONS['pileup']
     input:
-        "{analysis_dir}/bam/{sample_full}.bam", # if config['general']['ignore_umis'] else rules.umi_group.output,
-        "{analysis_dir}/bam/{sample_full}.bam.bai",
+        "{analysis_dir}/bams/{sample_full}.bam", # if config['general']['ignore_umis'] else rules.umi_group.output,
+        "{analysis_dir}/bams/{sample_full}.bam.bai",
         targets = "{analysis_dir}/targets.bed",
         probes = "{analysis_dir}/probes.csv" if config['pileup']['validate_probe_targets'] and not config['general']['use_raw_reads'] else []
     output:
@@ -1165,8 +1165,8 @@ rule pileup_agg:
 rule do_pileup_snps:
     version: VERSIONS['pileup']
     input:
-        "{analysis_dir}/bam/{sample_full}.bam", # if config['general']['ignore_umis'] else rules.umi_group.output,
-        "{analysis_dir}/bam/{sample_full}.bam.bai",
+        "{analysis_dir}/bams/{sample_full}.bam", # if config['general']['ignore_umis'] else rules.umi_group.output,
+        "{analysis_dir}/bams/{sample_full}.bam.bai",
         snps = "{analysis_dir}/snps.txt",
         probes = "{analysis_dir}/probes.csv" if config['pileup']['validate_probe_targets'] and not config['general']['use_raw_reads'] else []
     output:
@@ -1215,13 +1215,13 @@ rule pileup_snps_agg:
 
 rule umi_dedup:
     input:
-        "{analysis_dir}/bam/{sample_full}.bam",
-        "{analysis_dir}/bam/{sample_full}.bam.bai",
+        "{analysis_dir}/bams/{sample_full}.bam",
+        "{analysis_dir}/bams/{sample_full}.bam.bai",
         "{analysis_dir}/versions/samtools.txt",
     output:
-        "{analysis_dir}/umi_dedup/{sample_full}.bam",
-        "{analysis_dir}/umi_dedup/{sample_full}.bam.bai",
-        temp("{analysis_dir}/umi_dedup/{sample_full}.unsorted.bam")
+        "{analysis_dir}/bams_umi_dedup/{sample_full}.bam",
+        "{analysis_dir}/bams_umi_dedup/{sample_full}.bam.bai",
+        temp("{analysis_dir}/bams_umi_dedup/{sample_full}.unsorted.bam")
     shell:
         """
         %s
@@ -1243,7 +1243,7 @@ rule calc_coverage:
         "{analysis_dir}/versions/bedtools.txt",
         targets = "{analysis_dir}/targets.bed",
     output:
-        "{analysis_dir}/{bamdir}/coverage/{file}.coverage_raw.txt",
+        "{analysis_dir}/{bamdir}/coverages/{file}.coverage_raw.txt",
     shell:        
         """
         %s
@@ -1290,21 +1290,21 @@ rule coverage_process:
 rule coverage_agg:
     version: VERSIONS['coverage']
     input:
-        csvs = expand("{{bamdir}}/coverage/{sample_full}.coverage.csv", sample_full = SAMPLES),
+        csvs = expand("{{bamdir}}/coverages/{sample_full}.coverage.csv", sample_full = SAMPLES),
         sample_info = ["sample_info.csv"] if os.path.isfile("sample_info.csv") else []
     output:
-        merged = "{bamdir}/coverage/coverage_full.csv",
-        min_coverage = "{bamdir}/coverage/min_coverage.csv",
-        cov_per_bp = "{bamdir}/coverage/cov_per_bp.csv",
-        fraction_zero_coverage = "{bamdir}/coverage/fraction_zero_coverage.csv",
+        merged = "{bamdir}/coverages/coverage_full.csv",
+        min_coverage = "{bamdir}/coverages/min_coverage.csv",
+        cov_per_bp = "{bamdir}/coverages/cov_per_bp.csv",
+        fraction_zero_coverage = "{bamdir}/coverages/fraction_zero_coverage.csv",
     run:
         import amplimap.coverage
         amplimap.coverage.aggregate(input, output)
 
 rule call_variants_raw:
     input:
-        "{analysis_dir}/bam/{sample_full}.bam",
-        "{analysis_dir}/bam/{sample_full}.bam.bai",
+        "{analysis_dir}/bams/{sample_full}.bam",
+        "{analysis_dir}/bams/{sample_full}.bam.bai",
         "{analysis_dir}/versions/%s.txt" % config['variants']['caller'],
         targets = "{analysis_dir}/targets_merged.bed",
     output:
@@ -1381,8 +1381,8 @@ rule call_variants_umi:
 
 rule call_variants_low_frequency:
     input:
-        "{analysis_dir}/bam/{sample_full}.bam",
-        "{analysis_dir}/bam/{sample_full}.bam.bai",
+        "{analysis_dir}/bams/{sample_full}.bam",
+        "{analysis_dir}/bams/{sample_full}.bam.bai",
         targets = "{analysis_dir}/targets_merged.bed",
         version = "{analysis_dir}/versions/%s.txt" % config['variants']['caller_low_frequency'],
     output:

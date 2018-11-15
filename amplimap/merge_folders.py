@@ -21,7 +21,7 @@ import operator
 
 import argparse
 
-files_to_merge = ['variants_raw/variants_summary.csv', 'variants_raw/variants_summary_filtered.csv', 'bam/coverage/coverage_full.csv']
+files_to_merge = ['variants_raw/variants_summary.csv', 'variants_raw/variants_summary_filtered.csv', 'bams/coverages/coverage_full.csv']
 
 def join_nonempty(values):
     return ';'.join(values[values.notnull() & (values.str.len() > 0)])
@@ -66,7 +66,7 @@ def merge_folders(output_folder, folders, force, unique_sample_id_column, additi
             if not 'Notes' in folder_data.columns:
                 folder_data['Notes'] = ''
 
-            data['bam/coverage/coverage_full.csv'] = pd.concat([data['bam/coverage/coverage_full.csv'], folder_data], ignore_index = True)
+            data['bams/coverages/coverage_full.csv'] = pd.concat([data['bams/coverages/coverage_full.csv'], folder_data], ignore_index = True)
         except pd.io.common.EmptyDataError:
             log.info('Empty additional coverage file: %s', additional_coverage)
             raise
@@ -99,29 +99,29 @@ def merge_folders(output_folder, folders, force, unique_sample_id_column, additi
         coverage_aggregation_ops = {'min_coverage': max, 'cov_per_bp': max, 'sum_coverage': max, 'fraction_zero_coverage': min,
             'Notes': join_nonempty, 'Folder': join_nonempty}
         #detect additional columns to join
-        for colname in data['bam/coverage/coverage_full.csv'].columns:
+        for colname in data['bams/coverages/coverage_full.csv'].columns:
             if not colname in coverage_group_cols + coverage_ignore_cols + list(coverage_aggregation_ops.keys()):
                 coverage_aggregation_ops[colname] = join_nonempty
                 log.info('Coverage: Detected additional column to join: %s', colname)
 
         #fix dtypes for numeric columns
         for colname in ['min_coverage', 'sum_coverage']:
-            data['bam/coverage/coverage_full.csv'][colname] = data['bam/coverage/coverage_full.csv'][colname].astype(int)
+            data['bams/coverages/coverage_full.csv'][colname] = data['bams/coverages/coverage_full.csv'][colname].astype(int)
         for colname in ['cov_per_bp', 'fraction_zero_coverage']:
-            data['bam/coverage/coverage_full.csv'][colname] = data['bam/coverage/coverage_full.csv'][colname].astype(float)
+            data['bams/coverages/coverage_full.csv'][colname] = data['bams/coverages/coverage_full.csv'][colname].astype(float)
         log.info('Coverage: Fixed datatypes of numeric columns for min/max')
 
-        coverage_null_sample_column = data['bam/coverage/coverage_full.csv'][unique_sample_id_column].isnull()
+        coverage_null_sample_column = data['bams/coverages/coverage_full.csv'][unique_sample_id_column].isnull()
         if enforce_integer_ids:
             #just remove the .0 from end of strings rather than trying to make them ints, which causes problems with NAs
-            data['bam/coverage/coverage_full.csv'][unique_sample_id_column] = data['bam/coverage/coverage_full.csv'][unique_sample_id_column].replace(
+            data['bams/coverages/coverage_full.csv'][unique_sample_id_column] = data['bams/coverages/coverage_full.csv'][unique_sample_id_column].replace(
                 re.compile(r'\.0$'), '')
             log.info('Removing .0 from end of ID column!')
         if coverage_null_sample_column.any():
             log.warn('Dropping %d coverage rows without %s to make unique table', coverage_null_sample_column.sum(), unique_sample_id_column)
-            coverage_with_sample = data['bam/coverage/coverage_full.csv'][~coverage_null_sample_column]
+            coverage_with_sample = data['bams/coverages/coverage_full.csv'][~coverage_null_sample_column]
         else:
-            coverage_with_sample = data['bam/coverage/coverage_full.csv']
+            coverage_with_sample = data['bams/coverages/coverage_full.csv']
 
         #actually do the aggregation
         #in this case we want to keep the index, since this is coverage_group_cols, which is dnaid + target (I think?)
@@ -132,7 +132,7 @@ def merge_folders(output_folder, folders, force, unique_sample_id_column, additi
         data['coverage_full.unique.csv'] = data['coverage_full.unique.csv'][coverage_unique_cols]
         #log
         log.info('Coverage: Combined %d/%d rows (mean min_coverage = %f) into %d rows (mean min_coverage = %f) taking best values per sample',
-            len(coverage_with_sample), len(data['bam/coverage/coverage_full.csv']), coverage_with_sample['min_coverage'].mean(),
+            len(coverage_with_sample), len(data['bams/coverages/coverage_full.csv']), coverage_with_sample['min_coverage'].mean(),
             len(data['coverage_full.unique.csv']), data['coverage_full.unique.csv']['min_coverage'].mean())
     else:
         log.info('Not combining rows since unique-sample-id-column not provided.')

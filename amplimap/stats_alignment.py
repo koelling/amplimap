@@ -379,8 +379,6 @@ def process_file(design, input, output,
             #I don't think there is an easy way to resolve this unfortunately.
             #Options would be to keep _everything_ in memory for each contig (and lose a few), or to use name-sorted BAM files,
             #or to see if bowtie2 gives us some idea of how many mates there are for a given read, so we know which ones to keep around for how long (reference counting)?
-            #for a case, see: samtools view /t1-data/user/bernkopf/14thRun_170811/170811_CAP-X-UMIcons2_bowtie/analysis/bam/CAP-X-AHspike-II-BC1_S37.bam | grep '^M01913:197:000000000-BDBGM:1:2107:15418:5141:::pr_MIP_108_PTPN11e3:::umi_CCTCTTGGTT' | dnacol
-            #note the first two alignments are paired with each other, all alignments after that are paired with one of them too (!)
             log.info('Found %d orphaned read mates. First 10:', len(orphan_reads))
             pprint.pprint(orphan_reads[0:10])
 
