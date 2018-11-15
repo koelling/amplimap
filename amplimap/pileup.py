@@ -1106,7 +1106,7 @@ def process_file(input, output, probes_file, snps_file, targets_file, validate_p
 
             if region is not None:
                 #make sure we have pileup rows for every single nucleotide in the region
-                log.info('%s: Got %d pileup rows so far - filling in missing positions between %d and %d (0-based)', region_id, len(rows), region[1], region[2])
+                #log.info('%s: Got %d pileup rows so far - filling in missing positions between %d and %d (0-based)', region_id, len(rows), region[1], region[2])
                 for pos_0 in range(region[1], region[2]):
                     if not pos_0 in seen_positions:
                         #log.info('Row missing for: %d (0-based)', pos_0)
@@ -1125,12 +1125,13 @@ def process_file(input, output, probes_file, snps_file, targets_file, validate_p
                             snps_dict = snps_dict,
                             ignore_groups = ignore_groups,
                             min_consensus_count = min_consensus_count,
+                            min_consensus_fraction = min_consensus_fraction,
                             min_baseq = min_baseq,
                             ref = ref,
                             debug = debug
                             )
                         rows.append(row)
-                log.info('%s: New length %d pileup rows', region_id, len(rows))
+                log.info('%s: %d pileup rows', region_id, len(rows))
 
                 #calculate overall coverage
                 coverage_min = min(region_coverage)
