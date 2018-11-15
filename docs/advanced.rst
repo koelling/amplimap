@@ -1,35 +1,19 @@
 Advanced usage
 ---------------
 
-Merging runs
-~~~~~~~~~~~~
-
-To merge data from multiple runs together, use the ``amplimap_merge``
-script. You can run ``merge_folders.py --help`` to see the parameters.
-Here is an example:
-
-::
-
-    amplimap_merge /data/OUTPUT_FOLDER /data/working_directory1/analysis /data/working_directory2/analysis /data/working_directory3/analysis
-
-This will merge the variant summary and coverage files from
-``/data/working_directory1``, ``2`` and ``3`` together and save them in
-a folder called ``/data/OUTPUT_FOLDER``. If you only want to get one row
-per sample, you can use the ``--unique-sample-id-column`` to specify the
-column name containing the sample ID (eg. ``DNAId``). This will generate
-an additional file called ``variants_summary_filtered.unique.csv``,
-which contains all unique filtered variants, and another file called
-``overage_full.unique.csv``, which contains the highest coverage numbers
-observed for each sample.
-
-For example:
-
-::
-
-    amplimap_merge --unique-sample-id-column=DNAId /data/OUTPUT_FOLDER /data/working_directory1/analysis /data/working_directory2/analysis /data/working_directory3/analysis
-
-
 .. _running-capture:
+
+Ignoring UMIs
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Even when your reads contain unique molecular identifiers (UMIs) you
+may want to ignore them to perform a pileup on the raw reads.
+To do that, set ``ignore_groups: true`` under ``general:``
+
+::
+
+    general:
+      ignore_groups: true
+
 
 Running on capture-based data
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -164,6 +148,35 @@ when using this:
    multiple variants may be introduced.
 -  Matches inside the sequences will be replaced as well. This may cause
    problems with matching primer sequences to expected probe arms.
+
+
+Merging runs
+~~~~~~~~~~~~
+
+To merge data from multiple runs together, use the ``amplimap_merge``
+script. You can run ``merge_folders.py --help`` to see the parameters.
+Here is an example:
+
+::
+
+    amplimap_merge /data/OUTPUT_FOLDER /data/working_directory1/analysis /data/working_directory2/analysis /data/working_directory3/analysis
+
+This will merge the variant summary and coverage files from
+``/data/working_directory1``, ``2`` and ``3`` together and save them in
+a folder called ``/data/OUTPUT_FOLDER``. If you only want to get one row
+per sample, you can use the ``--unique-sample-id-column`` to specify the
+column name containing the sample ID (eg. ``DNAId``). This will generate
+an additional file called ``variants_summary_filtered.unique.csv``,
+which contains all unique filtered variants, and another file called
+``overage_full.unique.csv``, which contains the highest coverage numbers
+observed for each sample.
+
+For example:
+
+::
+
+    amplimap_merge --unique-sample-id-column=DNAId /data/OUTPUT_FOLDER /data/working_directory1/analysis /data/working_directory2/analysis /data/working_directory3/analysis
+
 
 
 Additional Notes
