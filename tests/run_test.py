@@ -92,7 +92,7 @@ def check_default_stats(wd_path):
     assert samples.loc[0, 'pairs_r1_too_short'] == 1
 
 def check_default_pileups(wd_path, expected_coverage = 5, include_too_short = False):
-    pileups = pd.read_csv(os.path.join(wd_path, 'analysis', 'pileup', 'pileups_long.csv'))
+    pileups = pd.read_csv(os.path.join(wd_path, 'analysis', 'pileups', 'pileups_long.csv'))
 
     #we covered 11bp
     assert len(pileups) == 11
@@ -128,7 +128,7 @@ def test_naive_pileups_simulation(capsys):
     captured = capsys.readouterr()
     assert '{} {} finished!'.format(amplimap.run.__title__, amplimap.run.__version__) in captured.err.strip()
 
-    pileups = pd.read_csv(os.path.join(wd_path, 'test__GGCAATATGT_GGCAATCTGT_100', 'pileup', 'pileups_long.csv'))    
+    pileups = pd.read_csv(os.path.join(wd_path, 'test__GGCAATATGT_GGCAATCTGT_100', 'pileups', 'pileups_long.csv'))    
     assert len(pileups) == 11
 
     #we should have an A>C SNP at pos 30, in addition to the others

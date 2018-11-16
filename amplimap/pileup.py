@@ -223,18 +223,22 @@ def record_read_in_group(read_calls, my_call, my_phred, my_umi, read_name):
         read_calls[read_name] = my_call_data
         return False
 
-def get_group_consensus(group_calls, min_consensus_count, ignore_groups, debug = False):
+def get_group_consensus(group_calls, min_consensus_count = 1, min_consensus_fraction = 0.51, ignore_groups = False, debug = False):
     """
     Calculate consensus call, count and phred for UMI group.
     """
     group_call_counts = collections.defaultdict(int)
     group_calls_maxphred = collections.defaultdict(int)
     
+    #count how often we saw each call
     for (my_call, my_phred, _) in group_calls:
         group_call_counts[my_call] += 1
         group_calls_maxphred[my_call] = max(group_calls_maxphred[my_call], my_phred)
 
-    group_consensus_call, group_consensus_count = None, 0
+    #find call with highest count
+    #note: as long as min_consensus_fraction is >0.5 we should never end up with a duplicate call
+    #in the end, since if we have a duplicate its fraction has to be <= 50%
+    group_consensus_call, group_consensus_count = None, 0    
     for my_call, my_count in group_call_counts.items():
         if my_count > group_consensus_count:
             group_consensus_call = my_call
@@ -246,11 +250,12 @@ def get_group_consensus(group_calls, min_consensus_count, ignore_groups, debug =
             ', '.join(['%dx %s (q%d)' % (group_call_counts[k], k, group_calls_maxphred[k]) for k in group_call_counts.keys()]))
         print(group_call_counts.most_common(1))
 
+    #filter out non-consensus calls by raising a PileupGroupFilterException
     if not ignore_groups and (group_consensus_count < min_consensus_count):
         if debug:
             print('-> Below min count -- ', group_consensus_call, ' (', group_consensus_count, 'x ), max Q =', group_consensus_phred)
         raise PileupGroupFilterException('group_below_min')
-    elif not ignore_groups and (group_consensus_count <= len(group_calls) * 0.5):
+    elif not ignore_groups and (group_consensus_count < len(group_calls) * min_consensus_fraction):
         if debug:
             print('-> No majority call -- ', group_consensus_call, ' (', group_consensus_count, 'x ), max Q =', group_consensus_phred)
         raise PileupGroupFilterException('group_no_majority')
@@ -271,6 +276,7 @@ def process_pileup_row(
         snps_dict,
         ignore_groups,
         min_consensus_count,
+        min_consensus_fraction,
         min_baseq,
         ref,        
         debug = False):
@@ -292,7 +298,11 @@ def process_pileup_row(
             #find consensus for this group
             group_consensus_call, group_consensus_count, group_consensus_phred = get_group_consensus(
                 my_group.values(),
-                min_consensus_count = min_consensus_count, ignore_groups = ignore_groups, debug = debug)
+                min_consensus_count = min_consensus_count,
+                min_consensus_fraction = min_consensus_fraction,
+                ignore_groups = ignore_groups,
+                debug = debug
+            )
 
             #record phreds
             phreds.append(group_consensus_phred)
@@ -414,6 +424,7 @@ def process_pileup_base(
     region_index,
     pileup_base,
     min_consensus_count,
+    min_consensus_fraction,
     min_mapq,
     min_baseq,
     ignore_groups,
@@ -500,6 +511,7 @@ def process_pileup_base(
         snps_dict = snps_dict,
         ignore_groups = ignore_groups,
         min_consensus_count = min_consensus_count,
+        min_consensus_fraction = min_consensus_fraction,
         min_baseq = min_baseq,
         ref = ref,
         debug = debug
@@ -801,7 +813,9 @@ def aggregate(folder, snps_file, ref, generate_calls):
 
 def process_file(input, output, probes_file, snps_file, targets_file, validate_probe_targets,
     fasta_file,
-    min_mapq, min_baseq, ignore_groups, min_consensus_count,
+    min_mapq, min_baseq, ignore_groups,
+    min_consensus_count,
+    min_consensus_fraction = 0.51,
     group_with_mate_positions = False,
     filter_softclipped = True,
     ignore_duplicates = False,
@@ -1057,6 +1071,7 @@ def process_file(input, output, probes_file, snps_file, targets_file, validate_p
                     region_index,
                     pileup_base,
                     min_consensus_count,
+                    min_consensus_fraction,
                     min_mapq,        
                     min_baseq,              
                     ignore_groups,
@@ -1087,11 +1102,11 @@ def process_file(input, output, probes_file, snps_file, targets_file, validate_p
                         t_now - t_start,
                         (t_now - t_start) / len(rows),
                         len(rows) / (t_now - t_start))
-                    log.info(str(row))
+                    #log.info(str(row))
 
             if region is not None:
                 #make sure we have pileup rows for every single nucleotide in the region
-                log.info('%s: Got %d pileup rows so far - filling in missing positions between %d and %d (0-based)', region_id, len(rows), region[1], region[2])
+                #log.info('%s: Got %d pileup rows so far - filling in missing positions between %d and %d (0-based)', region_id, len(rows), region[1], region[2])
                 for pos_0 in range(region[1], region[2]):
                     if not pos_0 in seen_positions:
                         #log.info('Row missing for: %d (0-based)', pos_0)
@@ -1110,12 +1125,13 @@ def process_file(input, output, probes_file, snps_file, targets_file, validate_p
                             snps_dict = snps_dict,
                             ignore_groups = ignore_groups,
                             min_consensus_count = min_consensus_count,
+                            min_consensus_fraction = min_consensus_fraction,
                             min_baseq = min_baseq,
                             ref = ref,
                             debug = debug
                             )
                         rows.append(row)
-                log.info('%s: New length %d pileup rows', region_id, len(rows))
+                log.info('%s: %d pileup rows', region_id, len(rows))
 
                 #calculate overall coverage
                 coverage_min = min(region_coverage)
@@ -1201,6 +1217,7 @@ def main():
     parser.add_argument("--ignore-groups", help="ignore the UMI group entirely", action='store_true')
     parser.add_argument("--group-with-mate-positions", help="only group read pairs if the aligned start positions of both mates are the same", action='store_true')
     parser.add_argument("--min-consensus-count", help="minimum number of consistent read pairs supporting a UMI", default=2, type=int)
+    parser.add_argument("--min-consensus-percentage", help="minimum fraction of reads supporting the consensus call in a UMI group", default=51, type=int)
 
     parser.add_argument("--min-mapq", help="minimum mapping quality (remove read pairs with either read having mapq < X)", default=20, type=int)
     parser.add_argument("--min-baseq", help="minimum base quality (ignore calls from groups below baseq < X at this position)", default=30, type=int)
@@ -1231,6 +1248,7 @@ def main():
             ignore_groups = args.ignore_groups,
             group_with_mate_positions = args.group_with_mate_positions,
             min_consensus_count = args.min_consensus_count,
+            min_consensus_fraction = args.min_consensus_percentage / 100.0,
             filter_softclipped = not args.no_filter_softclipped,
             ignore_duplicates = args.ignore_duplicates,
             no_probe_data = args.no_probe_data,

@@ -170,3 +170,15 @@ through the modules system. To use this feature, specify the modules that should
 for each of the software packages listed under ``modules:``.
 If you leave a setting empty, no module will be loaded and the software will have to be
 available without loading a module.
+
+
+
+All configuration options
+~~~~~~~~~~~~~~~~~~~~~~~~~
+A commented list of all configuration options supported by amplimap and their default values
+is available in config_default.yaml:
+
+.. include:: ../amplimap/config_default.yaml
+  :start-line: 4
+  :code: yaml
+
