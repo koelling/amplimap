@@ -7,12 +7,12 @@ Ignoring UMI groups
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Even when your reads contain unique molecular identifiers (UMIs) you
 may want to ignore them to perform a pileup on the raw reads.
-To do this, set ``ignore_groups: true`` under ``general:``
+To do this, set ``ignore_umis: true`` under ``general:``
 
 ::
 
     general:
-      ignore_groups: true
+      ignore_umis: true
 
 
 Running on capture-based data
