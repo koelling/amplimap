@@ -45,9 +45,40 @@ def compare_config_dicts(my_config, used_config, path = []):
             sys.stderr.write('Warning - config key {} not set in used config\n'.format(':'.join(path+[key])))
     return differences
 
+def read_config_file(print_config, path):
+    """
+    Helper function to read a config file, if it exists.
+    Always returns a dict, but it may be empty.
+    """
+    this_config = {}
+    if os.path.isfile(path):
+        if print_config:
+            sys.stderr.write('Reading additional configuration file: {}\n'.format(path))
+        with open(path, 'r') as config_file:
+            this_config = yaml.safe_load(config_file.read())
+        
+        #make sure we always get an empty dict, yaml.safe_load may give us None for an empty file
+        if this_config is None:
+            this_config = {}
+
+    return this_config
+
 def main(argv = None):
     """
-    Run amplimap.
+    Main function for the ``amplimap`` executable. This function:
+
+    - parses command line arguments
+    - reads, merges and checks each of these config files, if they exist:
+        + ``config_default.yaml`` in the amplimap package
+        + ``/etc/amplimap/VERSION/config.yaml`` (where VERSION is the amplimap version)
+        + ``$AMPLIMAP_CONFIG``
+        + ``config.yaml`` in the working directory
+    - checks for an existing analysis directory (and compares the amplimap version used to create it)
+    - adds its own parent directory to the config file (to be inserted back into the python path inside Snakemake)
+    - creates an analysis directory
+    - writes ``config_used.yaml`` to the new analysis directory
+    - creates a ``cluster_log`` directory (if running in cluster mode)
+    - launches Snakemake, using the amplimap Snakefile, ``config_used.yaml`` as the config file and cluster parameters as specified in the command line arguments and config.
     """
     try:
         basedir = os.path.dirname(os.path.realpath(__file__))
@@ -89,62 +120,30 @@ def main(argv = None):
             print(basedir)
             return 0
 
-        #read default config to get cluster paths etc
-        default_config = {}
-        default_config_path = os.path.join(basedir, 'config_default.yaml')
-        if args.print_config:
-            sys.stderr.write('Reading default configuration from: {}\n'.format(default_config_path))
-        if os.path.isfile(default_config_path):
-            with open(default_config_path, 'r') as config_file:
-                default_config = yaml.safe_load(config_file.read())
-                
-                #make sure we always get an empty dict, yaml.safe_load may give us None for an empty file
-                if default_config is None:
-                    default_config = {}
-        else:
+        #read base config to know which parameters etc are allowed
+        default_config = read_config_file(args.print_config, os.path.join(basedir, 'config_default.yaml'))
+        if not default_config:
             raise Exception('config_default.yaml file missing!')
 
+        #add undocumented config keys to make sure these don't raise an error
+        for key in ['include_gbrowse_links', 'include_exon_distance', 'include_score']:
+            default_config['annotate'][key] = False
+
         #override with data from /etc/amplimap, if exists
-        etc_config = {}
-        etc_config_path = '/etc/amplimap/%s/config.yaml' % __version__
-        if os.path.isfile(etc_config_path):
-            if args.print_config:
-                sys.stderr.write('Reading additional configuration from: {}\n'.format(etc_config_path))
-            with open(etc_config_path, 'r') as config_file:
-                etc_config = yaml.safe_load(config_file.read())
-                
-                #make sure we always get an empty dict, yaml.safe_load may give us None for an empty file
-                if etc_config is None:
-                    etc_config = {}
+        etc_config = read_config_file(args.print_config, '/etc/amplimap/%s/config.yaml' % __version__)
 
         #override with data from $AMPLIMAP_CONFIG, if exists
         env_config = {}
         try:
-            env_config_path = os.environ['AMPLIMAP_CONFIG']
-            if os.path.isfile(env_config_path):
-                if args.print_config:
-                    sys.stderr.write('Reading additional configuration from: {}\n'.format(env_config_path))
-                with open(env_config_path, 'r') as config_file:
-                    env_config = yaml.safe_load(config_file.read())
-                
-                #make sure we always get an empty dict, yaml.safe_load may give us None for an empty file
-                if env_config is None:
-                    env_config = {}
+            env_config = read_config_file(args.print_config, os.environ['AMPLIMAP_CONFIG'])
         except KeyError:
             pass
 
         #read local config
-        local_config = {}
-        local_config_path = os.path.join(args.working_directory, 'config.yaml')
-        if os.path.isfile(local_config_path):
-            with open(local_config_path, 'r') as config_file:
-                local_config = yaml.safe_load(config_file.read())
-                
-                #make sure we always get an empty dict, yaml.safe_load may give us None for an empty file
-                if local_config is None:
-                    local_config = {}
-        else:
-            sys.stderr.write('No local config.yaml found, using default configuration.\n')
+        local_config = read_config_file(args.print_config, os.path.join(args.working_directory, 'config.yaml'))
+        if not local_config:
+            if args.print_config:
+                sys.stderr.write('No local config.yaml found, using default configuration.\n')
 
         #merge configs together
         config = default_config
@@ -175,11 +174,11 @@ def main(argv = None):
         #     or os.path.isfile(os.path.join(args.working_directory, 'probes_heatseq.tsv')), 'probes.csv, probes_mipgen.csv, or probes_heatseq.tsv file missing'
 
         #check some basic settings
-        aligners = ['naive', 'bwa', 'bowtie2', 'star']
+        aligners = ['naive', 'bwa', 'bowtie2', 'star'] #allowed values for the aligner
         if not config['align']['aligner'] in aligners:
             raise Exception('align: aligner must be one of {}!'.format(','.join(aligners)))
 
-        callers = ['gatk', 'platypus']
+        callers = ['gatk', 'platypus'] #allowed values for the variant caller
         if not config['variants']['caller'] in callers:
             raise Exception('variants: caller must be one of {}!'.format(','.join(callers)))
 
@@ -232,8 +231,6 @@ def main(argv = None):
         if os.path.isfile(os.path.join(args.working_directory, 'snps.txt')):
             read_snps_txt(os.path.join(args.working_directory, 'snps.txt'), reference_type = 'genome')
 
-        #provide our source dir name to snakefile
-        config['general']['amplimap_dir'] = basedir
         #this will be used to (very hackily) make sure amplimap can be imported as amplimap.xxx
         #by adding the parent dir to the top of sys.path in the Snakefile
         config['general']['amplimap_parent_dir'] = os.path.dirname(basedir)

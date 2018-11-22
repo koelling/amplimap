@@ -54,13 +54,6 @@ assert len(SAMPLES) > 0, '\n\nNo samples found. Please check input filenames.\n\
 #versions
 VERSIONS = {}
 VERSIONS['_amplimap'] = str(__version__)
-VERSIONS['Snakefile'] = str(os.path.getmtime(os.path.join(config['general']['amplimap_dir'], 'Snakefile')))
-VERSIONS['parse_reads'] = str(os.path.getmtime(os.path.join(config['general']['amplimap_dir'], 'parse_reads.py')))
-VERSIONS['pileup'] = str(os.path.getmtime(os.path.join(config['general']['amplimap_dir'], 'pileup.py')))
-VERSIONS['stats_alignment'] = str(os.path.getmtime(os.path.join(config['general']['amplimap_dir'], 'stats_alignment.py')))
-VERSIONS['coverage'] = str(os.path.getmtime(os.path.join(config['general']['amplimap_dir'], 'coverage.py')))
-VERSIONS['simulate'] = str(os.path.getmtime(os.path.join(config['general']['amplimap_dir'], 'simulate.py')))
-VERSIONS['variants'] = str(os.path.getmtime(os.path.join(config['general']['amplimap_dir'], 'variants.py')))
 
 #helper function to load module
 def load_module_command(name, config):
