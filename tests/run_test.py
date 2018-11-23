@@ -195,4 +195,12 @@ def test_umi_dedup(capsys):
 
     check_run(capsys, wd_path, rules = 'dedup_bams')
     
+    import pysam
+    #before dedup we had five aligned read pairs
+    n_in = pysam.AlignmentFile(os.path.join(wd_path, 'analysis', 'bams', 'S1.bam')).count(until_eof=True)
+    assert n_in == 5 * 2
+
+    #after dedup we have four (two read pairs have same UMI)
+    n_dedup = pysam.AlignmentFile(os.path.join(wd_path, 'analysis', 'bams_umi_dedup', 'S1.bam')).count(until_eof=True)
+    assert n_dedup == 4 * 2
 
