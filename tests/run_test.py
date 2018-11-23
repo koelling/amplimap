@@ -65,7 +65,7 @@ def test_version(capsys):
 def test_config(capsys):
     amplimap.run.main(['--print-config'])
     captured = capsys.readouterr()
-    assert 'Reading additional configuration from: {}'.format(os.path.join(packagedir, "sample_data", "config_default.yaml")) in captured.err
+    assert 'Reading additional configuration file: {}'.format(os.path.join(packagedir, "sample_data", "config_default.yaml")) in captured.err
     # with capsys.disabled():
     #     sys.stdout.write(captured.err)
     #     sys.stdout.write(captured.out)
