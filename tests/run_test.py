@@ -70,14 +70,14 @@ def test_config(capsys):
     #     sys.stdout.write(captured.err)
     #     sys.stdout.write(captured.out)
 
-def check_run(capsys, wd_path):
+def check_run(capsys, wd_path, rules = 'pileups'):
     #dry-run
-    amplimap.run.main(['--working-directory={}'.format(wd_path), 'pileups'])
+    amplimap.run.main(['--working-directory={}'.format(wd_path), rules])
     captured = capsys.readouterr()
     assert '{} {} dry run successful.'.format(amplimap.run.__title__, amplimap.run.__version__) in captured.err.strip()
 
     #full run
-    amplimap.run.main(['--working-directory={}'.format(wd_path), 'pileups', '--run'])
+    amplimap.run.main(['--working-directory={}'.format(wd_path), rules, '--run'])
     captured = capsys.readouterr()
     assert '{} {} finished!'.format(amplimap.run.__title__, amplimap.run.__version__) in captured.err.strip()    
 
@@ -188,4 +188,11 @@ def test_umi_pileups(capsys):
     assert stats_reads.loc[0, 'read_pairs'] == 6
     assert stats_reads.loc[0, 'umis_total'] == 5
     assert stats_reads.loc[0, 'umis_coverage_max'] == 2
+
+def test_umi_dedup(capsys):
+    wd_path = os.path.join(packagedir, "sample_data", "wd_umis")
+    init_wd(wd_path, os.path.join(packagedir, "sample_data", "sample_reads_in"), umi_one = 3, umi_two = 4)
+
+    check_run(capsys, wd_path, rules = 'dedup_bams')
+    
 
