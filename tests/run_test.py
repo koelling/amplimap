@@ -18,7 +18,8 @@ import amplimap.run
 os.system("cythonize -i {}".format(os.path.join(packagedir, "amplimap", "parse_reads_cy.pyx")))
 
 #set config
-os.environ['AMPLIMAP_CONFIG'] = os.path.join(packagedir, "sample_data", "config_default.yaml")
+test_config_path = os.path.join(packagedir, "sample_data", "config_default.yaml")
+os.environ['AMPLIMAP_CONFIG'] = test_config_path
 
 def init_wd(path, reads_in_path, umi_one = 0, umi_two = 0):
     assert os.path.isdir(path)
@@ -66,9 +67,31 @@ def test_config(capsys):
     amplimap.run.main(['--print-config'])
     captured = capsys.readouterr()
     assert 'Reading additional configuration file: {}'.format(os.path.join(packagedir, "sample_data", "config_default.yaml")) in captured.err
+
+def test_config_env(capsys):
+    extra_config_path = os.path.join(packagedir, "sample_data", "extra_config.yaml")
+    os.environ['AMPLIMAP_CONFIG'] = extra_config_path
+    amplimap.run.main(['--print-config'])
+    captured = capsys.readouterr()
+    os.environ['AMPLIMAP_CONFIG'] = test_config_path #reset, so we don't affect later tests
+
+    # #for debugging:
     # with capsys.disabled():
     #     sys.stdout.write(captured.err)
     #     sys.stdout.write(captured.out)
+
+    assert 'Reading additional configuration file: {}'.format(extra_config_path) in captured.err
+    assert 'aligner: star' in captured.out
+
+def test_config_env_invalid(capsys):
+    extra_config_path = os.path.join(packagedir, "sample_data", "extra_config_invalid.yaml")
+    os.environ['AMPLIMAP_CONFIG'] = extra_config_path
+    amplimap.run.main(['--print-config'])
+    captured = capsys.readouterr()
+    os.environ['AMPLIMAP_CONFIG'] = test_config_path #reset, so we don't affect later tests
+
+    assert 'Reading additional configuration file: {}'.format(extra_config_path) in captured.err
+    assert 'Your configuration file(s) contain unknown or invalid settings:' in captured.err
 
 def check_run(capsys, wd_path, rules = 'pileups'):
     #dry-run
