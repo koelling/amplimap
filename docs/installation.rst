@@ -48,7 +48,7 @@ Requirements
 
 - Required software:
 
-  - At least one read aligner: bwa (tested with v0.7.12), Bowtie2 (tested with v2.2.5), STAR (tested with v2.5.1b)
+  - At least one read aligner: BWA (tested with v0.7.12), Bowtie2 (tested with v2.2.5), STAR (tested with v2.5.1b)
   - bedtools (tested with v2.27.1)
   - samtools (tested with v1.5)
 
