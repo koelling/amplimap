@@ -341,7 +341,7 @@ rule tool_version:
                     #picard has version number in stdERR, should return 1 and version number should be only result
                     elif tool_name == 'picard' \
                     and result.returncode == 1 \
-                    and re.match(r'^[0-9.]+\(.*\)$', result.stderr.decode('utf-8')):
+                    and re.match(r'^[0-9.]+.*$', result.stderr.decode('utf-8')):
                         with open(output[0], 'wb') as f:
                             f.write(result.stderr)
                     #didn't get a version number, so tool may just not be available
