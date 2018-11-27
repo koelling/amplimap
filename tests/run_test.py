@@ -18,7 +18,8 @@ import amplimap.run
 os.system("cythonize -i {}".format(os.path.join(packagedir, "amplimap", "parse_reads_cy.pyx")))
 
 #set config
-os.environ['AMPLIMAP_CONFIG'] = os.path.join(packagedir, "sample_data", "config_default.yaml")
+test_config_path = os.path.join(packagedir, "sample_data", "config_default.yaml")
+os.environ['AMPLIMAP_CONFIG'] = test_config_path
 
 def init_wd(path, reads_in_path, umi_one = 0, umi_two = 0):
     assert os.path.isdir(path)
@@ -65,19 +66,41 @@ def test_version(capsys):
 def test_config(capsys):
     amplimap.run.main(['--print-config'])
     captured = capsys.readouterr()
-    assert 'Reading additional configuration from: {}'.format(os.path.join(packagedir, "sample_data", "config_default.yaml")) in captured.err
+    assert 'Reading additional configuration file: {}'.format(os.path.join(packagedir, "sample_data", "config_default.yaml")) in captured.err
+
+def test_config_env(capsys):
+    extra_config_path = os.path.join(packagedir, "sample_data", "extra_config.yaml")
+    os.environ['AMPLIMAP_CONFIG'] = extra_config_path
+    amplimap.run.main(['--print-config'])
+    captured = capsys.readouterr()
+    os.environ['AMPLIMAP_CONFIG'] = test_config_path #reset, so we don't affect later tests
+
+    # #for debugging:
     # with capsys.disabled():
     #     sys.stdout.write(captured.err)
     #     sys.stdout.write(captured.out)
 
-def check_run(capsys, wd_path):
+    assert 'Reading additional configuration file: {}'.format(extra_config_path) in captured.err
+    assert 'aligner: star' in captured.out
+
+def test_config_env_invalid(capsys):
+    extra_config_path = os.path.join(packagedir, "sample_data", "extra_config_invalid.yaml")
+    os.environ['AMPLIMAP_CONFIG'] = extra_config_path
+    amplimap.run.main(['--print-config'])
+    captured = capsys.readouterr()
+    os.environ['AMPLIMAP_CONFIG'] = test_config_path #reset, so we don't affect later tests
+
+    assert 'Reading additional configuration file: {}'.format(extra_config_path) in captured.err
+    assert 'Your configuration file(s) contain unknown or invalid settings:' in captured.err
+
+def check_run(capsys, wd_path, rules = 'pileups'):
     #dry-run
-    amplimap.run.main(['--working-directory={}'.format(wd_path), 'pileups'])
+    amplimap.run.main(['--working-directory={}'.format(wd_path), rules])
     captured = capsys.readouterr()
     assert '{} {} dry run successful.'.format(amplimap.run.__title__, amplimap.run.__version__) in captured.err.strip()
 
     #full run
-    amplimap.run.main(['--working-directory={}'.format(wd_path), 'pileups', '--run'])
+    amplimap.run.main(['--working-directory={}'.format(wd_path), rules, '--run'])
     captured = capsys.readouterr()
     assert '{} {} finished!'.format(amplimap.run.__title__, amplimap.run.__version__) in captured.err.strip()    
 
@@ -188,4 +211,19 @@ def test_umi_pileups(capsys):
     assert stats_reads.loc[0, 'read_pairs'] == 6
     assert stats_reads.loc[0, 'umis_total'] == 5
     assert stats_reads.loc[0, 'umis_coverage_max'] == 2
+
+def test_umi_dedup(capsys):
+    wd_path = os.path.join(packagedir, "sample_data", "wd_umis")
+    init_wd(wd_path, os.path.join(packagedir, "sample_data", "sample_reads_in"), umi_one = 3, umi_two = 4)
+
+    check_run(capsys, wd_path, rules = 'dedup_bams')
+    
+    import pysam
+    #before dedup we had five aligned read pairs
+    n_in = pysam.AlignmentFile(os.path.join(wd_path, 'analysis', 'bams', 'S1.bam')).count(until_eof=True)
+    assert n_in == 5 * 2
+
+    #after dedup we have four (two read pairs have same UMI)
+    n_dedup = pysam.AlignmentFile(os.path.join(wd_path, 'analysis', 'bams_umi_dedup', 'S1.bam')).count(until_eof=True)
+    assert n_dedup == 4 * 2
 

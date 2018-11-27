@@ -54,13 +54,6 @@ assert len(SAMPLES) > 0, '\n\nNo samples found. Please check input filenames.\n\
 #versions
 VERSIONS = {}
 VERSIONS['_amplimap'] = str(__version__)
-VERSIONS['Snakefile'] = str(os.path.getmtime(os.path.join(config['general']['amplimap_dir'], 'Snakefile')))
-VERSIONS['parse_reads'] = str(os.path.getmtime(os.path.join(config['general']['amplimap_dir'], 'parse_reads.py')))
-VERSIONS['pileup'] = str(os.path.getmtime(os.path.join(config['general']['amplimap_dir'], 'pileup.py')))
-VERSIONS['stats_alignment'] = str(os.path.getmtime(os.path.join(config['general']['amplimap_dir'], 'stats_alignment.py')))
-VERSIONS['coverage'] = str(os.path.getmtime(os.path.join(config['general']['amplimap_dir'], 'coverage.py')))
-VERSIONS['simulate'] = str(os.path.getmtime(os.path.join(config['general']['amplimap_dir'], 'simulate.py')))
-VERSIONS['variants'] = str(os.path.getmtime(os.path.join(config['general']['amplimap_dir'], 'variants.py')))
 
 #helper function to load module
 def load_module_command(name, config):
@@ -183,7 +176,6 @@ rule check_target_overlaps:
         print(input['targets'], 'checked for overlaps.')
 
 rule check_sample_info:
-    version: VERSIONS['parse_reads']
     input:
         rules.start_analysis.output,
         sample_info = "sample_info.csv",
@@ -349,7 +341,7 @@ rule tool_version:
                     #picard has version number in stdERR, should return 1 and version number should be only result
                     elif tool_name == 'picard' \
                     and result.returncode == 1 \
-                    and re.match(r'^[0-9.]+\(.*\)$', result.stderr.decode('utf-8')):
+                    and re.match(r'^[0-9.]+.*$', result.stderr.decode('utf-8')):
                         with open(output[0], 'wb') as f:
                             f.write(result.stderr)
                     #didn't get a version number, so tool may just not be available
@@ -408,7 +400,6 @@ rule convert_targets_csv:
 
 ##### PROBE CSV CONVERSION
 rule copy_probes:
-    version: VERSIONS['parse_reads']
     input:
         rules.start_analysis.output,
         probes = "probes.csv"
@@ -420,7 +411,6 @@ rule copy_probes:
         design.to_csv(output['probes'], index=False)
 
 rule convert_mipgen_probes:
-    version: VERSIONS['parse_reads']
     input:
         rules.start_analysis.output,
         mipgen = "probes_mipgen.csv"
@@ -432,7 +422,6 @@ rule convert_mipgen_probes:
         design.to_csv(output['probes'], index=False)
 
 rule convert_heatseq_probes:
-    version: VERSIONS['parse_reads']
     input:
         rules.start_analysis.output,
         heatseq = "probes_heatseq.tsv"
@@ -736,7 +725,6 @@ rule link_reads:
         os.symlink(os.path.join("..", "..", input[0]), output[0])
 
 rule parse_reads_pe:
-    version: VERSIONS['parse_reads']
     input:
         r1 = ["{analysis_dir}/reads_in/{sample_full}_L%03d_R1_001.fastq.gz" % (lane+1) for lane in range(config['general']['lanes_actual'])],
         r2 = ["{analysis_dir}/reads_in/{sample_full}_L%03d_R2_001.fastq.gz" % (lane+1) for lane in range(config['general']['lanes_actual'])],
@@ -1079,7 +1067,6 @@ rule align_pe_CONSENSUS:
         shell(cmds)
 
 rule stats_alignment:
-    version: VERSIONS['stats_alignment']
     input:
         "{analysis_dir}/bams/{sample_full}.bam",
         "{analysis_dir}/bams/{sample_full}.bam.bai",
@@ -1109,7 +1096,6 @@ rule stats_alignment_agg:
         amplimap.stats_alignment.aggregate(folder = "{}/stats_alignment/".format(wildcards['analysis_dir']))
 
 rule do_pileup:
-    version: VERSIONS['pileup']
     input:
         "{analysis_dir}/bams/{sample_full}.bam", # if config['general']['ignore_umis'] else rules.umi_group.output,
         "{analysis_dir}/bams/{sample_full}.bam.bai",
@@ -1163,7 +1149,6 @@ rule pileup_agg:
         )
 
 rule do_pileup_snps:
-    version: VERSIONS['pileup']
     input:
         "{analysis_dir}/bams/{sample_full}.bam", # if config['general']['ignore_umis'] else rules.umi_group.output,
         "{analysis_dir}/bams/{sample_full}.bam.bai",
@@ -1278,7 +1263,6 @@ rule calc_coverage_mapq:
         """ % (load_module_command('samtools', config), load_module_command('bedtools', config))
 
 rule coverage_process:
-    version: VERSIONS['coverage']
     input:
         "{prefix}.coverage_raw.txt"
     output:
@@ -1288,7 +1272,6 @@ rule coverage_process:
         amplimap.coverage.process_file(input[0], output[0])
 
 rule coverage_agg:
-    version: VERSIONS['coverage']
     input:
         csvs = expand("{{bamdir}}/coverages/{sample_full}.coverage.csv", sample_full = SAMPLES),
         sample_info = ["sample_info.csv"] if os.path.isfile("sample_info.csv") else []
@@ -1475,7 +1458,6 @@ rule annotate_variants:
             """ % (load_module_command('bcftools', config), load_module_command('annovar', config), get_path('fasta'), get_path('annovar'), get_annovar_name()))
 
 rule variants_merge:
-    version: VERSIONS['variants']
     input:
         csvs = expand("{{analysis_dir}}/{{variants_dir}}/{sample_full}.vcf."+get_annovar_name()+"_multianno.csv", sample_full = SAMPLES)
     output:
@@ -1485,7 +1467,6 @@ rule variants_merge:
         amplimap.variants.merge_variants(input, output)
 
 rule variants_summary:
-    version: VERSIONS['variants']
     input:
         merged = rules.variants_merge.output,
         targets = "{analysis_dir}/targets.bed",
@@ -1498,7 +1479,6 @@ rule variants_summary:
             get_path('exon_table') if 'include_exon_distance' in config['annotate'] and config['annotate']['include_exon_distance'] else None)
 
 rule variants_summary_condensed:
-    version: VERSIONS['variants']
     input:
         summary = rules.variants_summary.output[0],
         sample_info = ["sample_info.csv"] if os.path.isfile("sample_info.csv") else []
@@ -1510,7 +1490,6 @@ rule variants_summary_condensed:
         amplimap.variants.make_summary_condensed(input, output)
 
 rule variants_summary_excel:
-    version: VERSIONS['variants']
     input:
         rules.variants_summary.output[0]
     output:
@@ -1520,7 +1499,6 @@ rule variants_summary_excel:
         amplimap.variants.make_summary_excel(input, output)
 
 rule check_test_variant:
-    version: VERSIONS['simulate']
     output:
         touch("checks/check_test__{search}_{replace}_{percentage}.done")
     run:
@@ -1528,7 +1506,6 @@ rule check_test_variant:
         amplimap.simulate.check_parameters(wildcards)
 
 rule test_make_reads:
-    version: VERSIONS['simulate']
     input:
         "analysis/reads_in/{sample_with_lane}_R1_001.fastq.gz",
         "analysis/reads_in/{sample_with_lane}_R2_001.fastq.gz",
@@ -1542,7 +1519,6 @@ rule test_make_reads:
         amplimap.simulate.make_simulated_reads(input, output, wildcards, config)
 
 rule stats_replacements_agg:
-    version: VERSIONS['simulate']
     input:
         expand("test__{{params}}/stats_replacements/stats_replacements__sample_{sample_full}_L{lane}.csv", sample_full = SAMPLES, lane = ['%03d' % l for l in range(1, config['general']['lanes_actual']+1)])
     output:

@@ -43,10 +43,18 @@ import argparse
 from .common import make_extended_read_name, find_umi_groups, parse_extended_read_name
 from .reader import read_new_probe_design
 
-#import cython code (should really be built in setup.py)
-#import pyximport
-#pyximport.install()
-from .parse_reads_cy import find_probe_from_reads, mismatch_count_with_max
+#import cython module. if we have run setup.py this should have been built already
+#but we may get import errors (eg. for readthedocs)
+try:
+    from .parse_reads_cy import find_probe_from_reads, mismatch_count_with_max
+except ImportError:
+    sys.stderr.write('Failed to import parse_reads_cy, trying again with pyximport\n')
+    
+    #try again with pyximport
+    import pyximport
+    pyximport.install()
+    from .parse_reads_cy import find_probe_from_reads, mismatch_count_with_max
+
 
 def quality_trim_read(read_seq, read_qual_raw, phred_base: int = 33, p_threshold: float = 0.01) -> tuple:
     """Use Richard Mott's algorithm implemented in bwa and others to quality-trim reads.

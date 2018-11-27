@@ -24,6 +24,11 @@ If this does not work, you can try to install it manually:
   cd amplimap
   python3 setup.py install
 
+
+You can also :download:`download our requirements.txt file <../requirements.txt>`,
+which contains a full list of all Python packages used by amplimap, and a known
+working version.
+
 Setup
 ~~~~~~~~~
 
@@ -37,23 +42,23 @@ Requirements
 - Linux environment (should also work on MacOS, Windows 10 Linux Subsystem)
 - Python 3.5+ with setuptools, Cython and numpy
 
-  - Further Python dependencies will be installed automatically
+  - Further Python dependencies are listed in ``requirements.txt`` but can also be installed automatically by ``setup.py``
 
-- Reference genome FASTA with indices
+- Reference genome FASTA file, with indices
 
 - Required software:
 
-  - At least one read aligner: bwa (tested with v0.7.12), Bowtie2 (tested with v2.2.5), STAR (tested with v2.5.1b)
+  - At least one read aligner: BWA (tested with v0.7.12), Bowtie2 (tested with v2.2.5), STAR (tested with v2.5.1b)
   - bedtools (tested with v2.27.1)
   - samtools (tested with v1.5)
 
-- Additional software for germline variant analysis (optional):
+- Additional software for germline variant calling (optional):
 
   - At least one variant caller: Platypus 0.8.1+, GATK 4+
   - Annovar (tested with v2015-06-17)
   - bcftools (tested with v1.5)
 
-- Additional software for somatic variant analysis (optional):
+- Additional software for low-frequency variant calling (optional):
 
   - Mutect2 (from GATK 4, tested with v4.0)
 
