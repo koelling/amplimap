@@ -1,3 +1,8 @@
+# -*- coding: utf-8 -*-
+"""
+This module contains methods to parse, merge, annotate and filter variant calls.
+"""
+
 import pandas as pd
 import numpy as np
 import re

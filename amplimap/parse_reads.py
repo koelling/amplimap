@@ -1,3 +1,8 @@
+# -*- coding: utf-8 -*-
+"""
+This module contains methods for reading raw FASTQ files, finding primers in them and trimming the reads.
+"""
+
 #python 3 compat
 #http://python-future.org/compatible_idioms.html
 from __future__ import print_function
@@ -65,7 +70,7 @@ def quality_trim_read(read_seq, read_qual_raw, phred_base: int = 33, p_threshold
     - see description: http://resources.qiagenbioinformatics.com/manuals/clcgenomicsworkbench/650/Quality_trimming.html
     - see sample code (but not sure if correct!): https://www.biostars.org/p/1923/
     - see version in bio.seqio: http://biopython.org/DIST/docs/api/Bio.SeqIO.AbiIO-module.html
-    - see implementation (super inefficient, keeps list of all cum scores...): http://biopython.org/DIST/docs/api/Bio.SeqIO.AbiIO-pysrc.html#_abi_trim
+    - see implementation (may be inefficient, keeps list of all cumulative scores...): http://biopython.org/DIST/docs/api/Bio.SeqIO.AbiIO-pysrc.html#_abi_trim
 
     NOTE: our implementation will always trim from first high-q base (sum > 0) to the best part of the read
     (max of the running sum), even if there are some low-quality bases in-between."""

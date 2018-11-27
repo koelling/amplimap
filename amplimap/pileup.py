@@ -1,3 +1,8 @@
+# -*- coding: utf-8 -*-
+"""
+This module contains methods for generating pileups (per-base allele counts) using pysam/samtools.
+"""
+
 #python 3 compat
 #http://python-future.org/compatible_idioms.html
 from __future__ import print_function

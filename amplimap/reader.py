@@ -1,3 +1,8 @@
+# -*- coding: utf-8 -*-
+"""
+This module contains methods related to reading input files, such as targets.csv, probes.csv etc.
+"""
+
 import re
 import sys
 import os, hashlib

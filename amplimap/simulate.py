@@ -1,3 +1,9 @@
+# -*- coding: utf-8 -*-
+"""
+``amplimap.simulate`` contains methods for simulating variants in reads by replacing a specific DNA sequence with a different sequence,
+some percentage of the time.
+"""
+
 import random
 import gzip
 import Bio.Seq

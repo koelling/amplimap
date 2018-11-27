@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #python 3 compat
 #http://python-future.org/compatible_idioms.html
 from __future__ import print_function

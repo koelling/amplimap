@@ -43,12 +43,6 @@ amplimap.run
 .. automodule:: amplimap.run
    :members:
 
-amplimap.common
-^^^^^^^^^^^^^^^^
-
-.. automodule:: amplimap.common
-   :members:
-
 amplimap.reader
 ^^^^^^^^^^^^^^^^
 
@@ -61,10 +55,10 @@ amplimap.parse_reads
 .. automodule:: amplimap.parse_reads
    :members:
 
-amplimap.variants
-^^^^^^^^^^^^^^^^^^
+amplimap.naive_mapper
+^^^^^^^^^^^^^^^^^^^^^^^
 
-.. automodule:: amplimap.variants
+.. automodule:: amplimap.naive_mapper
    :members:
 
 amplimap.pileup
@@ -79,19 +73,30 @@ amplimap.stats_alignment
 .. automodule:: amplimap.stats_alignment
    :members:
 
+amplimap.variants
+^^^^^^^^^^^^^^^^^^
+
+.. automodule:: amplimap.variants
+   :members:
+
 amplimap.coverage
 ^^^^^^^^^^^^^^^^^
 
 .. automodule:: amplimap.coverage
    :members:
 
-Others
-^^^^^^^^^^^^^^^^
+amplimap.merge_folders
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. automodule:: amplimap.merge_folders
    :members:
 
-.. automodule:: amplimap.naive_mapper
+
+
+Others
+^^^^^^^^^^^^^^^^
+
+.. automodule:: amplimap.common
    :members:
 
 .. automodule:: amplimap.simulate
