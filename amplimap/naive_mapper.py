@@ -1,3 +1,12 @@
+# -*- coding: utf-8 -*-
+"""
+This is a custom read mapper for amplicon data.
+It simply places the reads at the location they were expected to come from,
+based on the target coordinates of their associated probe.
+It will perform an aligment within the target region to handle small differences
+but will not correctly handle chimeric off-target reads or errors.
+"""
+
 import sys, os, re, time, collections
 
 import logging

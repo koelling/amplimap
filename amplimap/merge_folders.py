@@ -1,4 +1,11 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+This module provides the amplimap.merge_folders.main() function called by the ``amplimap_merge`` script.
+This script merges coverage data and variant calls from different working directories together,
+making it possible to merge samples sequenced in different runs into a single output file.
+"""
+
 #python 3 compat
 #http://python-future.org/compatible_idioms.html
 from __future__ import print_function

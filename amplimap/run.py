@@ -1,4 +1,10 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+This module provides the ``amplimap.run.main()`` method called from the `amplimap` command-line executable,
+as well as some helper functions for reading and checking the config files.
+"""
+
 import os
 import sys
 
