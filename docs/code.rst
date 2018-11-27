@@ -3,7 +3,7 @@ Code documentation
 
 Overview
 ------------------------
-When ``amplimap`` is launched, the function amplimap.main.run() is called. This function
+When ``amplimap`` is launched, the function amplimap.run.main() is called. This function
 will perform various pre-processing steps (see below) and then launch Snakemake.
 Snakemake, using the Snakefile provided in the amplimap package, will then determine
 the jobs that need to be executed.
