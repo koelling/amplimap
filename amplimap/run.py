@@ -127,7 +127,8 @@ def main(argv = None):
 
         #add undocumented config keys to make sure these don't raise an error
         for key in ['include_gbrowse_links', 'include_exon_distance', 'include_score']:
-            default_config['annotate'][key] = False
+            if not key in default_config['annotate']:
+                default_config['annotate'][key] = False
 
         #override with data from /etc/amplimap, if exists
         etc_config = read_config_file(args.print_config, '/etc/amplimap/%s/config.yaml' % __version__)
