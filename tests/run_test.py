@@ -169,8 +169,24 @@ def test_naive_pileups(capsys):
     check_default_stats(wd_path)
     check_default_pileups(wd_path)
 
+def test_naive_pileups_notrim(capsys):
+    wd_path = os.path.join(packagedir, "sample_data", "wd_naive_notrim")
+    init_wd(wd_path, os.path.join(packagedir, "sample_data", "sample_reads_in"))
+
+    check_run(capsys, wd_path)
+    check_default_stats(wd_path)
+    check_default_pileups(wd_path)
+
 def test_bwa_pileups(capsys):
     wd_path = os.path.join(packagedir, "sample_data", "wd_bwa")
+    init_wd(wd_path, os.path.join(packagedir, "sample_data", "sample_reads_in"))
+
+    check_run(capsys, wd_path)
+    check_default_stats(wd_path)
+    check_default_pileups(wd_path)
+
+def test_bwa_pileups_notrim(capsys):
+    wd_path = os.path.join(packagedir, "sample_data", "wd_bwa_notrim")
     init_wd(wd_path, os.path.join(packagedir, "sample_data", "sample_reads_in"))
 
     check_run(capsys, wd_path)

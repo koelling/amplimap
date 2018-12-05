@@ -1,0 +1,4 @@
+parse_reads:
+  trim_primers: false
+align:
+  aligner: "naive"
