@@ -112,7 +112,7 @@ def check_default_stats(wd_path, is_trimmed = True):
     assert samples.loc[0, 'files'] == 2
     assert samples.loc[0, 'pairs_total'] == 7
     assert samples.loc[0, 'pairs_good_arms'] == 6
-    assert samples.loc[0, 'pairs_r1_too_short'] == 1 if is_trimmed else 0
+    assert samples.loc[0, 'pairs_r1_too_short'] == (1 if is_trimmed else 0)
 
 def check_default_pileups(wd_path, expected_coverage = 5, include_too_short = False):
     pileups = pd.read_csv(os.path.join(wd_path, 'analysis', 'pileups', 'pileups_long.csv'))
