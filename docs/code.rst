@@ -36,8 +36,8 @@ In addition, you may want to add the following setting:
     amplimap_parent_dir: /path/to/parent/of/amplimap/package/directory
 
 This directory will be inserted into the Python path when running Snakemake to make
-sure ``import amplimap.xxx`` imports the correct files. If it is not provided,
-the Snakemake will load the version of amplimap installed in the default Python path.
+sure ``import amplimap.xxx`` imports the correct files. If it is not provided
+Snakemake will load the version of amplimap installed in the default Python path.
 
 
 amplimap.run
