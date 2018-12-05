@@ -104,7 +104,7 @@ def check_run(capsys, wd_path, rules = 'pileups'):
     captured = capsys.readouterr()
     assert '{} {} finished!'.format(amplimap.run.__title__, amplimap.run.__version__) in captured.err.strip()    
 
-def check_default_stats(wd_path):
+def check_default_stats(wd_path, is_trimmed = True):
     samples = pd.read_csv(os.path.join(wd_path, 'analysis', 'reads_parsed', 'stats_samples.csv'))
     assert len(samples) == 1
 
@@ -112,7 +112,7 @@ def check_default_stats(wd_path):
     assert samples.loc[0, 'files'] == 2
     assert samples.loc[0, 'pairs_total'] == 7
     assert samples.loc[0, 'pairs_good_arms'] == 6
-    assert samples.loc[0, 'pairs_r1_too_short'] == 1
+    assert samples.loc[0, 'pairs_r1_too_short'] == 1 if is_trimmed else 0
 
 def check_default_pileups(wd_path, expected_coverage = 5, include_too_short = False):
     pileups = pd.read_csv(os.path.join(wd_path, 'analysis', 'pileups', 'pileups_long.csv'))
@@ -174,7 +174,7 @@ def test_naive_pileups_notrim(capsys):
     init_wd(wd_path, os.path.join(packagedir, "sample_data", "sample_reads_in"))
 
     check_run(capsys, wd_path)
-    check_default_stats(wd_path)
+    check_default_stats(wd_path, is_trimmed = False)
     check_default_pileups(wd_path)
 
 def test_bwa_pileups(capsys):
@@ -190,7 +190,7 @@ def test_bwa_pileups_notrim(capsys):
     init_wd(wd_path, os.path.join(packagedir, "sample_data", "sample_reads_in"))
 
     check_run(capsys, wd_path)
-    check_default_stats(wd_path)
+    check_default_stats(wd_path, is_trimmed = False)
     check_default_pileups(wd_path)
 
 def test_raw_read_pileups(capsys):
