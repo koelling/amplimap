@@ -102,10 +102,11 @@ def main(argv = None):
         parser.add_argument("--resume", help="resume analysis in existing analysis directory", action="store_true")
         parser.add_argument("--cluster", help="specify a cluster type defined in your configuration files to run jobs on cluster.")
         parser.add_argument("--skip-file-check", help="skip check for changes in input files when resuming (not recommended)", action="store_true")
-        parser.add_argument("--unlock", help="unlock working directory", action="store_true")
+        parser.add_argument("--unlock", help="unlock working directory (Snakemake parameter)", action="store_true")
         parser.add_argument("--working-directory", help="path to the working directory", default=".")
         parser.add_argument("--ncores", help="number of local cores to run in parallel (only applies if --cluster is NOT set)", default=1, type=int)
         parser.add_argument("--njobs", help="number of cluster jobs to run in parallel (only applies if --cluster is set)", default=10, type=int)
+        parser.add_argument("--latency-wait", help="How long to wait for output files to appear after job completes. Increase this if you get errors about missing output files. (Snakemake parameter)", default=5, type=int)
         parser.add_argument("--debug", help="debug mode", action="store_true")
         #parser.add_argument("--debug-dag", help="debug DAG", action="store_true")
         parser.add_argument("TARGET", help="targets to run (eg. pileups variants coverages)", nargs="*")
@@ -346,6 +347,7 @@ def main(argv = None):
             cluster_sync = cluster_command_sync,
             jobname = "{}.{{rulename}}.{{jobid}}.sh".format(__title__),
             unlock = args.unlock,
+            latency_wait = args.latency_wait,
             #debug_dag = args.debug_dag,
             )
 
