@@ -128,6 +128,7 @@ def create_bam(
     ref_fasta,
     probes_dict,
     output,
+    has_trimmed_primers = True,
     debug = False
 ):
     """
@@ -192,8 +193,14 @@ def create_bam(
 
                     read_lens = [ len(read_pair[read_number][1]) for read_number in range(2) ]
 
-                    probe_start = probes_dict['target_start_0'][read_probe] + 1
-                    probe_end = probes_dict['target_end'][read_probe]
+                    #untested: if we haven't trimmed off the primers then we need to start aligning from the primer start location!
+                    if has_trimmed_primers:
+                        probe_start = probes_dict['target_start_0'][read_probe] + 1
+                        probe_end = probes_dict['target_end'][read_probe]
+                    else:
+                        probe_start = probes_dict['probe_start_0'][read_probe] + 1
+                        probe_end = probes_dict['probe_end'][read_probe]
+
                     if probes_dict['strand'][read_probe] == '+':
                         read_starts = [ probe_start, probe_end - read_lens[1] + 1 ]
                         read_reverse = [ False, True ]
@@ -207,7 +214,12 @@ def create_bam(
                     #starts CGGA but should start GGA; ends TTC but should end TTCT if we just use probe_start and probe_end
                     #they are always in genomic sense
                     probe_target_sequence = str(ref_idx.fetch(probe_chr, probe_start, probe_end)).upper()
-                    assert len(probe_target_sequence) == probes_dict['target_length'][read_probe]
+
+                    #sanity check that we got the right sequence
+                    if has_trimmed_primers:
+                        assert len(probe_target_sequence) == probes_dict['target_length'][read_probe]
+                    else:
+                        assert len(probe_target_sequence) == probes_dict['capture_size'][read_probe]                        
 
                     if debug:
                         print(read_name, read_probe, read_umi)

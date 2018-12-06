@@ -110,25 +110,25 @@ def aggregate(folder):
     print(outname)
 
 def process_file(
-    design: str,
-    input: str,
-    output: str,
+    probes_path: str,
+    input_path: str,
+    output_path: str,
     min_mapq: int,
     min_consensus_count: int,
     include_primers: bool,
     use_naive_groups: bool,
     ignore_groups: bool,
     ignore_group_mismatch: bool = False,
-    debug: bool = False
+    debug: bool = False,
+    targets_path: str = None,
 ):
     """
     Loop through coordinate-sorted BAM file and collect alignment statistics.
 
     Args:
-        design (str): Path to probes design CSV file
-        input (str): Path to input BAM file
-        output (str): Prefix of output CSV file ('.stats_alignment.csv' will be appended)        
-
+        probes_path (str): Path to probes design CSV file
+        input_path (str): Path to input BAM file
+        output_path (str): Prefix of output CSV file ('.stats_alignment.csv' will be appended)
 
     Output file columns:
 
@@ -156,11 +156,15 @@ def process_file(
     properly since an alignment is only kept in memory until the first matching mate has been found.
     These will be reported as "orphaned mates" at the end of the run.
     """
-    assert design is not None, 'design file missing'
-    assert input is not None, 'input file missing'
-    assert output is not None, 'output file missing'
+    assert input_path is not None, 'input file path missing'
+    assert output_path is not None, 'output file path missing'
 
-    design = read_new_probe_design(design)
+    #if we did not get a design path we can only look at on/off target
+    if probes_path is None or len(probes_path) == 0:
+        assert target_path is not None, 'target file path is missing'
+        #TODO
+
+    design = read_new_probe_design(probes_path)
 
     if include_primers:
         probe_column_start = 'probe_start'
@@ -170,11 +174,11 @@ def process_file(
         probe_column_end = 'target_end'
     log.info('Using columns %s / %s to determine target regions', probe_column_start, probe_column_end)
 
-    log.info('Processing file %s', input)
-    if not os.path.isfile(input):
-        sys.exit('input does not exist: %s' % input)
+    log.info('Processing file %s', input_path)
+    if not os.path.isfile(input_path):
+        sys.exit('input does not exist: %s' % input_path)
 
-    with pysam.AlignmentFile(input, "rb") as samfile:
+    with pysam.AlignmentFile(input_path, "rb") as samfile:
         t_shown = t_start = time.time()
 
         reads = collections.defaultdict(dict)
@@ -508,7 +512,7 @@ def process_file(
         if debug:
             print(df)
         else:
-            outname = output + '.stats_alignment.csv'
+            outname = output_path
             df.to_csv(outname, index=True)
             print(outname)
 
@@ -521,7 +525,7 @@ def main():
     parser.add_argument("--aggregate", help="folder with processed CSV files to aggregate")
     parser.add_argument("-d", "--design", help="CSV file with probes, arms sequences and locations")
     parser.add_argument("-i", "--input", help="input bam file name")
-    parser.add_argument("-o", "--output", help="output file prefix")
+    parser.add_argument("-o", "--output", help="output file prefix + '.stats_alignment.csv'")
     parser.add_argument("--use-naive-groups", help="use UMIs from um tag instead of UG tags", action='store_true')
     parser.add_argument("--ignore-groups", help="ignore the UMI group entirely", action='store_true')
     parser.add_argument("--ignore-group-mismatch", help="ignore group mismatches (to deal with old alignments that have separate UMIs)", action='store_true')
@@ -535,7 +539,7 @@ def main():
     if args.aggregate:
         aggregate(args.aggregate)
     else:
-        process_file(args.design, args.input, args.output,
+        process_file(args.design, args.input, args.output + '.stats_alignment.csv',
             args.min_mapq, args.min_consensus_count,
             args.include_primers, args.use_naive_groups, args.ignore_groups,
             args.ignore_group_mismatch,

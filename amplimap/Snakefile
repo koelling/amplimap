@@ -1,15 +1,29 @@
+# -*- coding: utf-8 -*-
+"""
+amplimap's ``Snakefile`` is used by the ``amplimap`` command-line executable
+to determine the shell commands and library functions to execute to generate a given file.
+Each "rule" in this file either executes a shell command (eg. running ``bwa``),
+executes a small set of Python commands or calls a function from the amplimap Python package.
+
+When running this manually set ``config['general']['amplimap_parent_dir']`` to specify the
+directory to load amplimap from, otherwise the amplimap package installed system-wide will be used.
+"""
+
 import os, shutil, sys
 
 #make sure we can import amplimap, and we are using the correct path
-#by adding it to the beginning of sys.path
-sys.path.insert(0, config['general']['amplimap_parent_dir'])
+#by adding it to the beginning of sys.path (but fall back on default if we don't have it)
+try:
+    sys.path.insert(0, config['general']['amplimap_parent_dir'])
+except KeyError:
+    sys.stderr.write('Failed to add exact amplimap directory to Python path, using system version of amplimap.\n')
 
 #version and title
 from amplimap.version import __title__, __version__
 
 #list of rules that don't run on the cluster
 localrules: all, \
-    start_analysis, check_python_packages, check_test_variant, check_target_overlaps, check_sample_info, \
+    start_analysis, check_test_variant, \
     copy_probes, copy_snps, copy_targets_bed, convert_targets_csv,
     link_tagged_bais_1, link_tagged_bais_2, link_tagged_bams, link_unmapped_bams, \
     convert_mipgen_probes, convert_heatseq_probes, \
@@ -147,43 +161,6 @@ rule start_analysis:
         import amplimap.reader
         with open(output['file_hashes'], 'w') as f:
             yaml.dump(amplimap.reader.get_file_hashes(), f, default_flow_style=False)
-
-rule check_python_packages:
-    input:
-        rules.start_analysis.output
-    output:
-        touch("checks/check_python_packages.done")
-    run:
-        import numpy
-        import pdb
-        import Bio
-        import pandas
-        import argparse
-        import interlap
-        import pysam, pyfaidx, distance
-        import umi_tools
-        print('Python libraries checked.')
-
-#DEPRECATED: we now always check for overlaps in run.py so this is no longer required
-rule check_target_overlaps:
-    input:
-        targets = "{analysis_dir}/targets.bed"
-    output:
-        touch("{analysis_dir}/checks/check_target_overlaps.done")
-    run:
-        import amplimap.reader
-        amplimap.reader.read_targets(input['targets'], check_overlaps=True, reference_type = 'genome', file_type = 'bed')
-        print(input['targets'], 'checked for overlaps.')
-
-rule check_sample_info:
-    input:
-        rules.start_analysis.output,
-        sample_info = "sample_info.csv",
-    output:
-        touch("{analysis_dir}/checks/check_sample_info.done")
-    run:
-        import amplimap.reader
-        amplimap.reader.read_sample_info(input['sample_info'])
     
 ##### target rules
 rule coverages:
@@ -364,7 +341,13 @@ rule tool_version:
                         )
                     )
             else:
-                pass #we succeeded
+                #check that we actually got the right version
+                if tool_name == 'bedtools':
+                    pass #TODO: should check that we have at least v2.24.0, since the interface for bedtools coverage changed
+                elif tool_name == 'picard':
+                    pass #TODO: should we require v2+?
+                else:
+                    pass #we succeeded
 
 
 ##### TARGET CONVERSION
@@ -890,6 +873,7 @@ rule align_pe:
                 my_index,
                 probes_dict,
                 output[0]+"__unsorted",
+                has_trimmed_primers = config['parse_reads']['trim_primers'],
                 debug = False
             )
 
@@ -1070,15 +1054,16 @@ rule stats_alignment:
     input:
         "{analysis_dir}/bams/{sample_full}.bam",
         "{analysis_dir}/bams/{sample_full}.bam.bai",
-        probes = "{analysis_dir}/probes.csv"
+        probes = "{analysis_dir}/probes.csv",
     output:
         "{analysis_dir}/stats_alignment/{sample_full}.stats_alignment.csv"
     run:
         import amplimap.stats_alignment
         amplimap.stats_alignment.process_file(
-            design = input['probes'],
-            input = input[0],
-            output = "{}/stats_alignment/{}".format(wildcards['analysis_dir'], wildcards['sample_full']),
+            probes_path = input['probes'],
+            #targets_path = input['targets'],
+            input_path = input[0],
+            output_path = output[0],
             min_mapq = config['pileup']['min_mapq'],
             min_consensus_count = config['general']['umi_min_consensus_count'],
             include_primers = not config['parse_reads']['trim_primers'],

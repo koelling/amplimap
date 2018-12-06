@@ -138,7 +138,7 @@ captured, introducing false positives. However, removing them also means
 that only the targeted region in-between the arms will be aligned to the
 genome. This can be problematic if its sequence is not unique, leading
 to off-target alignment and reads with mapping quality 0. To turn off
-primer trimming, specify ``trim_primers: false`` under ``general:``.
+primer trimming, specify ``trim_primers: false`` under ``parse_reads:``.
 
 Quality trimming of reads
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
