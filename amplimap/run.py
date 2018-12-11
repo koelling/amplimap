@@ -349,8 +349,9 @@ def main(argv = None):
             unlock = args.unlock,
             latency_wait = args.latency_wait,
             #debug_dag = args.debug_dag,
-            )
+        )
 
+        sys.stderr.write('\n===============================================\n\n')
         if success:
             if args.unlock:
                 sys.stderr.write('Unlocked working directory. Run without --unlock to start.\n')
@@ -361,7 +362,9 @@ def main(argv = None):
             return 0
         else:
             if args.cluster:
-                sys.stderr.write('{} {} failed! Please see output above or cluster logs for details.\n'.format(__title__,  __version__))
+                sys.stderr.write('{} {} failed! Please see output above or the cluster log files for details.\n'.format(__title__,  __version__))
+                sys.stderr.write('\nFor details on how to find the correct cluster log file for a failed job, see: https://amplimap.readthedocs.io/en/latest/usage.html#cluster-log-files\n')
+                sys.stderr.write('You can also try to run amplimap without the cluster parameter to see the error message.\n')
             else:
                 sys.stderr.write('{} {} failed! Please see output above for details.\n'.format(__title__,  __version__))
 
