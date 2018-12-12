@@ -3,7 +3,7 @@ Advanced usage
 
 .. _running-capture:
 
-Ignoring UMI groups
+Ignoring read families (UMI groups)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Even when your reads contain unique molecular identifiers (UMIs) you
 may want to ignore them to perform a pileup on the raw reads.

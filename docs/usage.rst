@@ -243,7 +243,7 @@ pipeline by adding the ``--run`` parameter:
 This will go through the first few steps of the pipeline but will not
 run the more advanced analysis-specific parts.
 
-To run these additional steps, you need to add so-called *target
+To run these additional analyses, you need to add so-called *target
 rules* to the ``amplimap`` command line. Some of these are listed below.
 
 
@@ -327,14 +327,15 @@ This function is still experimental and has not been thoroughly tested.
 Its output will be available in the ``variants_low_frequency/`` directory 
 
 
-Multiple targets
-~~~~~~~~~~~~~~~~
+Multiple analyses
+~~~~~~~~~~~~~~~~~~~
 
-You can also group together multiple *target rules*:
+You can also group together multiple *target rules* to run several analyses at once:
 
 ::
 
     amplimap pileups variants coverages
+
 
 Running on a cluster
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -378,12 +379,14 @@ but they should usually be called "amplimap.RULENAME.JOBID.sh.oCLUSTERID"
 where RULENAME is the name of the amplimap rule that failed, JOBID is its
 ID and CLUSTERID is an additional ID that has been assigned by the cluster.
 By default these log files will be placed in a folder called ``cluster_log``.
+
 For example, if you see an error message like this:
 
 ::
-
+    (...)
     Error in rule tool_version:
         jobid: 9
+        (...)
 
 Then you can find the error message in the log file that starts with
 ``cluster_log/amplimap.tool_version.9.sh.o`` followed by a number.
@@ -450,14 +453,14 @@ Low-frequency variation analysis: ``pileups``
 
 -  ``pileups/``: target region pileup tables
 
-   -  per-basepair pileups based on UMI groups:
+   -  per-basepair pileups for all positions and all samples:
       ``pileups/pileups_long.csv``
-   -  coverage of UMI groups over target regions:
+   -  coverage over target regions:
       ``pileups/target_coverage.csv``
 
 -  ``pileups_snps/``: SNP pileup tables (optional, requires ``snps.txt``)
 
-   -  per-SNP pileups based on UMI groups:
+   -  per-SNP pileups:
       ``pileups_snps/target_snps_pileups_long.csv``
 
 Additional output
@@ -465,5 +468,5 @@ Additional output
 
 In addition to the ``analysis`` directory, these folders may be created:
 
--  ``cluster_logs/``: directory with log files for each job submitted to
+-  ``cluster_log/``: directory with log files for each job submitted to
    the cluster (contain error messages if cluster submission fails)
