@@ -24,7 +24,7 @@ amplimap approach of identifying probes based on primer sequences no
 longer applies.
 
 However, amplimap can still produce pileups and variant calls
-using unmapped bam files as input.
+using your raw FASTQ or unmapped BAM (uBAM) files as input.
 
 To run this, create a working directory containing the
 ``targets.bed`` or ``targets.csv`` file as usual, as well as a
@@ -35,11 +35,14 @@ To run this, create a working directory containing the
     general:
       use_raw_reads: true
 
-Then, create a subdirectory called ``unmapped_bams_in`` inside your
-working directory and place your unmapped .bam files
+If you have gzipped FASTQ files without UMIs, put them in the :ref:`reads-in` directory as usual.
+
+If you have BAM files with unmapped reads, do not create a ``reads_in`` directory
+but instead create a subdirectory called ``unmapped_bams_in`` inside your
+working directory. Place your unmapped .bam files
 there (see also :ref:`unmapped-bams`).
-If you have UMIs, these should be provided in the bam file
-using BAM tag and the corresponding tag should be given in the config file, eg.:
+If your reads have UMIs, these should be provided in the bam file
+as a BAM tag and the name of the corresponding tag should be given in the config file, eg.:
 
 ::
 
