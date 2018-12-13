@@ -34,8 +34,8 @@ localrules: all, \
 if os.path.isdir('bams_in'):
     SAMPLES, = glob_wildcards("bams_in/{sample_full}.bam")
     config['general']['lanes_actual'] = 1
-elif os.path.isdir('tagged_bams_in'):
-    SAMPLES, = glob_wildcards("tagged_bams_in/{sample_full}.bam")
+elif os.path.isdir('mapped_bams_in'):
+    SAMPLES, = glob_wildcards("mapped_bams_in/{sample_full}.bam")
     config['general']['lanes_actual'] = 1
 elif os.path.isdir('unmapped_bams_in'):
     SAMPLES, = glob_wildcards("unmapped_bams_in/{sample_full}.bam")
@@ -562,18 +562,40 @@ rule merge_raw_reads:
 ##### TAGGED, ALIGNED BAMS
 rule link_tagged_bams:
     input:
-        "tagged_bams_in/{sample_full}.bam",
+        "mapped_bams_in/{sample_full}.bam",
         config_check = rules.start_analysis.output
     output:
         "{analysis_dir}/bams/{sample_full}.bam",
+        #note that we only provide stats_samples if we actually have use_raw_reads set, otherwise we might accidentally use this rule instead of parse_reads
+        stats_samples = "{analysis_dir}/reads_parsed/stats_samples__sample_{sample_full}.csv" if config['general']['use_raw_reads'] else [],
     run:
         import os
         #could use os.path.abspath() here, but then we can't move working directory without breaking things
         os.symlink(os.path.join("..", "..", input[0]), output[0])
 
+        #count reads (same as for unmapped_bam_to_fastqs)
+        n_alignments = 0
+        import pysam
+        #need check_sq=False to handle unmapped file
+        with pysam.AlignmentFile(input[0], "rb", check_sq=False) as bam:
+            n_alignments = bam.count(until_eof=True)
+
+        #align_pe rule expects stats_samples.csv, which is made from per-sample stats_samples.csv
+        #we will just fake this for now
+        import amplimap.parse_reads
+        amplimap.parse_reads.output_stats_samples(output['stats_samples'], {
+            'sample': [wildcards['sample_full']],
+            'files': [1],
+            'pairs_total': [n_alignments//2],
+            'pairs_unknown_arms': [0],
+            'pairs_good_arms': [n_alignments//2],
+            'pairs_r1_too_short': [0],
+            'pairs_r2_too_short': [0]
+        })
+
 rule link_tagged_bais_1:
     input:
-        "tagged_bams_in/{sample_full}.bam.bai",
+        "mapped_bams_in/{sample_full}.bam.bai",
     output:
         "{analysis_dir}/bams/{sample_full}.bam.bai",
     run:
@@ -583,7 +605,7 @@ rule link_tagged_bais_1:
 
 rule link_tagged_bais_2:
     input:
-        "tagged_bams_in/{sample_full}.bai",
+        "mapped_bams_in/{sample_full}.bai",
     output:
         "{analysis_dir}/bams/{sample_full}.bam.bai",
     run:
