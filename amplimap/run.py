@@ -176,7 +176,7 @@ def main(argv = None):
 
         #check for one (and only one) input directory
         input_directory_count = 0
-        input_directories = ['reads_in', 'unmapped_bams_in', 'tagged_bams_in', 'bams_in']
+        input_directories = ['reads_in', 'unmapped_bams_in', 'mapped_bams_in', 'bams_in']
         for input_name in input_directories:
             if os.path.isdir(os.path.join(args.working_directory, input_name)):
                 input_directory_count += 1

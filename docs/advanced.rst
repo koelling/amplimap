@@ -23,26 +23,34 @@ target regions, which do not contain any primer sequences. Thus, the normal
 amplimap approach of identifying probes based on primer sequences no
 longer applies.
 
+This means that some features of amplimap, such as the trimming of primer sequences
+or low quality bases and the detection of off-target capture events will not work.
+
 However, amplimap can still produce pileups and variant calls
 using your raw FASTQ or unmapped BAM (uBAM) files as input.
 
 To run this, create a working directory containing the
 ``targets.bed`` or ``targets.csv`` file as usual, as well as a
-``config.yaml`` file containing at least these settings:
+``config.yaml`` file containing at least this setting:
 
 ::
 
     general:
       use_raw_reads: true
 
-If you have gzipped FASTQ files without UMIs, put them in the :ref:`reads-in` directory as usual.
+Then, if you have gzipped FASTQ files without UMIs, put them in the :ref:`reads-in` directory as
+you normally would.
 
 If you have BAM files with unmapped reads, do not create a ``reads_in`` directory
 but instead create a subdirectory called ``unmapped_bams_in`` inside your
 working directory. Place your unmapped .bam files
 there (see also :ref:`unmapped-bams`).
-If your reads have UMIs, these should be provided in the bam file
-as a BAM tag and the name of the corresponding tag should be given in the config file, eg.:
+
+If you have a BAM file with reads that have already been mapped to the genome,
+you can put these into a directory called ``mapped_bams_in`` instead.
+
+If your reads have UMIs, these should be provided in the BAM file
+as a tag, the name of which should be given in the config file, eg.:
 
 ::
 

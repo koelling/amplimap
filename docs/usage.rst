@@ -60,8 +60,12 @@ specify the name of this tag in the config file.
 
 See also :ref:`running-capture` for more details and examples.
 
-If you run amplimap with unmapped BAM files, probes can no longer be identified
+When running amplimap with capture-based data probes can no longer be identified
 based on the primer arms. Thus, some of the output files can not be generated.
+
+If your BAM files have already been mapped (aligned) you can also put
+them into a directory called ``mapped_bams_in/`` instead, which will skip the
+alignment step inside amplimap.
 
 .. _probes-csv:
 
