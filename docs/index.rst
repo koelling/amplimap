@@ -40,7 +40,7 @@ For amplification-based protocols each read should start with a known primer seq
 Reads can optionally contain a unique molecular identifier (UMI) sequence in front of the primer, which can be used to group reads into families.
 Data should be available as demultiplexed FASTQ.GZ files, with each pair of files representing a different sample.
 
-For captured-based protocols data can be provided in FASTQ.GZ or unmapped/mapped BAM format, which may contain UMIs as BAM tags.
+For capture-based protocols data can be provided in FASTQ.GZ or unmapped/mapped BAM format, which may contain UMIs as BAM tags.
 See :ref:`running-capture` for details.
 
 Some of the protocols we have analyzed with amplimap include:
