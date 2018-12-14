@@ -32,8 +32,8 @@ Built on top of `Snakemake <https://snakemake.readthedocs.io/>`_ and Python 3, a
 automated and can be run on a single machine as well as on a HPC cluster
 (eg. LSF, SGE).
 
-Experimental protocols
-------------------------
+Supported experimental protocols
+---------------------------------
 amplimap is compatible with most targeted sequencing protocols that generate paired-end short read data.
 
 For protocols utilising PCR or smMIPs each read should start with a known primer (or targeting arm) sequence, followed by the amplified target DNA.
