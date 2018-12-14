@@ -175,11 +175,13 @@ def main(argv = None):
         assert os.path.isdir(args.working_directory), 'working directory does not exist'
 
         #check for one (and only one) input directory
+        input_directory = None
         input_directory_count = 0
         input_directories = ['reads_in', 'unmapped_bams_in', 'mapped_bams_in', 'bams_in']
         for input_name in input_directories:
             if os.path.isdir(os.path.join(args.working_directory, input_name)):
                 input_directory_count += 1
+                input_directory = input_name
         if input_directory_count < 1:
             raise Exception(
                 'An input directory (one of: %s) needs to exist. Please see the documentation for the appropriate directory to use and place your sequencing data there.'
@@ -190,6 +192,13 @@ def main(argv = None):
                 'More than one of the possible input directories (%s) exists. Please only provide a single input directory with all your data.'
                 % (', '.join(input_directories))
             )
+
+        if input_directory in ['unmapped_bams_in', 'mapped_bams_in']:
+            if not config['general']['use_raw_reads']:
+                raise Exception(
+                    'general: use_raw_reads needs to be set to true when using %s for input.
+                    % (input_directory)
+                )
 
         #check some basic settings
         aligners = ['naive', 'bwa', 'bowtie2', 'star'] #allowed values for the aligner
