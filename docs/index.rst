@@ -36,8 +36,8 @@ Experimental protocols
 -------------------
 amplimap is compatible with most targeted sequencing protocols that generate paired-end short read data.
 
-For amplification-based protocols each read should start with a known primer sequence, followed by the amplified target DNA.
-Reads can optionally contain a unique molecular identifier (UMI) sequence in front of the primer, which can be used to group reads into families.
+For protocols utilising PCR or smMIPs each read should start with a known primer (or targeting arm) sequence, followed by the amplified target DNA.
+Reads can optionally contain a unique molecular identifier (UMI) sequence in front of the primer/arm, which can be used to group reads into families.
 Data should be available as demultiplexed FASTQ.GZ files, with each pair of files representing a different sample.
 
 For capture-based protocols data can be provided in FASTQ.GZ or unmapped/mapped BAM format, which may contain UMIs as BAM tags.
