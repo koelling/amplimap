@@ -45,7 +45,7 @@ See :ref:`running-capture` for details.
 
 Some of the protocols we have analyzed with amplimap include:
 
-- [Multiplex] PCR-based targeted resequencing
+- PCR-based targeted resequencing (single/multiplex)
 - `smMIPs with and without UMIs <https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3638140/>`_
 - Probe based target enrichment, for example:
    + `IDT xGen Lockdown probes <https://www.idtdna.com/pages/products/next-generation-sequencing/hybridization-capture/custom-probes-panels/xgen-lockdown-probes>`_
