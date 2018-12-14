@@ -1,3 +1,5 @@
+.. _usage:
+
 Input and the working directory
 -------------------------------
 For each experiment (for example each sequencing run), you need to create a working directory

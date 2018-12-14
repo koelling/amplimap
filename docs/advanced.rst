@@ -1,8 +1,6 @@
 Advanced usage
 ---------------
 
-.. _running-capture:
-
 Ignoring read families (UMI groups)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Even when your reads contain unique molecular identifiers (UMIs) you
@@ -14,6 +12,7 @@ To do this, set ``ignore_umis: true`` under ``general:``
     general:
       ignore_umis: true
 
+.. _running-capture:
 
 Running on capture-based data
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
