@@ -494,240 +494,244 @@ rule mask_genome_index_star:
         """ % (load_module_command('star', config))
 
 ##### RAW BAM CONVERSION
-rule bam_to_fastq:
-    input:
-        "bams_in/{sample_full}.bam",
-    output:
-        r1 = "reads_in/{sample_full}_L001_R1_001.fastq.gz",
-        r2 = "reads_in/{sample_full}_L001_R2_001.fastq.gz",
-    run:
-        shell("%s bedtools bamtofastq -i {input[0]:q} -fq {output[r1]:q} -fq2 {output[r2]:q}" % load_module_command('bedtools', config))   
-
+if os.path.isdir('bams_in'):
+    rule bam_to_fastq:
+        input:
+            "bams_in/{sample_full}.bam",
+        output:
+            r1 = "reads_in/{sample_full}_L001_R1_001.fastq.gz",
+            r2 = "reads_in/{sample_full}_L001_R2_001.fastq.gz",
+        run:
+            shell("%s bedtools bamtofastq -i {input[0]:q} -fq {output[r1]:q} -fq2 {output[r2]:q}" % load_module_command('bedtools', config))   
 
 ##### MERGE RAW READS 
-rule merge_raw_reads:
-    input:
-        r1 = ["{analysis_dir}/reads_in/{sample_full}_L%03d_R1_001.fastq.gz" % (lane+1) for lane in range(config['general']['lanes_actual'])],
-        r2 = ["{analysis_dir}/reads_in/{sample_full}_L%03d_R2_001.fastq.gz" % (lane+1) for lane in range(config['general']['lanes_actual'])],
-        config_check = rules.start_analysis.output #make sure we copied the config we used
-    output:
-        r1 = "{analysis_dir}/reads_merged/{sample_full}__MERGED__R1_001.fastq.gz",
-        r2 = "{analysis_dir}/reads_merged/{sample_full}__MERGED__R2_001.fastq.gz",
-        #note that we only provide stats_samples if we actually have use_raw_reads set, otherwise we might accidentally use this rule instead of parse_reads
-        stats_samples = "{analysis_dir}/reads_parsed/stats_samples__sample_{sample_full}.csv" if config['general']['use_raw_reads'] else [],
-    run:
-        import os
-        assert len(input['r1']) == len(input['r2'])
+if os.path.isdir('reads_in') and config['general']['use_raw_reads']:
+    rule merge_raw_reads:
+        input:
+            r1 = ["{analysis_dir}/reads_in/{sample_full}_L%03d_R1_001.fastq.gz" % (lane+1) for lane in range(config['general']['lanes_actual'])],
+            r2 = ["{analysis_dir}/reads_in/{sample_full}_L%03d_R2_001.fastq.gz" % (lane+1) for lane in range(config['general']['lanes_actual'])],
+            config_check = rules.start_analysis.output #make sure we copied the config we used
+        output:
+            r1 = "{analysis_dir}/reads_merged/{sample_full}__MERGED__R1_001.fastq.gz",
+            r2 = "{analysis_dir}/reads_merged/{sample_full}__MERGED__R2_001.fastq.gz",
+            #note that we only provide stats_samples if we actually have use_raw_reads set, otherwise we might accidentally use this rule instead of parse_reads
+            stats_samples = "{analysis_dir}/reads_parsed/stats_samples__sample_{sample_full}.csv" if config['general']['use_raw_reads'] else [],
+        run:
+            import os
+            assert len(input['r1']) == len(input['r2'])
 
-        n_files = len(input['r1'])
+            n_files = len(input['r1'])
 
-        for read_number in ['r1', 'r2']:
-            if n_files == 1:
-                #we don't actually need to merge, just symlink
-                os.symlink(os.path.join("..", input[read_number][0]), output[read_number])
-            else:
-                #merge files
-                with open(output[read_number], 'wb') as wfd:
-                    for f in input[read_number]:
-                        with open(f, 'rb') as fd:
-                            #use shutil to copy 10MB chunks at a time
-                            shutil.copyfileobj(fd, wfd, 1024*1024*10)
+            for read_number in ['r1', 'r2']:
+                if n_files == 1:
+                    #we don't actually need to merge, just symlink
+                    os.symlink(os.path.join("..", input[read_number][0]), output[read_number])
+                else:
+                    #merge files
+                    with open(output[read_number], 'wb') as wfd:
+                        for f in input[read_number]:
+                            with open(f, 'rb') as fd:
+                                #use shutil to copy 10MB chunks at a time
+                                shutil.copyfileobj(fd, wfd, 1024*1024*10)
 
-        #count reads by looping through (merged) R1 file
-        import gzip
-        opener = gzip.open if output['r1'].endswith('.gz') else open
-        n_fastq_lines = -1
-        with opener(output['r1'], 'rt') as fmerged:
-            for n_fastq_lines, _ in enumerate(fmerged):
-                pass
-        n_fastq_lines += 1
+            #count reads by looping through (merged) R1 file
+            import gzip
+            opener = gzip.open if output['r1'].endswith('.gz') else open
+            n_fastq_lines = -1
+            with opener(output['r1'], 'rt') as fmerged:
+                for n_fastq_lines, _ in enumerate(fmerged):
+                    pass
+            n_fastq_lines += 1
 
-        #we should have four lines per read
-        assert n_fastq_lines % 4 == 0, 'encountered fastq file with %d lines, which is not a multiple of four' % (n_fastq_lines)
-        n_pairs = int(n_fastq_lines // 4)
+            #we should have four lines per read
+            assert n_fastq_lines % 4 == 0, 'encountered fastq file with %d lines, which is not a multiple of four' % (n_fastq_lines)
+            n_pairs = int(n_fastq_lines // 4)
 
-        #align_pe rule expects stats_samples.csv, which is made from per-sample stats_samples.csv
-        #we will just fake this for now
-        import amplimap.parse_reads
-        amplimap.parse_reads.output_stats_samples(output['stats_samples'], {
-            'sample': [wildcards['sample_full']],
-            'files': [n_files],
-            'pairs_total': [n_pairs],
-            'pairs_unknown_arms': [0],
-            'pairs_good_arms': [n_pairs],
-            'pairs_r1_too_short': [0],
-            'pairs_r2_too_short': [0]
-        })
+            #align_pe rule expects stats_samples.csv, which is made from per-sample stats_samples.csv
+            #we will just fake this for now
+            import amplimap.parse_reads
+            amplimap.parse_reads.output_stats_samples(output['stats_samples'], {
+                'sample': [wildcards['sample_full']],
+                'files': [n_files],
+                'pairs_total': [n_pairs],
+                'pairs_unknown_arms': [0],
+                'pairs_good_arms': [n_pairs],
+                'pairs_r1_too_short': [0],
+                'pairs_r2_too_short': [0]
+            })
 
 ##### TAGGED, ALIGNED BAMS
-rule link_tagged_bams:
-    input:
-        "mapped_bams_in/{sample_full}.bam",
-        config_check = rules.start_analysis.output
-    output:
-        "{analysis_dir}/bams/{sample_full}.bam",
-        #note that we only provide stats_samples if we actually have use_raw_reads set, otherwise we might accidentally use this rule instead of parse_reads
-        stats_samples = "{analysis_dir}/reads_parsed/stats_samples__sample_{sample_full}.csv" if config['general']['use_raw_reads'] else [],
-    run:
-        import os
-        #could use os.path.abspath() here, but then we can't move working directory without breaking things
-        os.symlink(os.path.join("..", "..", input[0]), output[0])
+if os.path.isdir('mapped_bams_in'):
+    rule link_tagged_bams:
+        input:
+            "mapped_bams_in/{sample_full}.bam",
+            config_check = rules.start_analysis.output
+        output:
+            "{analysis_dir}/bams/{sample_full}.bam",
+            #note that we only provide stats_samples if we actually have use_raw_reads set, otherwise we might accidentally use this rule instead of parse_reads
+            stats_samples = "{analysis_dir}/reads_parsed/stats_samples__sample_{sample_full}.csv" if config['general']['use_raw_reads'] else [],
+        run:
+            import os
+            #could use os.path.abspath() here, but then we can't move working directory without breaking things
+            os.symlink(os.path.join("..", "..", input[0]), output[0])
 
-        #count reads (same as for unmapped_bam_to_fastqs)
-        n_alignments = 0
-        import pysam
-        #need check_sq=False to handle unmapped file
-        with pysam.AlignmentFile(input[0], "rb", check_sq=False) as bam:
-            n_alignments = bam.count(until_eof=True)
+            #count reads (same as for unmapped_bam_to_fastqs)
+            n_alignments = 0
+            import pysam
+            #need check_sq=False to handle unmapped file
+            with pysam.AlignmentFile(input[0], "rb", check_sq=False) as bam:
+                n_alignments = bam.count(until_eof=True)
 
-        #align_pe rule expects stats_samples.csv, which is made from per-sample stats_samples.csv
-        #we will just fake this for now
-        import amplimap.parse_reads
-        amplimap.parse_reads.output_stats_samples(output['stats_samples'], {
-            'sample': [wildcards['sample_full']],
-            'files': [1],
-            'pairs_total': [n_alignments//2],
-            'pairs_unknown_arms': [0],
-            'pairs_good_arms': [n_alignments//2],
-            'pairs_r1_too_short': [0],
-            'pairs_r2_too_short': [0]
-        })
+            #align_pe rule expects stats_samples.csv, which is made from per-sample stats_samples.csv
+            #we will just fake this for now
+            import amplimap.parse_reads
+            amplimap.parse_reads.output_stats_samples(output['stats_samples'], {
+                'sample': [wildcards['sample_full']],
+                'files': [1],
+                'pairs_total': [n_alignments//2],
+                'pairs_unknown_arms': [0],
+                'pairs_good_arms': [n_alignments//2],
+                'pairs_r1_too_short': [0],
+                'pairs_r2_too_short': [0]
+            })
 
-rule link_tagged_bais_1:
-    input:
-        "mapped_bams_in/{sample_full}.bam.bai",
-    output:
-        "{analysis_dir}/bams/{sample_full}.bam.bai",
-    run:
-        import os
-        #could use os.path.abspath() here, but then we can't move working directory without breaking things
-        os.symlink(os.path.join("..", "..", input[0]), output[0])
+    rule link_tagged_bais_1:
+        input:
+            "mapped_bams_in/{sample_full}.bam.bai",
+        output:
+            "{analysis_dir}/bams/{sample_full}.bam.bai",
+        run:
+            import os
+            #could use os.path.abspath() here, but then we can't move working directory without breaking things
+            os.symlink(os.path.join("..", "..", input[0]), output[0])
 
-rule link_tagged_bais_2:
-    input:
-        "mapped_bams_in/{sample_full}.bai",
-    output:
-        "{analysis_dir}/bams/{sample_full}.bam.bai",
-    run:
-        import os
-        #could use os.path.abspath() here, but then we can't move working directory without breaking things
-        os.symlink(os.path.join("..", "..", input[0]), output[0])
+    rule link_tagged_bais_2:
+        input:
+            "mapped_bams_in/{sample_full}.bai",
+        output:
+            "{analysis_dir}/bams/{sample_full}.bam.bai",
+        run:
+            import os
+            #could use os.path.abspath() here, but then we can't move working directory without breaking things
+            os.symlink(os.path.join("..", "..", input[0]), output[0])
 
 ##### IDT INPUT
-rule link_unmapped_bams:
-    input:
-        "unmapped_bams_in/{sample_full}.bam",
-        config_check = rules.start_analysis.output
-    output:
-        "{analysis_dir}/bams_unmapped/{sample_full}.bam",
-    run:
-        import os
-        #could use os.path.abspath() here, but then we can't move working directory without breaking things
-        os.symlink(os.path.join("..", "..", input[0]), output[0])
+if os.path.isdir('unmapped_bams_in'):
+    rule link_unmapped_bams:
+        input:
+            "unmapped_bams_in/{sample_full}.bam",
+            config_check = rules.start_analysis.output
+        output:
+            "{analysis_dir}/bams_unmapped/{sample_full}.bam",
+        run:
+            import os
+            #could use os.path.abspath() here, but then we can't move working directory without breaking things
+            os.symlink(os.path.join("..", "..", input[0]), output[0])
 
-rule unmapped_bam_to_fastqs:
-    input:
-        "{analysis_dir}/bams_unmapped/{sample_full}.bam",
-        "{analysis_dir}/versions/picard.txt",
-    output:
-        "{analysis_dir}/reads_merged/{sample_full}.UNTAGGED__MERGED__R1_001.fastq.gz",
-        "{analysis_dir}/reads_merged/{sample_full}.UNTAGGED__MERGED__R2_001.fastq.gz",
-        #note that we only provide stats_samples if we actually have use_raw_reads set, otherwise we might accidentally use this rule instead of parse_reads
-        stats_samples = "{analysis_dir}/reads_parsed/stats_samples__sample_{sample_full}.csv" if config['general']['use_raw_reads'] else [],
-    run:
-        shell("""
-            %s
-            SamToFastq \
-                INPUT={input[0]:q} \
-                FASTQ={output[0]:q} \
-                SECOND_END_FASTQ={output[1]:q} \
-                INCLUDE_NON_PF_READS=false \
-                CLIPPING_ATTRIBUTE=XT \
-                CLIPPING_ACTION=X \
-                CLIPPING_MIN_LENGTH=10 \
-            ;
-        """ % load_module_command('picard', config))
+    rule unmapped_bam_to_fastqs:
+        input:
+            "{analysis_dir}/bams_unmapped/{sample_full}.bam",
+            "{analysis_dir}/versions/picard.txt",
+        output:
+            "{analysis_dir}/reads_merged/{sample_full}.UNTAGGED__MERGED__R1_001.fastq.gz",
+            "{analysis_dir}/reads_merged/{sample_full}.UNTAGGED__MERGED__R2_001.fastq.gz",
+            #note that we only provide stats_samples if we actually have use_raw_reads set, otherwise we might accidentally use this rule instead of parse_reads
+            stats_samples = "{analysis_dir}/reads_parsed/stats_samples__sample_{sample_full}.csv" if config['general']['use_raw_reads'] else [],
+        run:
+            shell("""
+                %s
+                SamToFastq \
+                    INPUT={input[0]:q} \
+                    FASTQ={output[0]:q} \
+                    SECOND_END_FASTQ={output[1]:q} \
+                    INCLUDE_NON_PF_READS=false \
+                    CLIPPING_ATTRIBUTE=XT \
+                    CLIPPING_ACTION=X \
+                    CLIPPING_MIN_LENGTH=10 \
+                ;
+            """ % load_module_command('picard', config))
 
-        #count reads
-        n_alignments = 0
-        import pysam
-        #need check_sq=False to handle unmapped file
-        with pysam.AlignmentFile(input[0], "rb", check_sq=False) as bam:
-            n_alignments = bam.count(until_eof=True)
+            #count reads
+            n_alignments = 0
+            import pysam
+            #need check_sq=False to handle unmapped file
+            with pysam.AlignmentFile(input[0], "rb", check_sq=False) as bam:
+                n_alignments = bam.count(until_eof=True)
 
-        #align_pe rule expects stats_samples.csv, which is made from per-sample stats_samples.csv
-        #we will just fake this for now
-        import amplimap.parse_reads
-        amplimap.parse_reads.output_stats_samples(output['stats_samples'], {
-            'sample': [wildcards['sample_full']],
-            'files': [1],
-            'pairs_total': [n_alignments//2],
-            'pairs_unknown_arms': [0],
-            'pairs_good_arms': [n_alignments//2],
-            'pairs_r1_too_short': [0],
-            'pairs_r2_too_short': [0]
-        })
+            #align_pe rule expects stats_samples.csv, which is made from per-sample stats_samples.csv
+            #we will just fake this for now
+            import amplimap.parse_reads
+            amplimap.parse_reads.output_stats_samples(output['stats_samples'], {
+                'sample': [wildcards['sample_full']],
+                'files': [1],
+                'pairs_total': [n_alignments//2],
+                'pairs_unknown_arms': [0],
+                'pairs_good_arms': [n_alignments//2],
+                'pairs_r1_too_short': [0],
+                'pairs_r2_too_short': [0]
+            })
 
-rule attach_tags_from_unmapped:
-    input:
-        "{analysis_dir}/bams_unmapped/{sample_full}.bam",
-        #TODO: this uses the normal align_pe rule for the alignment, which includes coordinate sorting
-        #the merge scripts wants queryname sort, but detects and fixes that automatically.
-        #just a bit of a waste...
-        "{analysis_dir}/bams/{sample_full}.UNTAGGED.bam",
-        "{analysis_dir}/bams/{sample_full}.UNTAGGED.bam.bai",
-        "{analysis_dir}/versions/picard.txt",
-        "{analysis_dir}/versions/samtools.txt",
-    output:
-        "{analysis_dir}/bams/{sample_full}.bam",
-        "{analysis_dir}/bams/{sample_full}.bam.bai",
-        temp("{analysis_dir}/bams/{sample_full}.attach_tags_tmp.bam")
-    run:
-        shell("""
-            %s%s
+    rule attach_tags_from_unmapped:
+        input:
+            "{analysis_dir}/bams_unmapped/{sample_full}.bam",
+            #TODO: this uses the normal align_pe rule for the alignment, which includes coordinate sorting
+            #the merge scripts wants queryname sort, but detects and fixes that automatically.
+            #just a bit of a waste...
+            "{analysis_dir}/bams/{sample_full}.UNTAGGED.bam",
+            "{analysis_dir}/bams/{sample_full}.UNTAGGED.bam.bai",
+            "{analysis_dir}/versions/picard.txt",
+            "{analysis_dir}/versions/samtools.txt",
+        output:
+            "{analysis_dir}/bams/{sample_full}.bam",
+            "{analysis_dir}/bams/{sample_full}.bam.bai",
+            temp("{analysis_dir}/bams/{sample_full}.attach_tags_tmp.bam")
+        run:
+            shell("""
+                %s%s
 
-            #attach tags from unmapped bam
-            MergeBamAlignment \
-                ALIGNED={input[1]:q} \
-                UNMAPPED={input[0]:q} \
-                OUTPUT={output[2]:q} \
-                REFERENCE_SEQUENCE="%s" \
-                EXPECTED_ORIENTATIONS=FR \
-                MAX_GAPS=-1 \
-                SORT_ORDER=coordinate \
-                ALIGNER_PROPER_PAIR_FLAGS=false \
-                CLIP_OVERLAPPING_READS=false \
-                VALIDATION_STRINGENCY=LENIENT \
-            ;
+                #attach tags from unmapped bam
+                MergeBamAlignment \
+                    ALIGNED={input[1]:q} \
+                    UNMAPPED={input[0]:q} \
+                    OUTPUT={output[2]:q} \
+                    REFERENCE_SEQUENCE="%s" \
+                    EXPECTED_ORIENTATIONS=FR \
+                    MAX_GAPS=-1 \
+                    SORT_ORDER=coordinate \
+                    ALIGNER_PROPER_PAIR_FLAGS=false \
+                    CLIP_OVERLAPPING_READS=false \
+                    VALIDATION_STRINGENCY=LENIENT \
+                ;
 
-            #fix the read groups, which will otherwise come from unmapped bam
-            #note SILENT stringency to deal with invalid read groups from before
-            #(LENIENT would still spam the logs with errors)
-            AddOrReplaceReadGroups \
-                I={output[2]:q} \
-                O={output[0]:q} \
-                RGID={wildcards.sample_full:q} \
-                RGLB={wildcards.sample_full:q} \
-                RGPL=illumina \
-                RGPU={wildcards.sample_full:q} \
-                RGSM={wildcards.sample_full:q} \
-                VALIDATION_STRINGENCY=SILENT \
-            ;
+                #fix the read groups, which will otherwise come from unmapped bam
+                #note SILENT stringency to deal with invalid read groups from before
+                #(LENIENT would still spam the logs with errors)
+                AddOrReplaceReadGroups \
+                    I={output[2]:q} \
+                    O={output[0]:q} \
+                    RGID={wildcards.sample_full:q} \
+                    RGLB={wildcards.sample_full:q} \
+                    RGPL=illumina \
+                    RGPU={wildcards.sample_full:q} \
+                    RGSM={wildcards.sample_full:q} \
+                    VALIDATION_STRINGENCY=SILENT \
+                ;
 
-            samtools index {output[0]:q};
-        """ % (load_module_command('picard', config), load_module_command('samtools', config), get_path('fasta')))
+                samtools index {output[0]:q};
+            """ % (load_module_command('picard', config), load_module_command('samtools', config), get_path('fasta')))
 
 ##### ACTUAL PIPELINE
-rule link_reads:
-    input:
-        "reads_in/{sample_with_lane}_R{read}_001.fastq.gz",
-        config_check = rules.start_analysis.output
-    output:
-        "analysis/reads_in/{sample_with_lane}_R{read}_001.fastq.gz",
-    run:
-        import os
-        #could use os.path.abspath() here, but then we can't move working directory without breaking things
-        os.symlink(os.path.join("..", "..", input[0]), output[0])
+if os.path.isdir('reads_in'):
+    rule link_reads:
+        input:
+            "reads_in/{sample_with_lane}_R{read}_001.fastq.gz",
+            config_check = rules.start_analysis.output
+        output:
+            "analysis/reads_in/{sample_with_lane}_R{read}_001.fastq.gz",
+        run:
+            import os
+            #could use os.path.abspath() here, but then we can't move working directory without breaking things
+            os.symlink(os.path.join("..", "..", input[0]), output[0])
 
 rule parse_reads_pe:
     input:
