@@ -19,17 +19,15 @@ Running on capture-based data
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Capture-based sequencing results in reads of varying length from the
-target regions, which do not contain any primer sequences. Thus, the normal
-amplimap approach of identifying probes based on primer sequences no
-longer applies.
-
+target regions, which do not contain specific primer sequences. 
 This means that some features of amplimap, such as the trimming of primer sequences
-or low quality bases and the detection of off-target capture events will not work.
+or low quality bases and the detection of off-target capture events will no longer be
+applicable.
 
 However, amplimap can still produce pileups and variant calls
-using your raw FASTQ or unmapped BAM (uBAM) files as input.
+from the raw FASTQ or unmapped/mapped BAM files.
 
-To run this, create a working directory containing the
+To do this, create a working directory containing a
 ``targets.bed`` or ``targets.csv`` file as usual, as well as a
 ``config.yaml`` file containing at least this setting:
 
@@ -38,19 +36,20 @@ To run this, create a working directory containing the
     general:
       use_raw_reads: true
 
-Then, if you have gzipped FASTQ files without UMIs, put them in the :ref:`reads-in` directory as
-you normally would.
+If you have gzipped FASTQ files without UMIs, put them into the usual :ref:`reads-in` directory.
 
 If you have BAM files with unmapped reads, do not create a ``reads_in`` directory
 but instead create a subdirectory called ``unmapped_bams_in`` inside your
-working directory. Place your unmapped .bam files
+working directory. Place the files
 there (see also :ref:`unmapped-bams`).
 
-If you have a BAM file with reads that have already been mapped to the genome,
+If you have BAM files with reads that have already been mapped to the genome,
 you can put these into a directory called ``mapped_bams_in`` instead.
 
+Then you can amplimap as usual to generate coverage data, pileups or variants calls.
+
 If your reads have UMIs, these should be provided in the BAM file
-as a tag, the name of which should be given in the config file, eg.:
+as a tag, the name of which should be given in the config file:
 
 ::
 
@@ -58,14 +57,7 @@ as a tag, the name of which should be given in the config file, eg.:
       umi_tag_name: "RX"
       use_raw_reads: true
 
-Now you can run amplimap as usual,
-for example to generate pileups:
-
-::
-
-    amplimap pileups
-
-Note that UMI-deduplicated variant calling (``variants_umi``) is currently
+UMI-deduplicated variant calling (``variants_umi``) is currently
 not supported for capture-based data.
 
 Simulating variation
@@ -165,7 +157,7 @@ Merging runs
 ~~~~~~~~~~~~
 
 To merge data from multiple runs together, use the ``amplimap_merge``
-script. You can run ``merge_folders.py --help`` to see the parameters.
+script. You can run ``amplimap_merge --help`` to see the parameters.
 Here is an example:
 
 ::
@@ -179,7 +171,7 @@ per sample, you can use the ``--unique-sample-id-column`` to specify the
 column name containing the sample ID (eg. ``DNAId``). This will generate
 an additional file called ``variants_summary_filtered.unique.csv``,
 which contains all unique filtered variants, and another file called
-``overage_full.unique.csv``, which contains the highest coverage numbers
+``coverage_full.unique.csv``, which contains the highest coverage numbers
 observed for each sample.
 
 For example:

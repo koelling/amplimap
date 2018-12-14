@@ -387,6 +387,7 @@ By default these log files will be placed in a folder called ``cluster_log``.
 For example, if you see an error message like this:
 
 ::
+
     (...)
     Error in rule tool_version:
         jobid: 9
