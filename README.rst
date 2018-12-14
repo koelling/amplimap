@@ -32,6 +32,22 @@ Built on top of `Snakemake <https://snakemake.readthedocs.io/>`_ and Python 3, a
 automated and can be run on a single machine as well as on a HPC cluster
 (eg. LSF, SGE).
 
+Experimental protocols
+-------------------
+amplimap is compatible with most experimental protocols that generate paired-end short read data.
+
+For amplification-based protocols each read should start with a known primer sequence, followed by the amplified target DNA.
+Reads can optionally contain a unique molecular identifier (UMI) sequence in front of the primer, which can be used to group reads into families.
+Data should be available as demultiplexed FASTQ.GZ files, with each pair of files representing a different sample.
+
+For captured-based protocols data can be provided in FASTQ.GZ or unmapped/map BAM format, which may contain UMIs as BAM tags.
+
+Some of the protocols we have analyzed with amplimap include:
+
+- Standard PCR amplicons
+- `smMIPs with and without UMIs <https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3638140/>`_
+- `IDT xGen Lockdown probes <https://www.idtdna.com/pages/products/next-generation-sequencing/hybridization-capture/custom-probes-panels/xgen-lockdown-probes>`_
+
 Tutorials
 ---------
 
