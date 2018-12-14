@@ -196,7 +196,7 @@ def main(argv = None):
         if input_directory in ['unmapped_bams_in', 'mapped_bams_in']:
             if not config['general']['use_raw_reads']:
                 raise Exception(
-                    'general: use_raw_reads needs to be set to true when using %s for input.
+                    'general: use_raw_reads needs to be set to true when using %s for input.'
                     % (input_directory)
                 )
 
