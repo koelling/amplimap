@@ -43,13 +43,13 @@ Data should be available as demultiplexed FASTQ.GZ files, with each pair of file
 For captured-based protocols data can be provided in FASTQ.GZ or unmapped/map BAM format, which may contain UMIs as BAM tags.
 See :ref:`running-capture` for details.
 
-Some of the protocols we have processed with amplimap include:
+Some of the protocols we have analyzed with amplimap include:
 
 - Standard PCR amplicons
-- `smMIPs with/without UMIs <https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3638140/>`_
+- `smMIPs with and without UMIs <https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3638140/>`_
 - `IDT xGen Lockdown probes <https://www.idtdna.com/pages/products/next-generation-sequencing/hybridization-capture/custom-probes-panels/xgen-lockdown-probes>`_
 
-Contents
+Documentation contents
 --------------------
 
 .. toctree::
