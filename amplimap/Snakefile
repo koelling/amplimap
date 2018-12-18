@@ -733,59 +733,60 @@ if os.path.isdir('reads_in'):
             #could use os.path.abspath() here, but then we can't move working directory without breaking things
             os.symlink(os.path.join("..", "..", input[0]), output[0])
 
-rule parse_reads_pe:
-    input:
-        r1 = ["{analysis_dir}/reads_in/{sample_full}_L%03d_R1_001.fastq.gz" % (lane+1) for lane in range(config['general']['lanes_actual'])],
-        r2 = ["{analysis_dir}/reads_in/{sample_full}_L%03d_R2_001.fastq.gz" % (lane+1) for lane in range(config['general']['lanes_actual'])],
-        probes = "{analysis_dir}/probes.csv",
-        config_check = rules.start_analysis.output #make sure we copied the config we used
-    output:
-        r1 = "{analysis_dir}/reads_parsed/fastq/{sample_full}__MIP_TRIMMED__R1_001.fastq.gz",
-        r2 = "{analysis_dir}/reads_parsed/fastq/{sample_full}__MIP_TRIMMED__R2_001.fastq.gz",
-        stats_samples = "{analysis_dir}/reads_parsed/stats_samples__sample_{sample_full}.csv",
-        stats_reads = "{analysis_dir}/reads_parsed/stats_reads__sample_{sample_full}.csv"
-    run:
-        #prepare stats dicts
-        import collections
-        stats_samples = collections.OrderedDict()
-        stats_reads = []
+if os.path.isdir('reads_in') and not config['general']['use_raw_reads']:
+    rule parse_reads_pe:
+        input:
+            r1 = ["{analysis_dir}/reads_in/{sample_full}_L%03d_R1_001.fastq.gz" % (lane+1) for lane in range(config['general']['lanes_actual'])],
+            r2 = ["{analysis_dir}/reads_in/{sample_full}_L%03d_R2_001.fastq.gz" % (lane+1) for lane in range(config['general']['lanes_actual'])],
+            probes = "{analysis_dir}/probes.csv",
+            config_check = rules.start_analysis.output #make sure we copied the config we used
+        output:
+            r1 = "{analysis_dir}/reads_parsed/fastq/{sample_full}__MIP_TRIMMED__R1_001.fastq.gz",
+            r2 = "{analysis_dir}/reads_parsed/fastq/{sample_full}__MIP_TRIMMED__R2_001.fastq.gz",
+            stats_samples = "{analysis_dir}/reads_parsed/stats_samples__sample_{sample_full}.csv",
+            stats_reads = "{analysis_dir}/reads_parsed/stats_reads__sample_{sample_full}.csv"
+        run:
+            #prepare stats dicts
+            import collections
+            stats_samples = collections.OrderedDict()
+            stats_reads = []
 
-        #load probes
-        import amplimap.reader
-        #read new format
-        probes = amplimap.reader.read_new_probe_design(input['probes'], reference_type = 'genome')
-        #much faster to access than using DataFrame.loc every time
-        probes_dict = probes.to_dict()
+            #load probes
+            import amplimap.reader
+            #read new format
+            probes = amplimap.reader.read_new_probe_design(input['probes'], reference_type = 'genome')
+            #much faster to access than using DataFrame.loc every time
+            probes_dict = probes.to_dict()
 
-        #run
-        import amplimap.parse_reads
-        amplimap.parse_reads.parse_read_pairs(
-            wildcards['sample_full'],
-            input['r1'],
-            input['r2'],
-            output['r1'],
-            output['r2'],
-            probes_dict,
-            stats_samples,
-            stats_reads,
-            unknown_arms_directory = os.path.join(wildcards['analysis_dir'], 'reads_parsed'),
-            umi_one = config['parse_reads']['umi_one'], umi_two = config['parse_reads']['umi_two'],
-            mismatches = config['parse_reads']['max_mismatches'],
-            trim_primers = config['parse_reads']['trim_primers'],
-            trim_min_length = config['parse_reads']['trim_min_length'],
-            trim_primers_strict = False,
-            trim_primers_smart = False,
-            quality_trim_threshold = config['parse_reads']['quality_trim_threshold'] if config['parse_reads']['quality_trim_threshold'] != False else None,
-            quality_trim_phred_base = config['parse_reads']['quality_trim_phred_base'],
-            allow_multiple_probes = False,
-            consensus_fastqs = None, #output['consensus_fastqs'],
-            min_consensus_count = config['general']['umi_min_consensus_count'],
-            min_consensus_fraction = config['general']['umi_min_consensus_percentage'] / 100.0
-        )
+            #run
+            import amplimap.parse_reads
+            amplimap.parse_reads.parse_read_pairs(
+                wildcards['sample_full'],
+                input['r1'],
+                input['r2'],
+                output['r1'],
+                output['r2'],
+                probes_dict,
+                stats_samples,
+                stats_reads,
+                unknown_arms_directory = os.path.join(wildcards['analysis_dir'], 'reads_parsed'),
+                umi_one = config['parse_reads']['umi_one'], umi_two = config['parse_reads']['umi_two'],
+                mismatches = config['parse_reads']['max_mismatches'],
+                trim_primers = config['parse_reads']['trim_primers'],
+                trim_min_length = config['parse_reads']['trim_min_length'],
+                trim_primers_strict = False,
+                trim_primers_smart = False,
+                quality_trim_threshold = config['parse_reads']['quality_trim_threshold'] if config['parse_reads']['quality_trim_threshold'] != False else None,
+                quality_trim_phred_base = config['parse_reads']['quality_trim_phred_base'],
+                allow_multiple_probes = False,
+                consensus_fastqs = None, #output['consensus_fastqs'],
+                min_consensus_count = config['general']['umi_min_consensus_count'],
+                min_consensus_fraction = config['general']['umi_min_consensus_percentage'] / 100.0
+            )
 
-        #output stats files
-        amplimap.parse_reads.output_stats_samples(output['stats_samples'], stats_samples)
-        amplimap.parse_reads.output_stats_reads(output['stats_reads'], stats_reads, config['parse_reads']['umi_one'], config['parse_reads']['umi_two'])
+            #output stats files
+            amplimap.parse_reads.output_stats_samples(output['stats_samples'], stats_samples)
+            amplimap.parse_reads.output_stats_reads(output['stats_reads'], stats_reads, config['parse_reads']['umi_one'], config['parse_reads']['umi_two'])
 
 rule merge_targets:
     input:
