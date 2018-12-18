@@ -525,7 +525,7 @@ if os.path.isdir('reads_in') and config['general']['use_raw_reads']:
             for read_number in ['r1', 'r2']:
                 if n_files == 1:
                     #we don't actually need to merge, just symlink
-                    os.symlink(os.path.join("..", input[read_number][0]), output[read_number])
+                    os.symlink(os.path.relpath(input[read_number][0], os.path.dirname(output[read_number])), output[read_number])
                 else:
                     #merge files
                     with open(output[read_number], 'wb') as wfd:
@@ -730,8 +730,7 @@ if os.path.isdir('reads_in'):
             "analysis/reads_in/{sample_with_lane}_R{read}_001.fastq.gz",
         run:
             import os
-            #could use os.path.abspath() here, but then we can't move working directory without breaking things
-            os.symlink(os.path.join("..", "..", input[0]), output[0])
+            os.symlink(os.path.relpath(input[0], os.path.dirname(output[0])), output[0])
 
 if os.path.isdir('reads_in') and not config['general']['use_raw_reads']:
     rule parse_reads_pe:
