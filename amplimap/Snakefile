@@ -899,7 +899,7 @@ rule align_pe:
                 my_index,
                 probes_dict,
                 output[0]+"__unsorted",
-                has_trimmed_primers = config['parse_reads']['trim_primers'],
+                has_trimmed_primers = config['parse_reads']['trim_primers'] and not config['general']['use_raw_reads'],
                 debug = False
             )
 
