@@ -29,7 +29,7 @@ These include, for example:
 3. A per-basepair “pileup” table telling you how often each nucleotide was seen in each sample at each position.
 
 Built on top of `Snakemake <https://snakemake.readthedocs.io/>`_ and Python 3, amplimap is entirely
-automated and can be run on a single machine as well as on a HPC cluster
+automated and can be run on a single machine as well as on an HPC cluster
 (e.g. LSF, SGE).
 
 Supported experimental protocols

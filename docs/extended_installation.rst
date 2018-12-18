@@ -12,7 +12,7 @@ conda website to install Miniconda.
 
 Then, set up the bioconda channels as described in the `bioconda documentation <https://bioconda.github.io/>`_.
 
-2. Setup amplimap enviroment
+2. Setup amplimap environment
 --------------------------------
 Download :download:`amplimap's environment file <../environment.yml>`, which contains a list of all the software used by amplimap.
 
