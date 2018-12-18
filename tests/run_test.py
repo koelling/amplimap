@@ -160,6 +160,14 @@ def test_naive_pileups_simulation(capsys):
     assert (pileups.loc[pileups.pos == 30, 'ref_hq_count'] == 0).all()
     assert (set(pileups.loc[pileups.pos == 30, 'alts'].iloc[0].split(';')) == set(['C'])) #explicitly use iloc and no .all() here
 
+def test_multiple_input_dirs(capsys):
+    wd_path = os.path.join(packagedir, "sample_data", "wd_multi_input")
+    init_wd(wd_path, os.path.join(packagedir, "sample_data", "sample_reads_in"))
+
+    amplimap.run.main(['--working-directory={}'.format(wd_path), 'pileups'])
+    captured = capsys.readouterr()
+
+    assert 'Please only provide a single input directory with all your data.' in captured.err
 
 def test_naive_pileups(capsys):
     wd_path = os.path.join(packagedir, "sample_data", "wd_naive")

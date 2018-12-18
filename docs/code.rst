@@ -16,7 +16,7 @@ Snakefile
 
 amplimap's ``Snakefile`` is used by the ``amplimap`` command-line executable
 to determine the shell commands and library functions to execute to generate a given file.
-Each "rule" in this file either executes a shell command (eg. running ``bwa``),
+Each "rule" in this file either executes a shell command (e.g. running ``bwa``),
 executes a small set of Python commands or calls a function from the amplimap Python package.
 
 Running ``snakemake`` directly

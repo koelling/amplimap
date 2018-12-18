@@ -12,7 +12,7 @@ conda website to install Miniconda.
 
 Then, set up the bioconda channels as described in the `bioconda documentation <https://bioconda.github.io/>`_.
 
-2. Setup amplimap enviroment
+2. Setup amplimap environment
 --------------------------------
 Download :download:`amplimap's environment file <../environment.yml>`, which contains a list of all the software used by amplimap.
 
@@ -39,7 +39,7 @@ Load amplimap by running this command:
 
     source activate amplimap
 
-You only need to run this command once per session, eg. when you open a new terminal window.
+You only need to run this command once per session, e.g. when you open a new terminal window.
 
 Run ``amplimap --version`` to confirm that amplimap has been installed and activated.
 
@@ -91,7 +91,7 @@ and always used the same FASTA filename as the prefix:
         bowtie2: "/home/user/amplimap/Homo_sapiens.GRCh38.dna.primary_assembly.fa"
         fasta: "/home/user/amplimap/Homo_sapiens.GRCh38.dna.primary_assembly.fa"
 
-If you used a different reference genome, change the "hg38" to the appropriate abbreviation (eg. "mm10")
+If you used a different reference genome, change the "hg38" to the appropriate abbreviation (e.g. "mm10")
 and also update the line ``genome_name: "hg38"`` below.
 
 If you are using Annovar, make sure you also provide the path to its indices directory under ``paths:``

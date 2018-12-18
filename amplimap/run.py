@@ -173,13 +173,32 @@ def main(argv = None):
 
         #do some basic checks
         assert os.path.isdir(args.working_directory), 'working directory does not exist'
-        assert os.path.isdir(os.path.join(args.working_directory, 'reads_in')) \
-            or os.path.isdir(os.path.join(args.working_directory, 'bams_in')) \
-            or os.path.isdir(os.path.join(args.working_directory, 'tagged_bams_in')) \
-            or os.path.isdir(os.path.join(args.working_directory, 'unmapped_bams_in')), 'reads_in/, bams_in/ or unmapped_bams_in/ directory missing'
-        # assert os.path.isfile(os.path.join(args.working_directory, 'probes.csv')) \
-        #     or os.path.isfile(os.path.join(args.working_directory, 'probes_mipgen.csv')) \
-        #     or os.path.isfile(os.path.join(args.working_directory, 'probes_heatseq.tsv')), 'probes.csv, probes_mipgen.csv, or probes_heatseq.tsv file missing'
+
+        #check for one (and only one) input directory
+        input_directory = None
+        input_directory_count = 0
+        input_directories = ['reads_in', 'unmapped_bams_in', 'mapped_bams_in', 'bams_in']
+        for input_name in input_directories:
+            if os.path.isdir(os.path.join(args.working_directory, input_name)):
+                input_directory_count += 1
+                input_directory = input_name
+        if input_directory_count < 1:
+            raise Exception(
+                'An input directory (one of: %s) needs to exist. Please see the documentation for the appropriate directory to use and place your sequencing data there.'
+                % (', '.join(input_directories))
+            )
+        elif input_directory_count > 1:
+            raise Exception(
+                'More than one of the possible input directories (%s) exists. Please only provide a single input directory with all your data.'
+                % (', '.join(input_directories))
+            )
+
+        if input_directory in ['unmapped_bams_in', 'mapped_bams_in']:
+            if not config['general']['use_raw_reads']:
+                raise Exception(
+                    'general: use_raw_reads needs to be set to true when using %s for input.'
+                    % (input_directory)
+                )
 
         #check some basic settings
         aligners = ['naive', 'bwa', 'bowtie2', 'star'] #allowed values for the aligner
@@ -349,8 +368,9 @@ def main(argv = None):
             unlock = args.unlock,
             latency_wait = args.latency_wait,
             #debug_dag = args.debug_dag,
-            )
+        )
 
+        sys.stderr.write('\n===============================================\n\n')
         if success:
             if args.unlock:
                 sys.stderr.write('Unlocked working directory. Run without --unlock to start.\n')
@@ -361,7 +381,9 @@ def main(argv = None):
             return 0
         else:
             if args.cluster:
-                sys.stderr.write('{} {} failed! Please see output above or cluster logs for details.\n'.format(__title__,  __version__))
+                sys.stderr.write('{} {} failed! Please see output above or the cluster log files for details.\n'.format(__title__,  __version__))
+                sys.stderr.write('\nFor details on how to find the correct cluster log file for a failed job, see: https://amplimap.readthedocs.io/en/latest/usage.html#cluster-log-files\n')
+                sys.stderr.write('You can also try to run amplimap without the cluster parameter to see the error message.\n')
             else:
                 sys.stderr.write('{} {} failed! Please see output above for details.\n'.format(__title__,  __version__))
 
