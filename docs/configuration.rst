@@ -12,7 +12,7 @@ The default configuration file is called :file:`config_default.yaml`. It is
 located in the amplimap basedir, which is usually the
 :file:`amplimap.{VERSION}.egg/amplimap` directory located in Python’s
 :file:`site-packages`
-(where *VERSION* is the amplimap version number, eg. |version|).
+(where *VERSION* is the amplimap version number, e.g. |version|).
 You can run ``amplimap --basedir`` to get the path to the basedir.
 
 Any settings in this file will be applied every time you run amplimap.
@@ -20,7 +20,7 @@ This is particularly helpful for setting up correct paths for the reference
 files (genome build, aligner index, reference genome fasta).
 
 You can also save this file under :file:`/etc/amplimap/{VERSION}/config.yaml`
-(where *VERSION* is the amplimap version number, eg. |version|) or provide a different
+(where *VERSION* is the amplimap version number, e.g. |version|) or provide a different
 path in the  :envvar:`AMPLIMAP_CONFIG` environment variable.
 
 Local configuration
@@ -103,7 +103,7 @@ Once you have Annovar installed we recommend that you download the following ind
 Finally, you need to specify the path to your Annovar index directory in your :ref:`default-config` file (see :ref:`config-reference`).
 If you downloaded a different set of indices you also need to adjust the annovar protocols and operations parameters.
 
-Running with UMIs (eg. for smMIPs)
+Running with UMIs (e.g. for smMIPs)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 If one or both of your reads start with UMIs, you have to specify their lengths

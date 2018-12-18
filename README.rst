@@ -30,7 +30,7 @@ These include, for example:
 
 Built on top of `Snakemake <https://snakemake.readthedocs.io/>`_ and Python 3, amplimap is entirely
 automated and can be run on a single machine as well as on a HPC cluster
-(eg. LSF, SGE).
+(e.g. LSF, SGE).
 
 Supported experimental protocols
 ---------------------------------

@@ -44,7 +44,7 @@ paired-end sequencing.
 Filenames should follow standard Illumina naming conventions
 (ending in ``_L001_R1_001.fastq.gz`` and
 ``_L001_R2_001.fastq.gz``, where ``L001`` is the lane).
-Data from multiple lanes (eg. ``L001`` and ``L002``) will be
+Data from multiple lanes (e.g. ``L001`` and ``L002``) will be
 merged, as long as all samples have a pair of files for each lane.
 
 .. _unmapped-bams:
@@ -57,7 +57,7 @@ as unmapped BAM files inside a directory called ``unmapped_bams_in/``.
 This is useful for running amplimap on data from capture-based protocols.
 
 If your reads contained UMIs, these should have been trimmed off already and be
-provided in the bam file using a BAM tag (eg. ``RX``). You will need to
+provided in the bam file using a BAM tag (e.g. ``RX``). You will need to
 specify the name of this tag in the config file.
 
 See also :ref:`running-capture` for more details and examples.
@@ -108,7 +108,7 @@ version of the probe will be counted together.
 
 MIP names cannot contain characters other than alphanumeric characters
 (``A-Z``, ``0-9``), or ``_:+-``. Avoid using multiple colons in a row
-(eg. ``::``) since this is used as a field separator internally.
+(e.g. ``::``) since this is used as a field separator internally.
 
 The file needs to be in plain CSV format with UNIX/Windows (not Mac)
 style line endings.
@@ -135,7 +135,7 @@ will cause an error.
 targets.csv
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-List of target regions (eg. exons, not the MIPs themselves) in CSV format.
+List of target regions (e.g. exons, not the MIPs themselves) in CSV format.
 This file should contain the following columns:
 
 1. ``chr`` (chromosome, should start with *chr*)

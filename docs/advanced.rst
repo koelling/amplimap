@@ -167,7 +167,7 @@ This will merge the variant summary and coverage files from
 ``/data/working_directory1``, ``2`` and ``3`` together and save them in
 a folder called ``/data/OUTPUT_FOLDER``. If you only want to get one row
 per sample, you can use the ``--unique-sample-id-column`` to specify the
-column name containing the sample ID (eg. ``DNAId``). This will generate
+column name containing the sample ID (e.g. ``DNAId``). This will generate
 an additional file called ``variants_summary_filtered.unique.csv``,
 which contains all unique filtered variants, and another file called
 ``coverage_full.unique.csv``, which contains the highest coverage numbers
