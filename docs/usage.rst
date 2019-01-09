@@ -1,3 +1,5 @@
+.. _usage:
+
 Input and the working directory
 -------------------------------
 For each experiment (for example each sequencing run), you need to create a working directory
@@ -42,7 +44,7 @@ paired-end sequencing.
 Filenames should follow standard Illumina naming conventions
 (ending in ``_L001_R1_001.fastq.gz`` and
 ``_L001_R2_001.fastq.gz``, where ``L001`` is the lane).
-Data from multiple lanes (eg. ``L001`` and ``L002``) will be
+Data from multiple lanes (e.g. ``L001`` and ``L002``) will be
 merged, as long as all samples have a pair of files for each lane.
 
 .. _unmapped-bams:
@@ -55,13 +57,17 @@ as unmapped BAM files inside a directory called ``unmapped_bams_in/``.
 This is useful for running amplimap on data from capture-based protocols.
 
 If your reads contained UMIs, these should have been trimmed off already and be
-provided in the bam file using a BAM tag (eg. ``RX``). You will need to
+provided in the bam file using a BAM tag (e.g. ``RX``). You will need to
 specify the name of this tag in the config file.
 
 See also :ref:`running-capture` for more details and examples.
 
-If you run amplimap with unmapped BAM files, probes can no longer be identified
+When running amplimap with capture-based data probes can no longer be identified
 based on the primer arms. Thus, some of the output files can not be generated.
+
+If your BAM files have already been mapped (aligned) you can also put
+them into a directory called ``mapped_bams_in/`` instead, which will skip the
+alignment step inside amplimap.
 
 .. _probes-csv:
 
@@ -102,7 +108,7 @@ version of the probe will be counted together.
 
 MIP names cannot contain characters other than alphanumeric characters
 (``A-Z``, ``0-9``), or ``_:+-``. Avoid using multiple colons in a row
-(eg. ``::``) since this is used as a field separator internally.
+(e.g. ``::``) since this is used as a field separator internally.
 
 The file needs to be in plain CSV format with UNIX/Windows (not Mac)
 style line endings.
@@ -129,7 +135,7 @@ will cause an error.
 targets.csv
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-List of target regions (eg. exons, not the MIPs themselves) in CSV format.
+List of target regions (e.g. exons, not the MIPs themselves) in CSV format.
 This file should contain the following columns:
 
 1. ``chr`` (chromosome, should start with *chr*)
@@ -243,7 +249,7 @@ pipeline by adding the ``--run`` parameter:
 This will go through the first few steps of the pipeline but will not
 run the more advanced analysis-specific parts.
 
-To run these additional steps, you need to add so-called *target
+To run these additional analyses, you need to add so-called *target
 rules* to the ``amplimap`` command line. Some of these are listed below.
 
 
@@ -327,14 +333,15 @@ This function is still experimental and has not been thoroughly tested.
 Its output will be available in the ``variants_low_frequency/`` directory 
 
 
-Multiple targets
-~~~~~~~~~~~~~~~~
+Multiple analyses
+~~~~~~~~~~~~~~~~~~~
 
-You can also group together multiple *target rules*:
+You can also group together multiple *target rules* to run several analyses at once:
 
 ::
 
     amplimap pileups variants coverages
+
 
 Running on a cluster
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -378,12 +385,15 @@ but they should usually be called "amplimap.RULENAME.JOBID.sh.oCLUSTERID"
 where RULENAME is the name of the amplimap rule that failed, JOBID is its
 ID and CLUSTERID is an additional ID that has been assigned by the cluster.
 By default these log files will be placed in a folder called ``cluster_log``.
+
 For example, if you see an error message like this:
 
 ::
 
+    (...)
     Error in rule tool_version:
         jobid: 9
+        (...)
 
 Then you can find the error message in the log file that starts with
 ``cluster_log/amplimap.tool_version.9.sh.o`` followed by a number.
@@ -450,14 +460,14 @@ Low-frequency variation analysis: ``pileups``
 
 -  ``pileups/``: target region pileup tables
 
-   -  per-basepair pileups based on UMI groups:
+   -  per-basepair pileups for all positions and all samples:
       ``pileups/pileups_long.csv``
-   -  coverage of UMI groups over target regions:
+   -  coverage over target regions:
       ``pileups/target_coverage.csv``
 
 -  ``pileups_snps/``: SNP pileup tables (optional, requires ``snps.txt``)
 
-   -  per-SNP pileups based on UMI groups:
+   -  per-SNP pileups:
       ``pileups_snps/target_snps_pileups_long.csv``
 
 Additional output
@@ -465,5 +475,5 @@ Additional output
 
 In addition to the ``analysis`` directory, these folders may be created:
 
--  ``cluster_logs/``: directory with log files for each job submitted to
+-  ``cluster_log/``: directory with log files for each job submitted to
    the cluster (contain error messages if cluster submission fails)

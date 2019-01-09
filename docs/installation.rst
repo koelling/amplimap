@@ -34,7 +34,7 @@ Setup
 
 To finish setting up amplimap you probably want to add the paths to the
 reference genome files you will be using
-(eg. bwa index and reference genome fasta) to the :ref:`default-config`.
+(e.g. bwa index and reference genome fasta) to the :ref:`default-config`.
 
 Requirements
 ~~~~~~~~~~~~~~~
