@@ -807,7 +807,6 @@ rule stats_samples_agg:
         for file in input:
             print('Reading', file, '...')
             df = pd.read_csv(file, index_col = False)
-            print('Data shape:', str(df.shape))
 
             if merged is None:
                 merged = df
@@ -816,6 +815,9 @@ rule stats_samples_agg:
 
         print('Merged data shape:', str(merged.shape))
         merged.sort_values(['sample'], inplace=True)
+
+        assert merged['pairs_good_arms'].sum() > 0, \
+            '\n\nABORTED: Did not find any read pairs with the expected primers sequences. Please check the reads, probe design, and config files for errors.\n\n' % (percentage_good)
 
         #should we ensure that we have at least X good reads?
         percentage_good = (100.0 * merged['pairs_good_arms'].sum() / merged['pairs_total'].sum())
@@ -826,7 +828,7 @@ rule stats_samples_agg:
             print('Wrote sample stats to %s' % output[0]+'.error.csv')
 
         assert percentage_good > config['parse_reads']['min_percentage_good'], \
-            '\n\nABORTED: Found too few pairs with good arms - overall percentage = %.1f%%. Check probe design file for mistakes or lower min_percentage_good in config.yaml to proceed\n\n' % (percentage_good)
+            '\n\nABORTED: Found too few read pairs with the expected primers sequences. The average percentage across all samples was %.1f%%. Please check the reads, probe design, and config files for errors or lower the min_percentage_good setting in config.yaml to continue anyway.\n\n' % (percentage_good)
 
         merged.to_csv(output[0], index = False)
 
