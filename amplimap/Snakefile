@@ -925,14 +925,17 @@ rule align_pe:
                 bwa mem \
                     -t {threads} \
                     -R '@RG\\tID:{wildcards.sample_full}\\tSM:{wildcards.sample_full}' \
-                    -C \
+                    %s \
                     "%s" \
                     {input[0]:q} {input[1]:q} \
                 | samtools fixmate -O bam - - \
                 | samtools sort -T "{output[0]}__sort_tmp" \
                     -o {output[0]:q} - \
                 ;
-                """ % my_index
+                """ % (
+                    '' if config['general']['use_raw_reads'] else '-C', #only use -C parameter if we have processed reads
+                    my_index
+                )
             )
         elif config['align']['aligner'] == 'bowtie2':
             extra = ''
