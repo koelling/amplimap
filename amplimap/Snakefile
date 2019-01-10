@@ -817,7 +817,7 @@ rule stats_samples_agg:
         merged.sort_values(['sample'], inplace=True)
 
         assert merged['pairs_good_arms'].sum() > 0, \
-            '\n\nABORTED: Did not find any read pairs with the expected primers sequences. Please check the reads, probe design, and config files for errors.\n\n' % (percentage_good)
+            '\n\nABORTED: Did not find any read pairs with the expected primers sequences. Please check the reads, probe design, and config files for errors.\n\n'
 
         #should we ensure that we have at least X good reads?
         percentage_good = (100.0 * merged['pairs_good_arms'].sum() / merged['pairs_total'].sum())
@@ -854,7 +854,7 @@ rule stats_reads_agg:
                 print('No data for', file, ', skipping.')
 
         assert merged is not None and len(merged) > 0, \
-            '\n\nABORTED: Did not find good reads for any sample. Please check configuration, probe design table and samples!\n\n'
+            '\n\nABORTED: Did not find any read pairs with the expected primers sequences. Please check the reads, probe design, and config files for errors.\n\n'
 
         print('Merged data shape:', str(merged.shape))
         merged.sort_values(['sample', 'probe'], inplace=True)
