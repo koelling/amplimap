@@ -485,7 +485,7 @@ def read_snps_txt(path: str, reference_type: str = 'genome') -> pd.DataFrame:
         if snps.shape[1] == 1:
             if ' ' in snps.iloc[0, 0]:
                 log.info('SNP table does not seem to be tab-separated, trying again with spaces')
-                snps = pd.read_table(path, header = None, sep=r'\s+')
+                snps = pd.read_table(path, header = None, sep='\s+')
 
         if snps.shape[1] == 5:
             snps.columns = ['chr', 'pos', 'id', 'snp_ref', 'snp_alt']

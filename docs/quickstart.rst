@@ -3,9 +3,7 @@ Quickstart
 
 -  Create a new working directory
 -  Put the :ref:`probes-csv` file into the working directory
-   (:download:`download probes.csv example <examples/probes.csv>`)
 -  Put the :ref:`targets-csv` file into the working directory
-   (:download:`download targets.csv example <examples/targets.csv>`)
 -  Create a subdirectory called :ref:`reads-in` in the working directory
    and copy your zipped sample FASTQ files (ending in ``.fastq.gz``)
    into it
