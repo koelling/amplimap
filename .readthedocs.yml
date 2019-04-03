@@ -1,0 +1,6 @@
+version: 2
+build:
+    image: latest
+# require python v3.6 (req'd for pysam)
+python:
+    version: 3.6
