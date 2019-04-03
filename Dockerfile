@@ -4,7 +4,7 @@ FROM continuumio/miniconda3
 # for some reason this does won't install properly through conda
 # it's required to build python packages from pip
 RUN apt-get update --fix-missing && \
-    apt-get install -y gcc && \
+    apt-get install -y gcc vim && \
     apt-get clean;
 
 # download and install conda environment

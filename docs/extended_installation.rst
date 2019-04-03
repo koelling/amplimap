@@ -4,7 +4,7 @@ Installation guide
 
 We recommend that you use `Miniconda <https://conda.io/en/latest/miniconda.html>`_
 with `bioconda <https://bioconda.github.io/>`_ to install amplimap and its requirements
-(such as Python 3.6, read aligners, etc). If you have Docker, you can
+(such as Python 3.6, read aligners, etc). If you have `Docker <https://www.docker.com/>`_ you can
 also use our Dockerfile instead: :ref:`installation-docker`.
 
 If your machine already has all of the required
@@ -36,7 +36,7 @@ into a new conda environment:
 .. conda activate amplimap
 .. #conda env export > environment.yml
 
-If you want to run germline variant calling and annotation, you also need to `download and install
+If you want to run germline variant calling and annotation you also need to `download and install
 Annovar <http://annovar.openbioinformatics.org/en/latest/user-guide/download/>`_ manually. Make sure you also download
 the relevant indices for the reference genome you want to use.
 
@@ -62,10 +62,10 @@ amplimap has been installed and activated.
 4. Set up your reference genome and indices
 -------------------------------------------
 Download the DNA (FASTA) file for the reference genome that you want to use, for example from the `Ensembl
-FTP <https://www.ensembl.org/info/data/ftp/index.html>`_. When in doubt, we recommend using the
+FTP <https://www.ensembl.org/info/data/ftp/index.html>`_. When in doubt we recommend using the
 primary_assembly version, for example ``Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz``.
 
-Once you have downloaded this file, you need to prepare it for use in amplimap:
+Once you have downloaded this file you need to prepare it for use in amplimap:
 
 ::
 
@@ -85,8 +85,9 @@ Once you have downloaded this file, you need to prepare it for use in amplimap:
 5. Update amplimap configuration
 ------------------------------------------
 
-Finally, you need to add the paths of the reference genome files to your ``config_default.yaml``.
-To find out where this file is located, run:
+Finally, we recommend that you add the paths of the reference genome files to your ``config_default.yaml``.
+This way, you don't need to specify these paths in every single directory-specify ``config.yaml``.
+To find out where this file is located run:
 
 ::
 
@@ -96,7 +97,7 @@ Open the file ``config_default.yaml`` at this location and look for the settings
 corresponding to the indices you created.
 
 Replace these with the full paths to your files. If you haven't generated the corresponding
-file, leave the setting empty. For example, if you generated indices for bwa and bowtie2 (but not STAR or Annovar)
+file leave the setting empty. For example, if you generated indices for bwa and bowtie2 (but not STAR or Annovar)
 and always used the same FASTA filename as the prefix:
 
 ::
@@ -107,10 +108,10 @@ and always used the same FASTA filename as the prefix:
         bowtie2: "/home/user/amplimap/Homo_sapiens.GRCh38.dna.primary_assembly.fa"
         fasta: "/home/user/amplimap/Homo_sapiens.GRCh38.dna.primary_assembly.fa"
 
-If you used a different reference genome, change ``hg38:`` to the appropriate abbreviation (e.g. ``mm10:``)
+If you used a different reference genome change ``hg38:`` to the appropriate abbreviation (e.g. ``mm10:``)
 and also update the line ``genome_name: "hg38"`` below.
 
-If you are using Annovar, make sure you also provide the path to its indices directory under ``paths:``
+If you are using Annovar make sure you also provide the path to its indices directory under ``paths:``
 and adjust the protocols/operations under ``annotate: annovar: protocols:`` to match the indices you
 have downloaded.
 
@@ -124,18 +125,29 @@ Now you are ready to run amplimap:
 
     amplimap
 
-If you get a message about the command not being found,
+If you get a message about the command not being found
 please make sure you activated the conda environment as described above.
 
 .. _installation-docker:
 
 Installing amplimap through Docker
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-We also have a :download:`Dockerfile <../Dockerfile>` available,
+We also have a Dockerfile available,
 which allows you to run amplimap through `Docker <https://www.docker.com/>`_.
+To build the docker image install docker, create a new directory and then run:
 
-After building the Docker image, see :ref:`installation-setup` for details
-on how to set up amplimap.
+::
+
+    wget https://raw.githubusercontent.com/koelling/amplimap/master/Dockerfile
+    docker build -t amplimap .
+
+After building the Docker image, you can run a shell in the container like this:
+
+::
+
+    docker run -i -t amplimap /bin/bash
+
+Finally, set up amplimap as described here: :ref:`installation-setup`
 
 .. _installation-pip:
 
@@ -175,9 +187,6 @@ You can also :download:`download our requirements.txt file <../requirements.txt>
 which contains a full list of all Python packages used by amplimap, and a known
 working version.
 
-Setup
--------------------
-
 To finish setting up amplimap you probably want to add the paths to the
 reference genome files you will be using
 (e.g. bwa index and reference genome fasta) to the :ref:`default-config`.
@@ -192,15 +201,15 @@ all requirements **will be installed automatically** when you install amplimap
 through conda.
 
 - Linux environment (should also work on MacOS, Windows 10 Linux Subsystem)
-- Python 3.5+ with setuptools, Cython and numpy
+- Python 3.5 or 3.6 with setuptools, Cython and numpy
 
-  - Further Python dependencies are listed in ``requirements.txt`` but can also be installed automatically by ``setup.py``
-
-- Reference genome FASTA file, with indices
+  - Further Python dependencies are listed in ``requirements.txt``
+    but can also be installed automatically by ``setup.py``.
 
 - Required software:
 
-  - At least one read aligner: BWA (tested with v0.7.12), Bowtie2 (tested with v2.2.5), STAR (tested with v2.5.1b)
+  - At least one read aligner: BWA (tested with v0.7.12),
+    Bowtie2 (tested with v2.2.5), STAR (tested with v2.5.1b)
   - bedtools (tested with v2.27.1)
   - samtools (tested with v1.5)
 
@@ -217,3 +226,5 @@ through conda.
 - Additional software for capture probe processing (optional):
 
   - Picard Tools 2+ (tested with v2.3.0)
+
+- Reference genome FASTA file, with indices
