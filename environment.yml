@@ -2,17 +2,16 @@ name: amplimap
 channels:
 - bioconda
 - conda-forge
-- defaults
 dependencies:
-- bcftools=1.8=1
-- bedtools=2.27.1=1
-- bowtie2=2.3.4.1=py36pl5.22.0_0
-- bwa=0.7.17=pl5.22.0_2
-- gatk4=4.0.3.0=0
-- picard=2.18.2=py36_0
-- samtools=1.8=3
-- star=2.5.4a=0
-- python>3.4
+- bcftools>=1.5
+- bedtools=2.27.*
+- bowtie2=2.3.*
+- bwa=0.7.*
+- gatk4=4.0.*
+- picard=2.18.*
+- samtools>=1.5
+- star=2.5.*
+- python=3.6.*
 - pip
 - setuptools>=18.0
 - cython

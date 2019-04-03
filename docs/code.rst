@@ -8,6 +8,16 @@ will perform various pre-processing steps (see below) and then launch Snakemake.
 Snakemake, using the Snakefile provided in the amplimap package, will then determine
 the jobs that need to be executed.
 
+Testing amplimap
+------------------------
+To test amplimap, install the ``pytest`` package through pip and then
+run this command in the amplimap source directory:
+
+::
+
+  pytest .
+
+
 amplimap components
 ------------------------
 

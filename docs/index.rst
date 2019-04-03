@@ -57,19 +57,18 @@ Documentation contents
 .. toctree::
    :maxdepth: 2
 
-   installation
+   extended_installation
    quickstart
    usage
    configuration
    tutorials
    advanced
-   extended_installation
    code
    references
 
 Links
 --------
- 
+
 - Package: https://pypi.org/project/amplimap/
 - Code: https://github.com/koelling/amplimap/
 - Documentation: https://amplimap.readthedocs.io/

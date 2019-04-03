@@ -1,52 +1,67 @@
 =========================================
-Extended installation guide for amplimap
+Installation guide
 =========================================
 
-If you need to install amplimap and its requirements (such as Python, read aligners, etc) from scratch
-we recommend that you use `bioconda <https://bioconda.github.io/>`_.
+We recommend that you use `Miniconda <https://conda.io/en/latest/miniconda.html>`_
+with `bioconda <https://bioconda.github.io/>`_ to install amplimap and its requirements
+(such as Python 3.6, read aligners, etc). If you have Docker, you can
+also use our Dockerfile instead: :ref:`installation-docker`.
 
-1. Install bioconda
---------------------
-Follow the official `installation guide <https://conda.io/docs/user-guide/install/index.html>`_ on the
-conda website to install Miniconda.
+If your machine already has all of the required
+software installed you can also install amplimap through pip.
+For more details, see :ref:`installation-pip`.
 
-Then, set up the bioconda channels as described in the `bioconda documentation <https://bioconda.github.io/>`_.
+.. _installation-miniconda:
 
-2. Setup amplimap environment
+Installing amplimap through Miniconda
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+1. Install Miniconda 3
+-----------------------
+Download and install `Miniconda with Python 3 <https://conda.io/en/latest/miniconda.html>`_
+from the conda website.
+
+
+2. Install amplimap environment
 --------------------------------
-Download :download:`amplimap's environment file <../environment.yml>`, which contains a list of all the software used by amplimap.
-
-Use the ``conda`` tool to install this software into a conda environment:
+Download amplimap's :download:`environment.yml file <../environment.yml>`
+and use it to install amplimap and its requirements
+into a new conda environment:
 
 ::
-    
-    conda env create -f environment.yml
+
+    conda env create --file environment.yml
 
 .. conda create --name amplimap 'python>=3.4' pip setuptools numpy cython bwa bowtie2 star bedtools samtools bcftools gatk4 picard
-.. source activate amplimap
+.. conda activate amplimap
 .. #conda env export > environment.yml
 
 If you want to run germline variant calling and annotation, you also need to `download and install
 Annovar <http://annovar.openbioinformatics.org/en/latest/user-guide/download/>`_ manually. Make sure you also download
-the relevant indices for the reference genome you want to use, 
+the relevant indices for the reference genome you want to use.
 
 
-3. Activate amplimap
+3. Activate amplimap environment
 ------------------------------------------------
-Load amplimap by running this command:
+Load the amplimap environnent by running this command:
 
 ::
 
-    source activate amplimap
+    conda activate amplimap
 
-You only need to run this command once per session, e.g. when you open a new terminal window.
+You only need to run this command once per session,
+e.g. when you open a new terminal window.
 
-Run ``amplimap --version`` to confirm that amplimap has been installed and activated.
+Your command line prompt should now start with ``(amplimap)``.
+Run ``amplimap --version`` to confirm that the correct version of
+amplimap has been installed and activated.
 
+
+.. _installation-setup:
 
 4. Set up your reference genome and indices
 -------------------------------------------
-Download the reference genome FASTA file that you want to use, for example from the `Ensembl
+Download the DNA (FASTA) file for the reference genome that you want to use, for example from the `Ensembl
 FTP <https://www.ensembl.org/info/data/ftp/index.html>`_. When in doubt, we recommend using the
 primary_assembly version, for example ``Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz``.
 
@@ -54,16 +69,16 @@ Once you have downloaded this file, you need to prepare it for use in amplimap:
 
 ::
 
-    #decompress the file (if it ends in .gz)
+    # decompress the file (if it ends in .gz)
     gunzip Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz
 
-    #index FASTA file
+    # index FASTA file
     samtools faidx Homo_sapiens.GRCh38.dna.primary_assembly.fa
 
-    #build bwa index, if you want to use bwa:
+    # build bwa index, if you want to use bwa:
     bwa index Homo_sapiens.GRCh38.dna.primary_assembly.fa
 
-    #build bowtie2 index, if you want to use bowtie2:
+    # build bowtie2 index, if you want to use bowtie2:
     bowtie2-build Homo_sapiens.GRCh38.dna.primary_assembly.fa Homo_sapiens.GRCh38.dna.primary_assembly.fa
 
 
@@ -79,6 +94,7 @@ To find out where this file is located, run:
 
 Open the file ``config_default.yaml`` at this location and look for the settings under ``paths:``
 corresponding to the indices you created.
+
 Replace these with the full paths to your files. If you haven't generated the corresponding
 file, leave the setting empty. For example, if you generated indices for bwa and bowtie2 (but not STAR or Annovar)
 and always used the same FASTA filename as the prefix:
@@ -91,7 +107,7 @@ and always used the same FASTA filename as the prefix:
         bowtie2: "/home/user/amplimap/Homo_sapiens.GRCh38.dna.primary_assembly.fa"
         fasta: "/home/user/amplimap/Homo_sapiens.GRCh38.dna.primary_assembly.fa"
 
-If you used a different reference genome, change the "hg38" to the appropriate abbreviation (e.g. "mm10")
+If you used a different reference genome, change ``hg38:`` to the appropriate abbreviation (e.g. ``mm10:``)
 and also update the line ``genome_name: "hg38"`` below.
 
 If you are using Annovar, make sure you also provide the path to its indices directory under ``paths:``
@@ -102,11 +118,102 @@ Save the file and confirm that the settings are being read correctly by looking 
 
 6. Run amplimap!
 -------------------
-Now you are ready to run amplimap! When you start a new session, activate the conda environment
-as described above and then run the amplimap commands as usual:
+Now you are ready to run amplimap:
 
 ::
 
-    source activate amplimap
+    amplimap
 
-    amplimap --version
+If you get a message about the command not being found,
+please make sure you activated the conda environment as described above.
+
+.. _installation-docker:
+
+Installing amplimap through Docker
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+We also have a :download:`Dockerfile <../Dockerfile>` available,
+which allows you to run amplimap through `Docker <https://www.docker.com/>`_.
+
+After building the Docker image, see :ref:`installation-setup` for details
+on how to set up amplimap.
+
+.. _installation-pip:
+
+Installing amplimap through pip
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+If you already have all of the required external software available
+(see :ref:`installation-requirements`)
+you can install amplimap directly through pip.
+Please note that this **requires Python 3.5 or 3.6** and does not currently
+work with Python 3.7 due to problems with the pysam package. It also
+does not work with any Python version lower than 3.5.
+
+If you do not have the dependencies and the right version of Python available
+please see :ref:`installation-miniconda`.
+
+::
+
+  # you may need to use `pip` instead of `pip3`
+  pip3 install amplimap
+
+If this does not work, you can try to install it manually:
+
+::
+
+  # install required python3 packages
+  # you may need to use `pip` instead of `pip3`
+  pip3 install setuptools Cython numpy
+
+  # download and install amplimap
+  # you may need to use `python` instead of `python3`
+  git clone --depth=1 https://github.com/koelling/amplimap.git
+  cd amplimap
+  python3 setup.py install
+
+
+You can also :download:`download our requirements.txt file <../requirements.txt>`,
+which contains a full list of all Python packages used by amplimap, and a known
+working version.
+
+Setup
+-------------------
+
+To finish setting up amplimap you probably want to add the paths to the
+reference genome files you will be using
+(e.g. bwa index and reference genome fasta) to the :ref:`default-config`.
+See :ref:`installation-setup` for more details.
+
+.. _installation-requirements:
+
+Requirements
+~~~~~~~~~~~~~~~
+Please note that, other than the Linux environment and the reference genome files,
+all requirements **will be installed automatically** when you install amplimap
+through conda.
+
+- Linux environment (should also work on MacOS, Windows 10 Linux Subsystem)
+- Python 3.5+ with setuptools, Cython and numpy
+
+  - Further Python dependencies are listed in ``requirements.txt`` but can also be installed automatically by ``setup.py``
+
+- Reference genome FASTA file, with indices
+
+- Required software:
+
+  - At least one read aligner: BWA (tested with v0.7.12), Bowtie2 (tested with v2.2.5), STAR (tested with v2.5.1b)
+  - bedtools (tested with v2.27.1)
+  - samtools (tested with v1.5)
+
+- Additional software for germline variant calling (optional):
+
+  - At least one variant caller: Platypus 0.8.1+, GATK 4+
+  - Annovar (tested with v2015-06-17)
+  - bcftools (tested with v1.5)
+
+- Additional software for low-frequency variant calling (optional):
+
+  - Mutect2 (from GATK 4, tested with v4.0)
+
+- Additional software for capture probe processing (optional):
+
+  - Picard Tools 2+ (tested with v2.3.0)
