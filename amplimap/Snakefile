@@ -1440,9 +1440,9 @@ rule normalize_variants:
             
             lines_after = 0
             import gzip
-            with gzip.open(output[0], 'r') as f:
+            with gzip.open(output[0], 'rb') as f:
                 for line in f:
-                    if not line.startswith('#'):
+                    if not line.startswith(b'#'):
                         lines_after += 1
 
             print('Converted raw VCF with {} lines into normalized VCF with {} lines'.format(
@@ -1463,9 +1463,9 @@ rule annotate_variants:
     run:
         import gzip
         lines_before = 0
-        with gzip.open(input[0], 'r') as f:
+        with gzip.open(input[0], 'rb') as f:
             for line in f:
-                if not line.startswith('#'):
+                if not line.startswith(b'#'):
                     lines_before += 1
 
         if lines_before == 0:
