@@ -28,7 +28,7 @@ localrules: all, \
     link_tagged_bais_1, link_tagged_bais_2, link_tagged_bams, link_unmapped_bams, \
     convert_mipgen_probes, convert_heatseq_probes, \
     link_reads, merge_targets, stats_samples_agg, stats_reads_agg, stats_alignment_agg, coverage_agg, stats_replacements_agg, \
-    variants_merge, variants_summary, variants_summary_excel
+    variants_summary, variants_summary_excel
 
 #find samples
 if os.path.isdir('bams_in'):
@@ -1475,7 +1475,7 @@ rule annotate_variants:
 
 # only provide this rule if we have annovar
 if get_path('annovar', default='') != '':
-    rule variants_merge:
+    rule merge_variants_from_annovar:
         input:
             csvs = expand("{{analysis_dir}}/{{variants_dir}}/{sample_full}.vcf."+get_annovar_name()+"_multianno.csv", sample_full = SAMPLES)
         output:
@@ -1483,6 +1483,7 @@ if get_path('annovar', default='') != '':
         run:
             import amplimap.variants
             amplimap.variants.merge_variants_from_annovar(input, output)
+
 # otherwise we just merge the files together
 else:
     rule variants_merge_without_annovar:
@@ -1496,7 +1497,7 @@ else:
 
 rule variants_summary:
     input:
-        merged = rules.variants_merge.output,
+        merged = "{analysis_dir}/{variants_dir}/variants_merged.csv",
         targets = "{analysis_dir}/targets.bed",
         sample_info = ["sample_info.csv"] if os.path.isfile("sample_info.csv") else []
     output:
