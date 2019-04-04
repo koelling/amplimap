@@ -246,7 +246,7 @@ def merge_variants_from_annovar(input, output):
         print('Merged data shape:', str(merged.shape))
         merged.to_csv(output[0], index = False)
 
-def merge_variants_without_annovar(input_vcfs, output_file):
+def merge_variants_unannotated(input_vcfs, output_file):
     """Merge unannotated VCF files into a single CSV."""
 
     merged = None
@@ -263,6 +263,7 @@ def merge_variants_without_annovar(input_vcfs, output_file):
                         row['Chr'] = variant.chrom
                         row['Start'] = variant.start + 1  # pysam is 0-based
                         row['End'] = variant.start + len(variant.ref)
+                        row['Ref'] = variant.ref
                         row['Alt'] = alt
                         row['Otherinfo'] = str(variant)
                         rows.append(row)

@@ -1486,14 +1486,14 @@ if get_path('annovar', default='') != '':
 
 # otherwise we just merge the files together
 else:
-    rule variants_merge_without_annovar:
+    rule variants_merge_unannotated:
         input:
             vcfs = expand("{{analysis_dir}}/{{variants_dir}}/{sample_full}.vcf", sample_full = SAMPLES)
         output:
             "{analysis_dir}/{variants_dir}/variants_merged.csv"
         run:
             import amplimap.variants
-            amplimap.variants.merge_variants_without_annovar(input['vcfs'], output[0])
+            amplimap.variants.merge_variants_unannotated(input['vcfs'], output[0])
 
 rule variants_summary:
     input:
