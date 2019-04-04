@@ -265,7 +265,7 @@ def merge_variants_unannotated(input_vcfs, output_file):
                         row['End'] = variant.start + len(variant.ref)
                         row['Ref'] = variant.ref
                         row['Alt'] = alt
-                        row['Otherinfo'] = str(variant)
+                        row['Otherinfo'] = str(variant).strip()
                         rows.append(row)
             df = pd.DataFrame(rows)
 
