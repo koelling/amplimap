@@ -260,7 +260,8 @@ def test_variants(capsys):
     init_wd(wd_path, os.path.join(packagedir, "sample_data", "sample_reads_in"), remove_analysis=False)
 
     # clean up possible old results
-    os.unlink(os.path.join(wd_path, 'analysis', 'variants_raw', 'variants_merged.csv'))
+    if os.path.exists(os.path.join(wd_path, 'analysis', 'variants_raw', 'variants_merged.csv')):
+        os.unlink(os.path.join(wd_path, 'analysis', 'variants_raw', 'variants_merged.csv'))
 
     # touch the intermediate files to make sure they are seen as new enough
     for file in ['variants_raw/S1.vcf', 'variants_raw/S2.vcf', 'targets.bed']:
