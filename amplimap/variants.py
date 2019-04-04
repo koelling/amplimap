@@ -301,7 +301,7 @@ def make_summary(input: list, output: list, config: dict, exon_table_path: str =
 
     #load merged variant table, process it and write to CSV
     try:
-        merged = pd.read_csv(input['merged'][0], index_col = False, dtype = variants_dtypes, na_values = variants_na_values)
+        merged = pd.read_csv(input['merged'], index_col = False, dtype = variants_dtypes, na_values = variants_na_values)
         merged = make_summary_dataframe(
             merged,
             targets,
