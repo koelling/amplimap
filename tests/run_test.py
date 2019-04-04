@@ -257,8 +257,11 @@ def test_variants(capsys):
     wd_path = os.path.join(packagedir, "sample_data", "special_wd_variants")
     init_wd(wd_path, os.path.join(packagedir, "sample_data", "sample_reads_in"), remove_analysis=False)
 
+    # clean up possible old results
+    os.unlink(os.path.join(wd_path, os.path.join('analysis', 'variants_raw', 'variants_merged.csv')))
+
     # just run the variants rule, we can't run from scratch since we won't have a caller
-    check_run(capsys, wd_path, rules = ['analysis/variants_raw/variants_summary.csv', '--resume'])
+    check_run(capsys, wd_path, rules = [os.path.join('analysis', 'variants_raw', 'variants_merged.csv'), '--resume'])
 
     # check variant files
     variants_merged = pd.read_csv(os.path.join(wd_path, 'analysis', 'variants_raw', 'variants_merged.csv'))
