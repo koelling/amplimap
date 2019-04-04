@@ -254,11 +254,17 @@ def test_umi_dedup(capsys):
 
 
 def test_variants(capsys):
+    """For this test we have some intermediate results already, otherwise we would require a variant caller to be installed"""
+
     wd_path = os.path.join(packagedir, "sample_data", "special_wd_variants")
     init_wd(wd_path, os.path.join(packagedir, "sample_data", "sample_reads_in"), remove_analysis=False)
 
     # clean up possible old results
-    os.unlink(os.path.join(wd_path, os.path.join('analysis', 'variants_raw', 'variants_merged.csv')))
+    os.unlink(os.path.join(wd_path, 'analysis', 'variants_raw', 'variants_merged.csv'))
+
+    # touch the intermediate files to make sure they are seen as new enough
+    for file in ['variants_raw/S1.vcf', 'variants_raw/S2.vcf', 'targets.bed']:
+        open(os.path.join(wd_path, 'analysis', file), 'a').close()
 
     # just run the variants rule, we can't run from scratch since we won't have a caller
     check_run(capsys, wd_path, rules = [os.path.join('analysis', 'variants_raw', 'variants_merged.csv'), '--resume'])
