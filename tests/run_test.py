@@ -93,9 +93,9 @@ def test_config_env_invalid(capsys):
     assert 'Reading additional configuration file: {}'.format(extra_config_path) in captured.err
     assert 'Your configuration file(s) contain unknown or invalid settings:' in captured.err
 
-def check_run(capsys, wd_path, rules = 'pileups'):
+def check_run(capsys, wd_path, rules = ['pileups']):
     #dry-run
-    amplimap.run.main(['--working-directory={}'.format(wd_path), rules])
+    amplimap.run.main(['--working-directory={}'.format(wd_path)] + rules)
     captured = capsys.readouterr()
     assert '{} {} dry run successful.'.format(amplimap.run.__title__, amplimap.run.__version__) in captured.err.strip()
 
@@ -240,7 +240,7 @@ def test_umi_dedup(capsys):
     wd_path = os.path.join(packagedir, "sample_data", "wd_umis")
     init_wd(wd_path, os.path.join(packagedir, "sample_data", "sample_reads_in"), umi_one = 3, umi_two = 4)
 
-    check_run(capsys, wd_path, rules = 'dedup_bams')
+    check_run(capsys, wd_path, rules = ['dedup_bams'])
     
     import pysam
     #before dedup we had five aligned read pairs
@@ -257,7 +257,7 @@ def test_variants(capsys):
     init_wd(wd_path, os.path.join(packagedir, "sample_data", "sample_reads_in"))
 
     # just run the variants rule, we can't run from scratch since we won't have a caller
-    check_run(capsys, wd_path, rules = 'analysis/variants_raw/variants_summary.csv --resume')
+    check_run(capsys, wd_path, rules = ['analysis/variants_raw/variants_summary.csv', '--resume'])
 
     # check variant files
     variants_merged = pd.read_csv(os.path.join(wd_path, 'analysis', 'variants_raw', 'variants_merged.csv'))
