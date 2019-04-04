@@ -257,16 +257,17 @@ def merge_variants_unannotated(input_vcfs, output_file):
             rows = []
             with pysam.VariantFile(file) as vcf:
                 for variant in vcf:
-                    for alt in variant.alts:
-                        row = collections.OrderedDict()
-                        row['Sample'] = sname
-                        row['Chr'] = variant.chrom
-                        row['Start'] = variant.start + 1  # pysam is 0-based
-                        row['End'] = variant.start + len(variant.ref)
-                        row['Ref'] = variant.ref
-                        row['Alt'] = alt
-                        row['Otherinfo'] = str(variant).strip()
-                        rows.append(row)
+                    assert len(variant.alts) == 1, 'Invalid VCF - multiallelics should have been split!'
+
+                    row = collections.OrderedDict()
+                    row['Sample'] = sname
+                    row['Chr'] = variant.chrom
+                    row['Start'] = variant.start + 1  # pysam is 0-based
+                    row['End'] = variant.start + len(variant.ref)
+                    row['Ref'] = variant.ref
+                    row['Alt'] = ','.join(variant.alts)
+                    row['Otherinfo'] = str(variant).strip()
+                    rows.append(row)
             df = pd.DataFrame(rows)
 
             print('Data shape:', str(df.shape))
@@ -416,7 +417,7 @@ def make_summary_dataframe(
         assert ((vcf_infos['Total_Reads_Alt'] == -1) | (vcf_infos['Total_Reads_Alt'] == vcf_sample['NV'].astype(int))).all(), 'variant coverage match'
 
     #add info from VCF to table
-    merged['Var_Zygosity'] = ['HOM' if gt == '1/1' else 'Het' if gt in ['0/1', '1/0'] else '???' for gt in vcf_sample['GT']]
+    merged['Var_Zygosity'] = ['HOM' if gt == '1/1' else 'Het' if gt in ['0/1', '1/0'] else 'REF' if gt in ['0/0'] else '???' for gt in vcf_sample['GT']]
     merged['Var_FailedFilters'] = ['' if (filt == 'PASS' or filt == '.') else filt for filt in vcf['Filter']]
     #mutect2 gives us AF
     if 'AF' in vcf_sample:

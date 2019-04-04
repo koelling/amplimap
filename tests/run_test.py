@@ -264,14 +264,31 @@ def test_variants(capsys):
         os.unlink(os.path.join(wd_path, 'analysis', 'variants_raw', 'variants_merged.csv'))
 
     # touch the intermediate files to make sure they are seen as new enough
-    for file in ['variants_raw/S1.vcf', 'variants_raw/S2.vcf', 'targets.bed']:
+    for file in ['targets.bed', 'variants_raw/S1.vcf']:
         open(os.path.join(wd_path, 'analysis', file), 'a').close()
 
     # just run the variants rule, we can't run from scratch since we won't have a caller
     check_run(capsys, wd_path, rules = [os.path.join('analysis', 'variants_raw', 'variants_merged.csv'), '--resume'])
 
     # check variant files
-    variants_merged = pd.read_csv(os.path.join(wd_path, 'analysis', 'variants_raw', 'variants_merged.csv'))
-    print(variants_merged)
-    variants_summary = pd.read_csv(os.path.join(wd_path, 'analysis', 'variants_raw', 'variants_summary.csv'))
-    print(variants_summary)
+    variants_merged = pd.read_csv(os.path.join(wd_path, 'analysis', 'variants_raw', 'variants_merged.csv'), index_cols=['Chr', 'Start'])
+    assert len(variants_merged) == 5
+    assert len(variants_summary['U00096.3', 35]) == 1
+    assert len(variants_summary['U00096.3', 36]) == 1
+    assert len(variants_summary['U00096.3', 37]) == 1
+    assert len(variants_summary['U00096.3', 38]) == 2
+
+    variants_summary = pd.read_csv(os.path.join(wd_path, 'analysis', 'variants_raw', 'variants_summary.csv'), index_cols=['Chr', 'Start', 'Alt'])
+    assert len(variants_summary) == 5
+    
+    assert variants_summary['U00096.3', 35, 'T', 'Ref'] == 'G'
+    assert variants_summary['U00096.3', 36, 'A', 'Ref'] == 'C'
+    assert variants_summary['U00096.3', 37, 'T', 'Ref'] == 'TTT'
+    assert variants_summary['U00096.3', 38, 'A', 'Ref'] == 'C'
+    assert variants_summary['U00096.3', 38, 'T', 'Ref'] == 'C'
+
+    assert variants_summary['U00096.3', 35, 'T', 'Var_Zygosity'] == 'Het'
+    assert variants_summary['U00096.3', 36, 'A', 'Var_Zygosity'] == 'HOM'
+    assert variants_summary['U00096.3', 37, 'T', 'Var_Zygosity'] == 'Het'
+    assert variants_summary['U00096.3', 38, 'A', 'Var_Zygosity'] == 'REF'
+    assert variants_summary['U00096.3', 38, 'T', 'Var_Zygosity'] == 'Het'

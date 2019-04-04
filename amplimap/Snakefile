@@ -1410,53 +1410,75 @@ rule call_variants_low_frequency:
         else:
             raise Exception('Invalid variant caller specified')
 
-rule annotate_variants:
+rule normalize_variants:
     input:
         "{analysis_dir}/{variants_dir}/{sample_full}.vcf",
-        "{analysis_dir}/versions/annovar.txt",
         "{analysis_dir}/versions/bcftools.txt",
     output:
-        "{analysis_dir}/{variants_dir}/{sample_full}.vcf."+get_annovar_name()+"_multianno.csv",
-        temp("{analysis_dir}/{variants_dir}/{sample_full}.for_annovar.vcf.gz"),
-        temp("{analysis_dir}/{variants_dir}/{sample_full}.for_annovar.bed")
+        "{analysis_dir}/{variants_dir}/{sample_full}.vcf.normalized.vcf.gz",
     run:
+        lines_before = 0
         with open(input[0], 'r') as f:
-            found_variants = False
             for line in f:
                 if not line.startswith('#'):
-                    found_variants = True
-                    break
+                    lines_before += 1
 
-        if not found_variants:
-            print('No variants found, creating empty files!')
+        if lines_before == 0:
+            print('No variants found, creating empty file!')
             open(output[0], 'a').close()
-            open(output[1], 'a').close()
-            open(output[2], 'a').close()
         else:
             shell("""
                 %s
-                %s
-
-                lines_before="$(grep -v '^#' {input[0]:q} | wc -l)"
                 bcftools norm \
                     --multiallelics=-both \
                     --fasta-ref="%s" \
-                    --output={output[1]:q} \
+                    --output={output[0]:q} \
                     --output-type=z \
                     {input[0]:q} \
                 ;
+            """ % (load_module_command('bcftools', config), get_path('fasta')))
+            
+            lines_after = 0
+            import gzip
+            with gzip.open(output[0], 'r') as f:
+                for line in f:
+                    if not line.startswith('#'):
+                        lines_after += 1
 
-                lines_after="$(zgrep -v '^#' {output[1]:q} | wc -l)"
-                echo "Split $lines_before variants into $lines_after variants using bcftools";
-                if [ $lines_after -lt $lines_before ]; then
-                    echo "Lost lines?!"
-                    exit 2
-                fi
+            print('Converted raw VCF with {} lines into normalized VCF with {} lines'.format(
+                lines_before,
+                lines_after
+            ))
+            
+            assert lines_after >= lines_before, 'Error: Got fewer lines after VCF normalization than before for {}'.format(input[0])
 
-                convert2annovar.pl {output[1]:q} -format vcf4old --includeinfo > {output[2]:q};
+
+rule annotate_variants:
+    input:
+        "{analysis_dir}/{variants_dir}/{sample_full}.vcf.normalized.vcf.gz",
+        "{analysis_dir}/versions/annovar.txt",
+    output:
+        "{analysis_dir}/{variants_dir}/{sample_full}.vcf."+get_annovar_name()+"_multianno.csv",
+        temp("{analysis_dir}/{variants_dir}/{sample_full}.for_annovar.bed")
+    run:
+        import gzip
+        lines_before = 0
+        with gzip.open(input[0], 'r') as f:
+            for line in f:
+                if not line.startswith('#'):
+                    lines_before += 1
+
+        if lines_before == 0:
+            print('No variants found, creating empty files!')
+            open(output[0], 'a').close()
+            open(output[1], 'a').close()
+        else:
+            shell("""
+                %s
+                convert2annovar.pl {input[0]:q} -format vcf4old --includeinfo > {output[1]:q};
 
                 table_annovar.pl \
-                    {output[2]:q} \
+                    {output[1]:q} \
                     "%s" \
                     --buildver "%s" \
                     --otherinfo -csvout -remove \
@@ -1464,14 +1486,15 @@ rule annotate_variants:
                     -operation {config[annotate][annovar][operations]:q} \
                     --outfile {input[0]:q} \
                 ;
-
-                lines_final="$(tail -n+2 {output[0]:q} | wc -l)"
-                echo "Annotated $lines_after variants into $lines_final variants using annovar";
-                if [ $lines_final -lt $lines_after ]; then
-                    echo "Lost lines?!"
-                    exit 2
-                fi
-            """ % (load_module_command('bcftools', config), load_module_command('annovar', config), get_path('fasta'), get_path('annovar'), get_annovar_name()))
+            """ % (load_module_command('annovar', config), get_path('fasta'), get_path('annovar'), get_annovar_name()))
+            
+            lines_after = 0
+            with gzip.open(output[0], 'r') as f:
+                for line in f:
+                    if not line.startswith('#'):
+                        lines_after += 1
+            
+            assert lines_after >= lines_before, 'Error: Got fewer lines after VCF annotation than before for {}'.format(input[0])
 
 # only provide this rule if we have annovar
 if get_path('annovar', default='') != '':
@@ -1488,7 +1511,7 @@ if get_path('annovar', default='') != '':
 else:
     rule variants_merge_unannotated:
         input:
-            vcfs = expand("{{analysis_dir}}/{{variants_dir}}/{sample_full}.vcf", sample_full = SAMPLES)
+            vcfs = expand("{{analysis_dir}}/{{variants_dir}}/{sample_full}.vcf.normalized.vcf.gz", sample_full = SAMPLES)
         output:
             "{analysis_dir}/{variants_dir}/variants_merged.csv"
         run:
