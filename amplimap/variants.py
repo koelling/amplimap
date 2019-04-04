@@ -258,7 +258,7 @@ def merge_variants_unannotated(input_vcfs, output_file):
             with pysam.VariantFile(file) as vcf:
                 for variant in vcf:
                     for alt in variant.alts:
-                        row = {}
+                        row = collections.OrderedDict()
                         row['Sample'] = sname
                         row['Chr'] = variant.chrom
                         row['Start'] = variant.start + 1  # pysam is 0-based

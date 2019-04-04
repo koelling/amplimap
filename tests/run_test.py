@@ -100,7 +100,7 @@ def check_run(capsys, wd_path, rules = ['pileups']):
     assert '{} {} dry run successful.'.format(amplimap.run.__title__, amplimap.run.__version__) in captured.err.strip()
 
     #full run
-    amplimap.run.main(['--working-directory={}'.format(wd_path), rules, '--run'])
+    amplimap.run.main(['--working-directory={}'.format(wd_path), '--run'] + rules)
     captured = capsys.readouterr()
     assert '{} {} finished!'.format(amplimap.run.__title__, amplimap.run.__version__) in captured.err.strip()    
 
