@@ -40,7 +40,7 @@ def init_wd(path, reads_in_path, umi_one = 0, umi_two = 0):
         else:
             umi_len = 0
 
-        next_umi = None
+        next_umi = ''
         with open(os.path.join(reads_in_path, file), 'rt') as fin, gzip.open(os.path.join(path, 'reads_in', '{}.gz'.format(file)), 'wt') as fout:
             for ix, line in enumerate(fin):
                 assert line.startswith('@') or ix % 4 != 0
@@ -251,3 +251,16 @@ def test_umi_dedup(capsys):
     n_dedup = pysam.AlignmentFile(os.path.join(wd_path, 'analysis', 'bams_umi_dedup', 'S1.bam')).count(until_eof=True)
     assert n_dedup == 4 * 2
 
+
+def test_variants(capsys):
+    wd_path = os.path.join(packagedir, "sample_data", "wd_variants")
+    init_wd(wd_path, os.path.join(packagedir, "sample_data", "sample_reads_in"))
+
+    # just run the variants rule, we can't run from scratch since we won't have a caller
+    check_run(capsys, wd_path, rules = 'analysis/variants_raw/variants_summary.csv --resume')
+
+    # check variant files
+    variants_merged = pd.read_csv(os.path.join(wd_path, 'analysis', 'variants_raw', 'variants_merged.csv'))
+    print(variants_merged)
+    variants_summary = pd.read_csv(os.path.join(wd_path, 'analysis', 'variants_raw', 'variants_summary.csv'))
+    print(variants_summary)

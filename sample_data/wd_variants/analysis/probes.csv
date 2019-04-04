@@ -1,0 +1,2 @@
+id,first_primer_5to3,second_primer_5to3,chr,target_start,target_end,strand,probe_start,probe_end,target_start_0,probe_start_0,capture_size,target_length,first_primer_5to3__rc,second_primer_5to3__rc
+Probe1,AGCTTTTCATTCTGA,GCTGCTATCAGA,U00096.3,16,58,+,1,70,15,0,70,43,TCAGAATGAAAAGCT,TCTGATAGCAGC
