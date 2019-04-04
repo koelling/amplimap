@@ -62,8 +62,10 @@ amplimap has been installed and activated.
 4. Set up your reference genome and indices
 -------------------------------------------
 Download the DNA (FASTA) file for the reference genome that you want to use, for example from the `Ensembl
-FTP <https://www.ensembl.org/info/data/ftp/index.html>`_. When in doubt we recommend using the
-primary_assembly version, for example ``Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz``.
+FTP <https://www.ensembl.org/info/data/ftp/index.html>`_
+or `iGenomes <https://support.illumina.com/sequencing/sequencing_software/igenome.html>`_.
+When in doubt we recommend using the
+primary_assembly file from Ensembl, for example ``Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz``.
 
 Once you have downloaded this file you need to prepare it for use in amplimap:
 

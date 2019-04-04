@@ -8,9 +8,11 @@ import numpy as np
 import re
 import os
 
-#for overlap with targest bed
+# for overlap with targest bed
 import collections
 import interlap
+# for VCF processing
+import pysam
 
 import logging
 log = logging.getLogger(__name__)
@@ -190,22 +192,31 @@ def calculate_del_score(merged: pd.DataFrame):
 
     Additionally, any stopgain, frameshift or splicing variants are always set to 6.
     """
-    assert merged['GERP++_RS'].dtype == float
-    assert merged['phyloP100way_vertebrate'].dtype == float
-        
-    merged['DeleteriousScore'] = 0
-    merged.loc[merged['SIFT_pred'] == 'D', 'DeleteriousScore'] += 1
-    merged.loc[merged['Polyphen2_HDIV_pred'] == 'D', 'DeleteriousScore'] += 1
-    merged.loc[merged['LRT_pred'] == 'D', 'DeleteriousScore'] += 1
-    merged.loc[merged['MutationTaster_pred'].isin(['A', 'D']), 'DeleteriousScore'] += 1
-    merged.loc[merged['GERP++_RS'] >= 5, 'DeleteriousScore'] += 1
-    merged.loc[merged['phyloP100way_vertebrate'] > 1, 'DeleteriousScore'] += 1
-    #set score = 6 for some special cases
-    merged.loc[merged['ExonicFunc.refGene'].notnull() & merged['ExonicFunc.refGene'].str.contains('^stopgain|^frameshift'), 'DeleteriousScore'] = 6
-    merged.loc[merged['Func.refGene'].notnull() & merged['Func.refGene'].str.contains('splic'), 'DeleteriousScore'] = 6
-    merged.loc[merged['ExonicFunc.refGene'].notnull() & merged['ExonicFunc.refGene'].str.contains('splic'), 'DeleteriousScore'] = 6
 
-def merge_variants(input, output):
+    merged['DeleteriousScore'] = 0
+    if 'SIFT_pred' in merged.columns:
+        merged.loc[merged['SIFT_pred'] == 'D', 'DeleteriousScore'] += 1
+    if 'Polyphen2_HDIV_pred' in merged.columns:
+        merged.loc[merged['Polyphen2_HDIV_pred'] == 'D', 'DeleteriousScore'] += 1
+    if 'LRT_pred' in merged.columns:
+        merged.loc[merged['LRT_pred'] == 'D', 'DeleteriousScore'] += 1
+    if 'MutationTaster_pred' in merged.columns:
+        merged.loc[merged['MutationTaster_pred'].isin(['A', 'D']), 'DeleteriousScore'] += 1
+    if 'GERP++_RS' in merged.columns:
+        assert merged['GERP++_RS'].dtype == float
+        merged.loc[merged['GERP++_RS'] >= 5, 'DeleteriousScore'] += 1
+    if 'phyloP100way_vertebrate' in merged.columns:
+        assert merged['phyloP100way_vertebrate'].dtype == float
+        merged.loc[merged['phyloP100way_vertebrate'] > 1, 'DeleteriousScore'] += 1
+
+    #set score = 6 for some special cases
+    if 'ExonicFunc.refGene' in merged.columns:
+        merged.loc[merged['ExonicFunc.refGene'].notnull() & merged['ExonicFunc.refGene'].str.contains('^stopgain|^frameshift'), 'DeleteriousScore'] = 6
+        merged.loc[merged['ExonicFunc.refGene'].notnull() & merged['ExonicFunc.refGene'].str.contains('splic'), 'DeleteriousScore'] = 6
+    if 'Func.refGene' in merged.columns:
+        merged.loc[merged['Func.refGene'].notnull() & merged['Func.refGene'].str.contains('splic'), 'DeleteriousScore'] = 6
+
+def merge_variants_from_annovar(input, output):
     """Merge individual Annovar CSV files together."""
 
     merged = None
@@ -234,6 +245,46 @@ def merge_variants(input, output):
     else:
         print('Merged data shape:', str(merged.shape))
         merged.to_csv(output[0], index = False)
+
+def merge_variants_without_annovar(input_vcfs, output_file):
+    """Merge unannotated VCF files into a single CSV."""
+
+    merged = None
+    for file in input_vcfs:
+        sname = os.path.basename(file).split('.')[0]
+        print('Reading', file, ' ( Sample =', sname, ')...')
+        try:
+            rows = []
+            with pysam.VariantFile(file) as vcf:
+                for variant in vcf:
+                    for alt in variant.alts:
+                        row = {}
+                        row['Sample'] = sname
+                        row['Chr'] = variant.chrom
+                        row['Start'] = variant.start + 1  # pysam is 0-based
+                        row['End'] = variant.start + len(variant.ref)
+                        row['Alt'] = alt
+                        row['Otherinfo'] = str(variant)
+                        rows.append(row)
+            df = pd.DataFrame(rows)
+
+            print('Data shape:', str(df.shape))
+            if len(df) > 0:
+                if merged is None:
+                    merged = df
+                else:
+                    merged = merged.append(df, ignore_index = True)
+            else:
+                print('Ignoring - empty!')
+        except pd.io.common.EmptyDataError:
+            print('No data for', file, ', skipping.')
+
+    if merged is None:
+        print('No variants found in any of the samples, creating empty file!')
+        open(output_file, 'a').close()
+    else:
+        print('Merged data shape:', str(merged.shape))
+        merged.to_csv(output_file, index = False)
 
 def make_summary(input: list, output: list, config: dict, exon_table_path: str = None):
     """Load merged Annovar CSV file (plus targets and sample info), process them and output a new CSV file."""
@@ -300,11 +351,12 @@ def make_summary_dataframe(
     #See here for better, more general solutions: https://www.biostars.org/p/53561/
     #or actually just use the same approach as for targest (interlap.InterLap)
     if include_exon_distance:
-        assert 'Gene.refGene' in merged.columns, 'The Annovar refGene database is required to calculate the distance to the nearest exon.'
-
-        merged['DistanceNearestExon'] = merged.apply(find_closest_exon, axis = 1, gexs = load_gene_exons(
-            exon_table_path,
-            merged.loc[merged['Func.refGene'].isin(['intronic', 'upstream', 'downstream']), 'Gene.refGene']))
+        if not 'Gene.refGene' in merged.columns or not 'Func.refGene' in merged.columns:
+            log.warning('Variants have to be annotated with the Annovar refGene database to calculate exon distances.')
+        else:
+            merged['DistanceNearestExon'] = merged.apply(find_closest_exon, axis = 1, gexs = load_gene_exons(
+                exon_table_path,
+                merged.loc[merged['Func.refGene'].isin(['intronic', 'upstream', 'downstream']), 'Gene.refGene']))
 
     #get gt info
     vcf_sample = pd.DataFrame([ dict( zip( row.Fields.split(':'), row.SampleData.split(':') ) ) for row in vcf.itertuples() ])
@@ -499,57 +551,57 @@ def make_summary_condensed(input, output):
             print('No variants found, creating empty file!')
             open(output[do_filter], 'a').close()
 
-def make_summary_excel(input, output):
-    """UNTESTED: make Excel table for merged table"""
-    import openpyxl
+# def make_summary_excel(input, output):
+#     """UNTESTED: make Excel table for merged table"""
+#     import openpyxl
 
-    try:
-        merged = pd.read_csv(input[0], index_col = False)
+#     try:
+#         merged = pd.read_csv(input[0], index_col = False)
 
-        #reset header format
-        pd.formats.format.header_style = None
+#         #reset header format
+#         pd.formats.format.header_style = None
 
-        #requires openpyxl
-        with pd.ExcelWriter(output[0]) as xlsx:
-            merged.to_excel(xlsx, sheet_name='All (%d)' % len(merged))
+#         #requires openpyxl
+#         with pd.ExcelWriter(output[0]) as xlsx:
+#             merged.to_excel(xlsx, sheet_name='All (%d)' % len(merged))
 
-            merged['_sheet'] = 'Unknown'
-            for sheet, regex in {
-                'ncRNA': 'ncRNA',
-                'Intronic intergenic': 'intronic|intergenic',
-                'Splicing': 'splic',
-                'Up-downstream': 'stream',
-                'UTR': 'utr'
-            }.items():
-                merged.loc[merged['Func.refGene'].notnull() & merged['Func.refGene'].str.contains(regex, case=False), '_sheet'] = sheet
+#             merged['_sheet'] = 'Unknown'
+#             for sheet, regex in {
+#                 'ncRNA': 'ncRNA',
+#                 'Intronic intergenic': 'intronic|intergenic',
+#                 'Splicing': 'splic',
+#                 'Up-downstream': 'stream',
+#                 'UTR': 'utr'
+#             }.items():
+#                 merged.loc[merged['Func.refGene'].notnull() & merged['Func.refGene'].str.contains(regex, case=False), '_sheet'] = sheet
 
-            for sheet, regex in {
-                'Stops': 'stop',
-                'Nonsyn': 'nonsynonymous',
-                'Synon': 'synonymous',
-                'Fshifts': 'frameshift'
-            }.items():
-                merged.loc[merged['ExonicFunc.refGene'].notnull() & merged['ExonicFunc.refGene'].str.contains(regex, case=False), '_sheet'] = sheet
+#             for sheet, regex in {
+#                 'Stops': 'stop',
+#                 'Nonsyn': 'nonsynonymous',
+#                 'Synon': 'synonymous',
+#                 'Fshifts': 'frameshift'
+#             }.items():
+#                 merged.loc[merged['ExonicFunc.refGene'].notnull() & merged['ExonicFunc.refGene'].str.contains(regex, case=False), '_sheet'] = sheet
 
-            sheets = ['Nonsyn', 'Stops', 'Fshifts', 'Splicing', 'Synon', 'Intronic intergenic', 'Up-downstream', 'UTR', 'ncRNA', 'Unknown']
-            assert merged['_sheet'].isin(sheets).all()
-            for sheet in sheets:
-                my_merged = merged[merged['_sheet'] == sheet]
-                if len(my_merged) > 0:
-                    my_merged.drop('_sheet', axis=1, inplace=True)
-                    my_merged.to_excel(xlsx, sheet_name='%s (%d)' % (sheet, len(my_merged)))
+#             sheets = ['Nonsyn', 'Stops', 'Fshifts', 'Splicing', 'Synon', 'Intronic intergenic', 'Up-downstream', 'UTR', 'ncRNA', 'Unknown']
+#             assert merged['_sheet'].isin(sheets).all()
+#             for sheet in sheets:
+#                 my_merged = merged[merged['_sheet'] == sheet]
+#                 if len(my_merged) > 0:
+#                     my_merged.drop('_sheet', axis=1, inplace=True)
+#                     my_merged.to_excel(xlsx, sheet_name='%s (%d)' % (sheet, len(my_merged)))
 
-            #add formatting
-            workbook = xlsx.book
-            for worksheet in workbook:
-                #http://openpyxl.readthedocs.io/en/default/api/openpyxl.worksheet.worksheet.html
-                #http://openpyxl.readthedocs.io/en/default/formatting.html
-                #add colour scale on deleteriousness score
-                worksheet.conditional_formatting.add('A1:A%d'%worksheet.max_row, openpyxl.formatting.rule.ColorScaleRule(start_color = 'ffffff', end_color = 'aa0000'))
-                #causes error, not clear why...
-                pass
+#             #add formatting
+#             workbook = xlsx.book
+#             for worksheet in workbook:
+#                 #http://openpyxl.readthedocs.io/en/default/api/openpyxl.worksheet.worksheet.html
+#                 #http://openpyxl.readthedocs.io/en/default/formatting.html
+#                 #add colour scale on deleteriousness score
+#                 worksheet.conditional_formatting.add('A1:A%d'%worksheet.max_row, openpyxl.formatting.rule.ColorScaleRule(start_color = 'ffffff', end_color = 'aa0000'))
+#                 #causes error, not clear why...
+#                 pass
 
-            xlsx.save()
-    except pd.io.common.EmptyDataError:
-        print('No variants found, creating empty file!')
-        open(output[0], 'a').close()
+#             xlsx.save()
+#     except pd.io.common.EmptyDataError:
+#         print('No variants found, creating empty file!')
+#         open(output[0], 'a').close()

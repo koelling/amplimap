@@ -253,7 +253,6 @@ def get_group_consensus(group_calls, min_consensus_count = 1, min_consensus_frac
     if debug:
         print('Group', '( len =', len(group_calls), ')', ' calls:',
             ', '.join(['%dx %s (q%d)' % (group_call_counts[k], k, group_calls_maxphred[k]) for k in group_call_counts.keys()]))
-        print(group_call_counts.most_common(1))
 
     #filter out non-consensus calls by raising a PileupGroupFilterException
     if not ignore_groups and (group_consensus_count < min_consensus_count):

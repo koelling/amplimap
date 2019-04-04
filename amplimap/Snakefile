@@ -1473,14 +1473,26 @@ rule annotate_variants:
                 fi
             """ % (load_module_command('bcftools', config), load_module_command('annovar', config), get_path('fasta'), get_path('annovar'), get_annovar_name()))
 
-rule variants_merge:
-    input:
-        csvs = expand("{{analysis_dir}}/{{variants_dir}}/{sample_full}.vcf."+get_annovar_name()+"_multianno.csv", sample_full = SAMPLES)
-    output:
-        "{analysis_dir}/{variants_dir}/variants_merged.csv"
-    run:
-        import amplimap.variants
-        amplimap.variants.merge_variants(input, output)
+# only provide this rule if we have annovar
+if get_path('annovar', default='') != '':
+    rule variants_merge:
+        input:
+            csvs = expand("{{analysis_dir}}/{{variants_dir}}/{sample_full}.vcf."+get_annovar_name()+"_multianno.csv", sample_full = SAMPLES)
+        output:
+            "{analysis_dir}/{variants_dir}/variants_merged.csv"
+        run:
+            import amplimap.variants
+            amplimap.variants.merge_variants_from_annovar(input, output)
+# otherwise we just merge the files together
+else:
+    rule variants_merge_without_annovar:
+        input:
+            vcfs = expand("{{analysis_dir}}/{{variants_dir}}/{sample_full}.vcf", sample_full = SAMPLES)
+        output:
+            "{analysis_dir}/{variants_dir}/variants_merged.csv"
+        run:
+            import amplimap.variants
+            amplimap.variants.merge_variants_without_annovar(input['vcfs'], output[0])
 
 rule variants_summary:
     input:

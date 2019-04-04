@@ -44,7 +44,9 @@ Reference genome paths
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 amplimap requires a reference genome and associated indices (such as a FASTA index
-or a bwa index) to run. For example, to specify paths for ``hg19`` and ``hg38``
+or a bwa index) to run.
+It is recommended that you specify these paths in the :ref:`default-config` file.
+For example, to specify paths for ``hg19`` and ``hg38``
 of the human genome and set the default to ``hg38``:
 
 ::
@@ -61,8 +63,8 @@ of the human genome and set the default to ``hg38``:
     general:
       genome_name: "hg38"
 
-
-It is recommended that you specify these paths in the :ref:`default-config` file.
+For suggestions on where to obtain these references and how to create indices see
+:ref:`installation-setup`.
 
 Once you have set up these paths, you can then choose the genome to use for each
 experiment by specifying the ``genome_name`` in your local configuration file:
@@ -92,7 +94,8 @@ Note that when you are doing variant annotation with Annovar your
 
 Setting up Annovar
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-For licensing reasons annovar needs to be downloaded and installed manually.
+Annovar is the software amplimap uses to annotate variant calls.
+For licensing reasons it needs to be downloaded and installed manually.
 Please see the `Annovar website <http://annovar.openbioinformatics.org/en/latest/user-guide/download/>`_
 for details.
 
