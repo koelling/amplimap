@@ -1486,7 +1486,7 @@ rule annotate_variants:
                     -operation {config[annotate][annovar][operations]:q} \
                     --outfile {input[0]:q} \
                 ;
-            """ % (load_module_command('annovar', config), get_path('fasta'), get_path('annovar'), get_annovar_name()))
+            """ % (load_module_command('annovar', config), get_path('annovar'), get_annovar_name()))
             
             lines_after = 0
             with gzip.open(output[0], 'r') as f:
