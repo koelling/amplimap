@@ -21,13 +21,14 @@ os.system("cythonize -i {}".format(os.path.join(packagedir, "amplimap", "parse_r
 test_config_path = os.path.join(packagedir, "sample_data", "config_default.yaml")
 os.environ['AMPLIMAP_CONFIG'] = test_config_path
 
-def init_wd(path, reads_in_path, umi_one = 0, umi_two = 0):
+def init_wd(path, reads_in_path, umi_one = 0, umi_two = 0, remove_analysis = True):
     assert os.path.isdir(path)
 
-    #remove previous output
-    shutil.rmtree(os.path.join(path, 'analysis'), ignore_errors=True)
+    # remove previous output
+    if remove_analysis:
+        shutil.rmtree(os.path.join(path, 'analysis'), ignore_errors=True)
 
-    #remove previous reads_in and then prepare a new one
+    # remove previous reads_in and then prepare a new one
     shutil.rmtree(os.path.join(path, 'reads_in'), ignore_errors=True)
     os.mkdir(os.path.join(path, 'reads_in'))
 
@@ -253,8 +254,8 @@ def test_umi_dedup(capsys):
 
 
 def test_variants(capsys):
-    wd_path = os.path.join(packagedir, "sample_data", "wd_variants")
-    init_wd(wd_path, os.path.join(packagedir, "sample_data", "sample_reads_in"))
+    wd_path = os.path.join(packagedir, "sample_data", "special_wd_variants")
+    init_wd(wd_path, os.path.join(packagedir, "sample_data", "sample_reads_in"), remove_analysis=False)
 
     # just run the variants rule, we can't run from scratch since we won't have a caller
     check_run(capsys, wd_path, rules = ['analysis/variants_raw/variants_summary.csv', '--resume'])
