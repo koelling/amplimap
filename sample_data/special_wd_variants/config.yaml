@@ -1,2 +1,5 @@
 align:
   aligner: "naive"
+
+variants:
+  caller: "gatk"

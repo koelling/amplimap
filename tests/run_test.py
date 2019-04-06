@@ -150,6 +150,25 @@ def check_default_pileups(wd_path, expected_coverage = 5, include_too_short = Fa
     assert (set(pileups.loc[pileups.pos == 37, 'alts'].iloc[0].split(';')) == set(['G'])) #explicitly use iloc and no .all() here
 
 
+def test_multiple_input_dirs(capsys):
+    wd_path = os.path.join(packagedir, "sample_data", "wd_multi_input")
+    init_wd(wd_path, os.path.join(packagedir, "sample_data", "sample_reads_in"))
+
+    amplimap.run.main(['--working-directory={}'.format(wd_path), 'pileups'])
+    captured = capsys.readouterr()
+
+    assert 'Please only provide a single input directory with all your data.' in captured.err
+
+
+def test_naive_pileups(capsys):
+    wd_path = os.path.join(packagedir, "sample_data", "wd_naive")
+    init_wd(wd_path, os.path.join(packagedir, "sample_data", "sample_reads_in"))
+
+    check_run(capsys, wd_path)
+    check_default_stats(wd_path)
+    check_default_pileups(wd_path)
+
+
 def test_variants(capsys):
     """
     For this test we have some intermediate results already, otherwise we would require a variant caller to be installed.
@@ -164,19 +183,27 @@ def test_variants(capsys):
         if os.path.exists(os.path.join(wd_path, 'analysis', file)):
             os.unlink(os.path.join(wd_path, 'analysis', file))
 
-    # touch the intermediate files to make sure they are seen as new enough
-    for file in ['targets.bed', 'variants_raw/S1.vcf']:
+    # then run the first steps
+    amplimap.run.main(['--working-directory={}'.format(wd_path), 'bams'])
+
+    # now update file modification time to pretend we called variants
+    for file in ['versions/gatk.txt', 'targets_merged.bed', 'variants_raw/S1.vcf']:
         pathlib.Path(os.path.join(wd_path, 'analysis', file)).touch()
 
+    rules_manual = [
+        '--resume',
+        os.path.join('analysis', 'variants_raw', 'variants_summary.csv'), 
+    ]
+
     # just run the variants rule, we can't run from scratch since we won't have a caller
-    captured = check_run(capsys, wd_path, rules = [os.path.join('analysis', 'variants_raw', 'variants_merged.csv'), '--resume'], run=False)
+    captured = check_run(capsys, wd_path, rules = rules_manual, run=False)
     # make sure we are not trying to rerun everything
     assert not 'align_pe' in captured.out.strip()
     assert not 'call_variants_raw' in captured.out.strip()
     # make sure we want to reannotate
     assert 'variants_merge_unannotated' in captured.out.strip()
     # now actually run
-    captured = check_run(capsys, wd_path, rules = [os.path.join('analysis', 'variants_raw', 'variants_merged.csv'), '--resume'])
+    captured = check_run(capsys, wd_path, rules = rules_manual)
 
     # check variant files
     variants_merged = pd.read_csv(os.path.join(wd_path, 'analysis', 'variants_raw', 'variants_merged.csv'), index_col=['Chr', 'Start'])
@@ -202,42 +229,6 @@ def test_variants(capsys):
     assert variants_summary['U00096.3', 45, 'C', 'Var_Zygosity'] == 'Het'
 
 
-def test_naive_pileups_simulation(capsys):
-    wd_path = os.path.join(packagedir, "sample_data", "wd_naive")
-    init_wd(wd_path, os.path.join(packagedir, "sample_data", "sample_reads_in"))
-    shutil.rmtree(os.path.join(wd_path, 'test__GGCAATATGT_GGCAATCTGT_100'), ignore_errors=True) #make sure this doesn't exist
-
-    #run simulation, replacing A@30 to C
-    amplimap.run.main(['--working-directory={}'.format(wd_path), 'test__GGCAATATGT_GGCAATCTGT_100/test_pileups.done', '--run'])
-    captured = capsys.readouterr()
-    assert '{} {} finished!'.format(amplimap.run.__title__, amplimap.run.__version__) in captured.err.strip()
-
-    pileups = pd.read_csv(os.path.join(wd_path, 'test__GGCAATATGT_GGCAATCTGT_100', 'pileups', 'pileups_long.csv'))    
-    assert len(pileups) == 11
-
-    #we should have an A>C SNP at pos 30, in addition to the others
-    assert pileups.loc[~pileups.pos.isin([30, 35, 37]), 'alts'].isnull().all()
-    assert (pileups.loc[pileups.pos == 30, 'nonref_hq_count'] == 5).all()
-    assert (pileups.loc[pileups.pos == 30, 'ref_hq_count'] == 0).all()
-    assert (set(pileups.loc[pileups.pos == 30, 'alts'].iloc[0].split(';')) == set(['C'])) #explicitly use iloc and no .all() here
-
-def test_multiple_input_dirs(capsys):
-    wd_path = os.path.join(packagedir, "sample_data", "wd_multi_input")
-    init_wd(wd_path, os.path.join(packagedir, "sample_data", "sample_reads_in"))
-
-    amplimap.run.main(['--working-directory={}'.format(wd_path), 'pileups'])
-    captured = capsys.readouterr()
-
-    assert 'Please only provide a single input directory with all your data.' in captured.err
-
-def test_naive_pileups(capsys):
-    wd_path = os.path.join(packagedir, "sample_data", "wd_naive")
-    init_wd(wd_path, os.path.join(packagedir, "sample_data", "sample_reads_in"))
-
-    check_run(capsys, wd_path)
-    check_default_stats(wd_path)
-    check_default_pileups(wd_path)
-
 def test_naive_pileups_notrim(capsys):
     wd_path = os.path.join(packagedir, "sample_data", "wd_naive_notrim")
     init_wd(wd_path, os.path.join(packagedir, "sample_data", "sample_reads_in"))
@@ -245,6 +236,7 @@ def test_naive_pileups_notrim(capsys):
     check_run(capsys, wd_path)
     check_default_stats(wd_path, is_trimmed = False)
     #check_default_pileups(wd_path, expected_coverage = 6)
+
 
 def test_bwa_pileups(capsys):
     wd_path = os.path.join(packagedir, "sample_data", "wd_bwa")
@@ -254,6 +246,7 @@ def test_bwa_pileups(capsys):
     check_default_stats(wd_path)
     check_default_pileups(wd_path)
 
+
 def test_bwa_pileups_notrim(capsys):
     wd_path = os.path.join(packagedir, "sample_data", "wd_bwa_notrim")
     init_wd(wd_path, os.path.join(packagedir, "sample_data", "sample_reads_in"))
@@ -261,6 +254,7 @@ def test_bwa_pileups_notrim(capsys):
     check_run(capsys, wd_path)
     check_default_stats(wd_path, is_trimmed = False)
     #check_default_pileups(wd_path, expected_coverage = 6)
+
 
 def test_raw_read_pileups(capsys):
     wd_path = os.path.join(packagedir, "sample_data", "wd_bwa_raw")
@@ -280,6 +274,7 @@ def test_raw_read_pileups(capsys):
 
     check_default_pileups(wd_path, include_too_short = True)
 
+
 def test_umi_pileups(capsys):
     wd_path = os.path.join(packagedir, "sample_data", "wd_umis")
     init_wd(wd_path, os.path.join(packagedir, "sample_data", "sample_reads_in"), umi_one = 3, umi_two = 4)
@@ -297,6 +292,7 @@ def test_umi_pileups(capsys):
     assert stats_reads.loc[0, 'umis_total'] == 5
     assert stats_reads.loc[0, 'umis_coverage_max'] == 2
 
+
 def test_umi_dedup(capsys):
     wd_path = os.path.join(packagedir, "sample_data", "wd_umis")
     init_wd(wd_path, os.path.join(packagedir, "sample_data", "sample_reads_in"), umi_one = 3, umi_two = 4)
@@ -311,3 +307,23 @@ def test_umi_dedup(capsys):
     #after dedup we have four (two read pairs have same UMI)
     n_dedup = pysam.AlignmentFile(os.path.join(wd_path, 'analysis', 'bams_umi_dedup', 'S1.bam')).count(until_eof=True)
     assert n_dedup == 4 * 2
+
+
+def test_naive_pileups_simulation(capsys):
+    wd_path = os.path.join(packagedir, "sample_data", "wd_naive")
+    init_wd(wd_path, os.path.join(packagedir, "sample_data", "sample_reads_in"))
+    shutil.rmtree(os.path.join(wd_path, 'test__GGCAATATGT_GGCAATCTGT_100'), ignore_errors=True) #make sure this doesn't exist
+
+    #run simulation, replacing A@30 to C
+    amplimap.run.main(['--working-directory={}'.format(wd_path), 'test__GGCAATATGT_GGCAATCTGT_100/test_pileups.done', '--run'])
+    captured = capsys.readouterr()
+    assert '{} {} finished!'.format(amplimap.run.__title__, amplimap.run.__version__) in captured.err.strip()
+
+    pileups = pd.read_csv(os.path.join(wd_path, 'test__GGCAATATGT_GGCAATCTGT_100', 'pileups', 'pileups_long.csv'))    
+    assert len(pileups) == 11
+
+    #we should have an A>C SNP at pos 30, in addition to the others
+    assert pileups.loc[~pileups.pos.isin([30, 35, 37]), 'alts'].isnull().all()
+    assert (pileups.loc[pileups.pos == 30, 'nonref_hq_count'] == 5).all()
+    assert (pileups.loc[pileups.pos == 30, 'ref_hq_count'] == 0).all()
+    assert (set(pileups.loc[pileups.pos == 30, 'alts'].iloc[0].split(';')) == set(['C'])) #explicitly use iloc and no .all() here
