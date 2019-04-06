@@ -1418,9 +1418,9 @@ rule normalize_variants:
         "{analysis_dir}/{variants_dir}/{sample_full}.vcf.normalized.vcf.gz",
     run:
         lines_before = 0
-        with open(input[0], 'r') as f:
+        with open(input[0], 'rb') as f:
             for line in f:
-                if not line.startswith('#'):
+                if not line.startswith(b'#'):
                     lines_before += 1
 
         if lines_before == 0:
@@ -1488,11 +1488,15 @@ rule annotate_variants:
                 ;
             """ % (load_module_command('annovar', config), get_path('annovar'), get_annovar_name()))
             
-            lines_after = 0
-            with gzip.open(output[0], 'r') as f:
+            lines_after = -1  # adjust for header line
+            with open(output[0], 'rb') as f:
                 for line in f:
-                    if not line.startswith('#'):
-                        lines_after += 1
+                    lines_after += 1
+
+            print('Annotated VCF with {} lines into CSV with {} lines'.format(
+                lines_before,
+                lines_after
+            ))
             
             assert lines_after >= lines_before, 'Error: Got fewer lines after VCF annotation than before for {}'.format(input[0])
 

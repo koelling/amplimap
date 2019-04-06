@@ -107,6 +107,7 @@ def main(argv = None):
         parser.add_argument("--ncores", help="number of local cores to run in parallel (only applies if --cluster is NOT set)", default=1, type=int)
         parser.add_argument("--njobs", help="number of cluster jobs to run in parallel (only applies if --cluster is set)", default=10, type=int)
         parser.add_argument("--latency-wait", help="How long to wait for output files to appear after job completes. Increase this if you get errors about missing output files. (Snakemake parameter)", default=5, type=int)
+        parser.add_argument("--snakemake-args", help="For debugging: Extra arguments to the snakemake function (comma-separated key=value pairs - eg. 'printreason=True')")
         parser.add_argument("--debug", help="debug mode", action="store_true")
         #parser.add_argument("--debug-dag", help="debug DAG", action="store_true")
         parser.add_argument("TARGET", help="targets to run (eg. pileups variants coverages)", nargs="*")
@@ -344,7 +345,7 @@ def main(argv = None):
             sys.stderr.write('cluster_command_nosync={}\n'.format(cluster_command_nosync))
             sys.stderr.write('cluster_command_sync={}\n'.format(cluster_command_sync))
 
-            #make sure cluster log directory exists (this assumed the cluster command is using this as a parameter)
+            # make sure cluster log directory exists (this assumed the cluster command is using this as a parameter)
             cluster_logs = os.path.join(args.working_directory, 'cluster_log')
             try:
                 os.makedirs(cluster_logs)
@@ -354,11 +355,22 @@ def main(argv = None):
         else:
             sys.stderr.write('Running locally with {} cores\n'.format(args.ncores))
 
+        extra_snakemake_args = {}
+        if args.snakemake_args:
+            extra_snakemake_args = {
+                kv[0]: (True if kv[1].lower() == 'true' else False if kv[1].lower() == 'false' else kv[1])
+                for kv in [
+                    x.split('=') for x in args.snakemake_args.split(',')
+                ]
+            }
+
+            sys.stderr.write('Using extra Snakemake arguments: {}\n'.format(str(extra_snakemake_args)))
+
         success = snakemake.snakemake(
             snakefile = os.path.join(basedir, "Snakefile"),
             configfile = configfile,
-            cores = args.ncores, #ignored if cluster
-            nodes = args.njobs, #ignored if not cluster
+            cores = args.ncores,  # ignored if cluster
+            nodes = args.njobs,  # ignored if not cluster
             workdir = args.working_directory,
             targets = args.TARGET,
             dryrun = not args.run,
@@ -367,7 +379,7 @@ def main(argv = None):
             jobname = "{}.{{rulename}}.{{jobid}}.sh".format(__title__),
             unlock = args.unlock,
             latency_wait = args.latency_wait,
-            #debug_dag = args.debug_dag,
+            **extra_snakemake_args
         )
 
         sys.stderr.write('\n===============================================\n\n')

@@ -29,6 +29,10 @@ def init_wd(path, reads_in_path, umi_one = 0, umi_two = 0, remove_analysis = Tru
     if remove_analysis:
         shutil.rmtree(os.path.join(path, 'analysis'), ignore_errors=True)
 
+    # remove snakemake temp
+    if os.path.exists(os.path.join(path, '.snakemake')):
+        os.unlink(os.path.join(path, '.snakemake'))
+
     # remove previous reads_in and then prepare a new one
     shutil.rmtree(os.path.join(path, 'reads_in'), ignore_errors=True)
     os.mkdir(os.path.join(path, 'reads_in'))
