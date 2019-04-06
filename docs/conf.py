@@ -25,7 +25,7 @@ sys.path.insert(0, os.path.abspath('..'))
 # -- Project information -----------------------------------------------------
 
 project = u'amplimap'
-copyright = u'2018, Nils Koelling'
+copyright = u'2019, Nils Koelling'
 author = u'Nils Koelling'
 
 #load version number (can't just import the package since we might miss requirements)

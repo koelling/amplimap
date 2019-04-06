@@ -7,7 +7,7 @@ ADD https://raw.githubusercontent.com/koelling/amplimap/master/environment.yml e
 # it's required to build python packages from pip
 # then download and install conda environment
 RUN apt-get update --fix-missing && \
-    apt-get install -y gcc vim && \
+    apt-get install -y gcc && \
     apt-get clean && \
     conda env create --file environment.yml && \
     conda clean -i -l -t -y && \

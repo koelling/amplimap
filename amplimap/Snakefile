@@ -393,27 +393,29 @@ rule copy_probes:
         design = amplimap.reader.read_new_probe_design(input['probes'], reference_type = 'genome')
         design.to_csv(output['probes'], index=False)
 
-rule convert_mipgen_probes:
-    input:
-        rules.start_analysis.output,
-        mipgen = "probes_mipgen.csv"
-    output:
-        probes = "{analysis_dir}/probes.csv"
-    run:
-        import amplimap.reader
-        design = amplimap.reader.read_and_convert_mipgen_probes(input['mipgen'])
-        design.to_csv(output['probes'], index=False)
+if os.path.isfile("probes_mipgen.csv"):
+    rule convert_mipgen_probes:
+        input:
+            rules.start_analysis.output,
+            mipgen = "probes_mipgen.csv"
+        output:
+            probes = "{analysis_dir}/probes.csv"
+        run:
+            import amplimap.reader
+            design = amplimap.reader.read_and_convert_mipgen_probes(input['mipgen'])
+            design.to_csv(output['probes'], index=False)
 
-rule convert_heatseq_probes:
-    input:
-        rules.start_analysis.output,
-        heatseq = "probes_heatseq.tsv"
-    output:
-        probes = "{analysis_dir}/probes.csv"
-    run:
-        import amplimap.reader
-        design = amplimap.reader.read_and_convert_heatseq_probes(input['heatseq'])
-        design.to_csv(output['probes'], index=False)
+if os.path.isfile("probes_heatseq.csv"):
+    rule convert_heatseq_probes:
+        input:
+            rules.start_analysis.output,
+            heatseq = "probes_heatseq.tsv"
+        output:
+            probes = "{analysis_dir}/probes.csv"
+        run:
+            import amplimap.reader
+            design = amplimap.reader.read_and_convert_heatseq_probes(input['heatseq'])
+            design.to_csv(output['probes'], index=False)
 
 ##### SNPS CHECKING/COPYING
 rule copy_snps:

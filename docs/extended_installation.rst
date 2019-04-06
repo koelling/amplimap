@@ -88,7 +88,7 @@ Once you have downloaded this file you need to prepare it for use in amplimap:
 ------------------------------------------
 
 Finally, we recommend that you add the paths of the reference genome files to your ``config_default.yaml``.
-This way, you don't need to specify these paths in every single directory-specify ``config.yaml``.
+This way, you don't need to specify these paths in every single directory-specific ``config.yaml``.
 To find out where this file is located run:
 
 ::
@@ -98,8 +98,9 @@ To find out where this file is located run:
 Open the file ``config_default.yaml`` at this location and look for the settings under ``paths:``
 corresponding to the indices you created.
 
-Replace these with the full paths to your files. If you haven't generated the corresponding
-file leave the setting empty. For example, if you generated indices for bwa and bowtie2 (but not STAR or Annovar)
+Replace these with the full paths to your files. If you haven't generated one of the
+files leave the corresponding setting empty.
+For example, if you generated indices for bwa and bowtie2 (but not STAR or Annovar)
 and always used the same FASTA filename as the prefix:
 
 ::
@@ -110,7 +111,7 @@ and always used the same FASTA filename as the prefix:
         bowtie2: "/home/user/amplimap/Homo_sapiens.GRCh38.dna.primary_assembly.fa"
         fasta: "/home/user/amplimap/Homo_sapiens.GRCh38.dna.primary_assembly.fa"
 
-If you used a different reference genome change ``hg38:`` to the appropriate abbreviation (e.g. ``mm10:``)
+If you are working with a different reference genome change ``hg38:`` to the appropriate abbreviation (e.g. ``mm10:``)
 and also update the line ``genome_name: "hg38"`` below.
 
 If you are using Annovar make sure you also provide the path to its indices directory under ``paths:``
@@ -121,11 +122,9 @@ Save the file and confirm that the settings are being read correctly by looking 
 
 6. Run amplimap!
 -------------------
-Now you are ready to run amplimap:
-
-::
-
-    amplimap
+Now you are ready to run amplimap! Prepare a working directory
+(see :ref:`usage`), change into it using ``cd`` and then run
+``amplimap`` to get started.
 
 If you get a message about the command not being found
 please make sure you activated the conda environment as described above.
@@ -134,22 +133,47 @@ please make sure you activated the conda environment as described above.
 
 Installing amplimap through Docker
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-We also have a Dockerfile available,
-which allows you to run amplimap through `Docker <https://www.docker.com/>`_.
-To build the docker image install docker, create a new directory and then run:
+We also have a ` Docker image<https://cloud.docker.com/repository/docker/koelling/amplimap/general>`_
+available.
+To use this, install `Docker <https://www.docker.com/>`_ and then run
+``docker pull koelling/amplimap`` to download the image.
+Then you can run amplimap commands using ``docker run amplimap``,
+forwarding directories from your host into the docker container with ``-v``.
+
+For example, here are some commands you could use to prepare
+indices for an *E. coli* :download:`reference genome FASTA <../sample_data/ecoli.fasta>`
+saved as ``~/references/ecoli.fasta`` and then run amplimap
+on some :download:`example data <../sample_data/example_wd.tar>` you saved in ``~/data/example_wd``:
 
 ::
 
-    wget https://raw.githubusercontent.com/koelling/amplimap/master/Dockerfile
-    docker build -t amplimap .
+    docker pull koelling/amplimap
+    docker run -v ~/references:/references amplimap samtools faidx /references/ecoli.fasta
+    docker run -v ~/references:/references amplimap bwa index /references/ecoli.fasta
+    docker run -v ~/references:/references -v ~/data:/data amplimap amplimap --working-directory=/data/example_wd coverages pileups
 
-After building the Docker image, you can run a shell in the container like this:
+Note that in this example you would have to provide the paths to your reference genome
+in the ``~/data/example_wd/config.yaml`` file:
 
 ::
 
-    docker run -i -t amplimap /bin/bash
+    paths:
+      ecoli:
+        bwa: "/references/ucsc.ecoli.fasta"
+        fasta: "/references/ucsc.ecoli.fasta"
+    general:
+      genome_name: "ecoli"
 
-Finally, set up amplimap as described here: :ref:`installation-setup`
+You can avoid having to specify these paths every time by running a shell inside the Docker container
+and adding your reference genome to your ``config_default.yaml`` as described here: :ref:`installation-setup`.
+
+::
+
+    docker run -t -i amplimap /bin/bash
+
+To annotate variant calls you would also have to install Annovar inside the Docker container
+and add the path to the Annovar indices to your config.
+
 
 .. _installation-pip:
 

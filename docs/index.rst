@@ -32,6 +32,14 @@ Built on top of `Snakemake <https://snakemake.readthedocs.io/>`_ and Python 3, a
 automated and can be run on a single machine as well as on an HPC cluster
 (e.g. LSF, SGE).
 
+Pipeline diagram & cheat sheet
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. image:: amplimap-diagram.png
+   :scale: 20%
+
+:download:`Download PDF version <amplimap-diagram.pdf>`
+
 Supported experimental protocols
 ---------------------------------
 amplimap is compatible with most targeted sequencing protocols that generate paired-end short read data.
@@ -76,7 +84,7 @@ Links
 Citation and License
 --------------------
 Licensed under the Apache License, version 2.0.
-Copyright 2018 Nils Koelling.
+Copyright 2019 Nils Koelling.
 When you use amplimap, please cite it in your work. For example:
 
   Koelling, Nils. "amplimap: amplicon mapping and analysis pipeline (version |version|)". https://github.com/koelling/amplimap/
