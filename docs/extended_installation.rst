@@ -133,7 +133,7 @@ please make sure you activated the conda environment as described above.
 
 Installing amplimap through Docker
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-We also have a ` Docker image<https://cloud.docker.com/repository/docker/koelling/amplimap/general>`_
+We also have a `Docker image <https://cloud.docker.com/repository/docker/koelling/amplimap/general>`_
 available.
 To use this, install `Docker <https://www.docker.com/>`_ and then run
 ``docker pull koelling/amplimap`` to download the image.

@@ -18,3 +18,7 @@ RUN apt-get update --fix-missing && \
 # set up
 RUN echo "source activate amplimap" > ~/.bashrc
 ENV PATH /opt/conda/envs/amplimap/bin:$PATH
+
+# TO BUILD:
+# cd docker; rm Dockerfile; cp ../Dockerfile .; docker build --no-cache -t amplimap .; docker run amplimap amplimap --version;
+# docker tag amplimap koelling/amplimap:v0.4.7; docker push koelling/amplimap:v0.4.7
