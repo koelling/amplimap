@@ -208,25 +208,36 @@ def test_variants(capsys):
     # check variant files
     variants_merged = pd.read_csv(os.path.join(wd_path, 'analysis', 'variants_raw', 'variants_merged.csv'), index_col=['Chr', 'Start'])
     assert len(variants_merged) == 5
-    assert len(variants_merged['U00096.3', 35]) == 1
-    assert len(variants_merged['U00096.3', 36]) == 1
-    assert len(variants_merged['U00096.3', 37]) == 1
-    assert len(variants_merged['U00096.3', 45]) == 2
+    assert len(variants_merged.loc['U00096.3', 35]) == 1
+    assert len(variants_merged.loc['U00096.3', 36]) == 1
+    assert len(variants_merged.loc['U00096.3', 37]) == 1
+    assert len(variants_merged.loc['U00096.3', 45]) == 2
 
     variants_summary = pd.read_csv(os.path.join(wd_path, 'analysis', 'variants_raw', 'variants_summary.csv'), index_col=['Chr', 'Start', 'Alt'])
     assert len(variants_summary) == 5
-    
-    assert variants_summary['U00096.3', 35, 'C', 'Ref'] == 'T'
-    assert variants_summary['U00096.3', 36, 'A', 'Ref'] == 'C'
-    assert variants_summary['U00096.3', 37, 'T', 'Ref'] == 'TGTG'
-    assert variants_summary['U00096.3', 45, 'G', 'Ref'] == 'T'
-    assert variants_summary['U00096.3', 45, 'C', 'Ref'] == 'T'
 
-    assert variants_summary['U00096.3', 35, 'C', 'Var_Zygosity'] == 'Het'
-    assert variants_summary['U00096.3', 36, 'A', 'Var_Zygosity'] == 'HOM'
-    assert variants_summary['U00096.3', 37, 'T', 'Var_Zygosity'] == 'Het'
-    assert variants_summary['U00096.3', 45, 'G', 'Var_Zygosity'] == 'REF'
-    assert variants_summary['U00096.3', 45, 'C', 'Var_Zygosity'] == 'Het'
+    assert variants_summary.loc['U00096.3', 35, 'C']['Ref'] == 'T'
+    assert variants_summary.loc['U00096.3', 36, 'A']['Ref'] == 'C'
+    assert variants_summary.loc['U00096.3', 37, 'T']['Ref'] == 'TGTG'
+    assert variants_summary.loc['U00096.3', 45, 'G']['Ref'] == 'T'
+    assert variants_summary.loc['U00096.3', 45, 'C']['Ref'] == 'T'
+
+    assert variants_summary.loc['U00096.3', 35, 'C']['Var_Zygosity'] == 'Het'
+    assert variants_summary.loc['U00096.3', 36, 'A']['Var_Zygosity'] == 'HOM'
+    assert variants_summary.loc['U00096.3', 37, 'T']['Var_Zygosity'] == 'Het'
+    assert variants_summary.loc['U00096.3', 45, 'G']['Var_Zygosity'] == 'REF'
+    assert variants_summary.loc['U00096.3', 45, 'C']['Var_Zygosity'] == 'Het'
+
+    assert variants_summary.loc['U00096.3', 35, 'C']['Target'] == 'target_0'
+    assert variants_summary.loc['U00096.3', 36, 'A']['Target'] == 'target_0'
+    assert variants_summary.loc['U00096.3', 37, 'T']['Target'] == 'target_0'
+    assert pd.isna(variants_summary.loc['U00096.3', 45, 'G']['Target'])
+    assert pd.isna(variants_summary.loc['U00096.3', 45, 'C']['Target'])
+
+    assert variants_summary.loc['U00096.3', 35, 'C']['Var_FailedFilters'] == 'badReads'
+    assert variants_summary.loc['U00096.3', 45, 'G']['Var_FailedFilters'] == 'badReads'
+    assert variants_summary.loc['U00096.3', 45, 'C']['Var_FailedFilters'] == 'badReads'
+    assert variants_summary['Var_FailedFilters'].isnull().sum() == 2
 
 
 def test_naive_pileups_notrim(capsys):
