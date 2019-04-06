@@ -465,11 +465,20 @@ def make_summary_dataframe(
         else:
             print('Not generating GBrowse/RegionSeq columns since reference build is neither hg19 nor hg38.')
 
-    #NB: always take the first one
     if target_intervals is not None:
-        merged['Target'] = [ (
-            next(target_range[2].id for target_range in target_intervals[row.Chr].find( (row.Start, row.End) )) #note the double parenthesis for tuple
-        ) for row in merged[['Chr', 'Start', 'End']].itertuples()]
+        found_targets = []
+        for row in merged[['Chr', 'Start', 'End']].itertuples():
+            # this function may return 0..N items
+            found_targets_for_row = target_intervals[row.Chr].find( (row.Start, row.End) )
+
+            # take the first target, if any
+            my_target = None
+            for target_range in found_targets_for_row:
+                my_target = target_range[2].id
+                break  # always take the first hit
+            found_targets.append(my_target)
+
+        merged['Target'] = found_targets
 
     #join sample_info
     if sample_info is not None:
