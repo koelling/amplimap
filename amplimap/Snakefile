@@ -962,7 +962,7 @@ rule align_pe:
         elif config['align']['aligner'] == 'star':
             extra = ''
             if input[0].endswith('.gz'):
-                extra += ' --readFilesCommand zcat'
+                extra += ' --readFilesCommand "gzip -cd"'
 
             cmds = cmds % (
                 load_module_command('samtools', config),
@@ -1053,7 +1053,7 @@ rule align_pe_CONSENSUS:
         elif config['align']['aligner'] == 'star':
             extra = ''
             if input[0].endswith('.gz'):
-                extra += ' --readFilesCommand zcat'
+                extra += ' --readFilesCommand "gzip -cd"'
 
             cmds = cmds % (
                 load_module_command('samtools', config),

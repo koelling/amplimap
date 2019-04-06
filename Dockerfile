@@ -1,15 +1,19 @@
 FROM continuumio/miniconda3
 
+ADD https://raw.githubusercontent.com/koelling/amplimap/master/environment.yml environment.yml
+
 # install GCC:
 # for some reason this does won't install properly through conda
 # it's required to build python packages from pip
+# then download and install conda environment
 RUN apt-get update --fix-missing && \
     apt-get install -y gcc vim && \
-    apt-get clean;
-
-# download and install conda environment
-ADD https://raw.githubusercontent.com/koelling/amplimap/master/environment.yml environment.yml
-RUN conda env create --file environment.yml
+    apt-get clean && \
+    conda env create --file environment.yml && \
+    conda clean -i -l -t -y && \
+    apt-get remove -y --purge gcc && \
+    apt-get autoremove -y && \
+    rm -rf /root/.cache/pip/*;
 
 # set up
 RUN echo "source activate amplimap" > ~/.bashrc
