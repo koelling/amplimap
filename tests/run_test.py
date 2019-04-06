@@ -187,7 +187,7 @@ def test_variants(capsys):
     amplimap.run.main(['--working-directory={}'.format(wd_path), 'bams'])
 
     # now update file modification time to pretend we called variants
-    for file in ['versions/gatk.txt', 'targets_merged.bed', 'variants_raw/S1.vcf']:
+    for file in ['targets.bed', 'targets_merged.bed', 'versions/gatk.txt', 'variants_raw/S1.vcf']:
         pathlib.Path(os.path.join(wd_path, 'analysis', file)).touch()
 
     rules_manual = [
