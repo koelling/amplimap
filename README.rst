@@ -65,22 +65,24 @@ Links
 - Documentation: https://amplimap.readthedocs.io/
 
 
-Basic installation
+Installation
 -------------------
+We recommend that you install amplimap through conda:
+
 ::
 
-	pip install amplimap
+   wget https://raw.githubusercontent.com/koelling/amplimap/master/environment.yml
+	conda env create --file environment.yml
 
-Requires Python 3.5+. `More details here. <https://amplimap.readthedocs.io/en/latest/installation.html>`_
+Please see our
+`full installation instructions <https://amplimap.readthedocs.io/en/latest/extended_installation.html>`_
+for additional details and alternative ways to install amplimap (pip, Docker).
 
-amplimap requires an aligner (BWA/Bowtie2/STAR), a variant caller (Platypus/GATK), bedtools, samtools, bcftools and Annovar.
-If you do not have these installed, please install them manually or see the 
-`instructions for installing required tools through conda <https://amplimap.readthedocs.io/en/latest/extended_installation.html>`_.
 
 Citation and License
 --------------------
 Licensed under the Apache License, version 2.0.
-Copyright 2018 Nils Koelling.
+Copyright 2019 Nils Koelling.
 When you use amplimap, please cite it in your work. For example:
 
   Koelling, Nils. "amplimap: amplicon mapping and analysis pipeline". https://github.com/koelling/amplimap/
