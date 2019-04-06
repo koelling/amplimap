@@ -198,7 +198,7 @@ def test_variants(capsys):
     # just run the variants rule, we can't run from scratch since we won't have a caller
     captured = check_run(capsys, wd_path, rules = rules_manual, run=False)
     # make sure we are not trying to rerun everything
-    assert not 'align_pe' in captured.out.strip()
+    # NOTE: this will contain output from above, so we can't fail on align_pe
     assert not 'call_variants_raw' in captured.out.strip()
     # make sure we want to reannotate
     assert 'variants_merge_unannotated' in captured.out.strip()
