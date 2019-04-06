@@ -1458,7 +1458,7 @@ rule annotate_variants:
         "{analysis_dir}/{variants_dir}/{sample_full}.vcf.normalized.vcf.gz",
         "{analysis_dir}/versions/annovar.txt",
     output:
-        "{analysis_dir}/{variants_dir}/{sample_full}.vcf."+get_annovar_name()+"_multianno.csv",
+        "{analysis_dir}/{variants_dir}/{sample_full}.vcf.normalized.vcf.gz."+get_annovar_name()+"_multianno.csv",
         temp("{analysis_dir}/{variants_dir}/{sample_full}.for_annovar.bed")
     run:
         import gzip
@@ -1500,7 +1500,7 @@ rule annotate_variants:
 if get_path('annovar', default='') != '':
     rule merge_variants_from_annovar:
         input:
-            csvs = expand("{{analysis_dir}}/{{variants_dir}}/{sample_full}.vcf."+get_annovar_name()+"_multianno.csv", sample_full = SAMPLES)
+            csvs = expand("{{analysis_dir}}/{{variants_dir}}/{sample_full}.vcf.normalized.vcf.gz."+get_annovar_name()+"_multianno.csv", sample_full = SAMPLES)
         output:
             "{analysis_dir}/{variants_dir}/variants_merged.csv"
         run:

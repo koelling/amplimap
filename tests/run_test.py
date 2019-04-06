@@ -95,18 +95,21 @@ def test_config_env_invalid(capsys):
     assert 'Reading additional configuration file: {}'.format(extra_config_path) in captured.err
     assert 'Your configuration file(s) contain unknown or invalid settings:' in captured.err
 
-def check_run(capsys, wd_path, rules = ['pileups']):
+def check_run(capsys, wd_path, rules=['pileups'], run=True):
     #dry-run
     amplimap.run.main(['--working-directory={}'.format(wd_path)] + rules)
     captured = capsys.readouterr()
     assert '{} {} dry run successful.'.format(amplimap.run.__title__, amplimap.run.__version__) in captured.err.strip()
 
-    #full run
-    amplimap.run.main(['--working-directory={}'.format(wd_path), '--run'] + rules)
-    captured = capsys.readouterr()
-    assert '{} {} finished!'.format(amplimap.run.__title__, amplimap.run.__version__) in captured.err.strip()    
+    # full run
+    if run:
+        amplimap.run.main(['--working-directory={}'.format(wd_path), '--run'] + rules)
+        captured = capsys.readouterr()
+        assert '{} {} finished!'.format(amplimap.run.__title__, amplimap.run.__version__) in captured.err.strip()
 
-def check_default_stats(wd_path, is_trimmed = True):
+    return captured
+
+def check_default_stats(wd_path, is_trimmed=True):
     samples = pd.read_csv(os.path.join(wd_path, 'analysis', 'reads_parsed', 'stats_samples.csv'))
     assert len(samples) == 1
 
@@ -142,6 +145,59 @@ def check_default_pileups(wd_path, expected_coverage = 5, include_too_short = Fa
     assert (pileups.loc[pileups.pos == 37, 'nonref_hq_count'] == 1).all()
     assert (pileups.loc[pileups.pos == 37, 'ref_hq_count'] == pileups.loc[pileups.pos == 37, 'expected_coverage'] - 1).all()
     assert (set(pileups.loc[pileups.pos == 37, 'alts'].iloc[0].split(';')) == set(['G'])) #explicitly use iloc and no .all() here
+
+
+def test_variants(capsys):
+    """
+    For this test we have some intermediate results already, otherwise we would require a variant caller to be installed.
+    We also skip the annotation part.
+    """
+
+    wd_path = os.path.join(packagedir, "sample_data", "special_wd_variants")
+    init_wd(wd_path, os.path.join(packagedir, "sample_data", "sample_reads_in"), remove_analysis=False)
+
+    # clean up possible old results
+    for file in ['config_used.yaml', 'variants_raw/variants_merged.csv']:
+        if os.path.exists(os.path.join(wd_path, 'analysis', file)):
+            os.unlink(os.path.join(wd_path, 'analysis', file))
+
+    # touch the intermediate files to make sure they are seen as new enough
+    for file in ['targets.bed', 'variants_raw/S1.vcf']:
+        pathlib.Path(os.path.join(wd_path, 'analysis', file)).touch()
+
+    # just run the variants rule, we can't run from scratch since we won't have a caller
+    captured = check_run(capsys, wd_path, rules = [os.path.join('analysis', 'variants_raw', 'variants_merged.csv'), '--resume'], run=False)
+    # make sure we are not trying to rerun everything
+    assert not 'align_pe' in captured.out.strip()
+    assert not 'call_variants_raw' in captured.out.strip()
+    # make sure we want to reannotate
+    assert 'variants_merge_unannotated' in captured.out.strip()
+    # now actually run
+    captured = check_run(capsys, wd_path, rules = [os.path.join('analysis', 'variants_raw', 'variants_merged.csv'), '--resume'])
+
+    # check variant files
+    variants_merged = pd.read_csv(os.path.join(wd_path, 'analysis', 'variants_raw', 'variants_merged.csv'), index_col=['Chr', 'Start'])
+    assert len(variants_merged) == 5
+    assert len(variants_merged['U00096.3', 35]) == 1
+    assert len(variants_merged['U00096.3', 36]) == 1
+    assert len(variants_merged['U00096.3', 37]) == 1
+    assert len(variants_merged['U00096.3', 45]) == 2
+
+    variants_summary = pd.read_csv(os.path.join(wd_path, 'analysis', 'variants_raw', 'variants_summary.csv'), index_col=['Chr', 'Start', 'Alt'])
+    assert len(variants_summary) == 5
+    
+    assert variants_summary['U00096.3', 35, 'C', 'Ref'] == 'T'
+    assert variants_summary['U00096.3', 36, 'A', 'Ref'] == 'C'
+    assert variants_summary['U00096.3', 37, 'T', 'Ref'] == 'TGTG'
+    assert variants_summary['U00096.3', 45, 'G', 'Ref'] == 'A'
+    assert variants_summary['U00096.3', 45, 'C', 'Ref'] == 'A'
+
+    assert variants_summary['U00096.3', 35, 'C', 'Var_Zygosity'] == 'Het'
+    assert variants_summary['U00096.3', 36, 'A', 'Var_Zygosity'] == 'HOM'
+    assert variants_summary['U00096.3', 37, 'T', 'Var_Zygosity'] == 'Het'
+    assert variants_summary['U00096.3', 45, 'G', 'Var_Zygosity'] == 'REF'
+    assert variants_summary['U00096.3', 45, 'C', 'Var_Zygosity'] == 'Het'
+
 
 def test_naive_pileups_simulation(capsys):
     wd_path = os.path.join(packagedir, "sample_data", "wd_naive")
@@ -252,48 +308,3 @@ def test_umi_dedup(capsys):
     #after dedup we have four (two read pairs have same UMI)
     n_dedup = pysam.AlignmentFile(os.path.join(wd_path, 'analysis', 'bams_umi_dedup', 'S1.bam')).count(until_eof=True)
     assert n_dedup == 4 * 2
-
-
-def test_variants(capsys):
-    """
-    For this test we have some intermediate results already, otherwise we would require a variant caller to be installed.
-    We also skip the annotation part.
-    """
-
-    wd_path = os.path.join(packagedir, "sample_data", "special_wd_variants")
-    init_wd(wd_path, os.path.join(packagedir, "sample_data", "sample_reads_in"), remove_analysis=False)
-
-    # clean up possible old results
-    for file in ['config_used.yaml', 'variants_raw/variants_merged.csv']:
-        if os.path.exists(os.path.join(wd_path, 'analysis', file)):
-            os.unlink(os.path.join(wd_path, 'analysis', file))
-
-    # touch the intermediate files to make sure they are seen as new enough
-    for file in ['targets.bed', 'variants_raw/S1.vcf']:
-        pathlib.Path(os.path.join(wd_path, 'analysis', file)).touch()
-
-    # just run the variants rule, we can't run from scratch since we won't have a caller
-    check_run(capsys, wd_path, rules = [os.path.join('analysis', 'variants_raw', 'variants_merged.csv'), '--resume'])
-
-    # check variant files
-    variants_merged = pd.read_csv(os.path.join(wd_path, 'analysis', 'variants_raw', 'variants_merged.csv'), index_col=['Chr', 'Start'])
-    assert len(variants_merged) == 5
-    assert len(variants_merged['U00096.3', 35]) == 1
-    assert len(variants_merged['U00096.3', 36]) == 1
-    assert len(variants_merged['U00096.3', 37]) == 1
-    assert len(variants_merged['U00096.3', 45]) == 2
-
-    variants_summary = pd.read_csv(os.path.join(wd_path, 'analysis', 'variants_raw', 'variants_summary.csv'), index_col=['Chr', 'Start', 'Alt'])
-    assert len(variants_summary) == 5
-    
-    assert variants_summary['U00096.3', 35, 'C', 'Ref'] == 'T'
-    assert variants_summary['U00096.3', 36, 'A', 'Ref'] == 'C'
-    assert variants_summary['U00096.3', 37, 'T', 'Ref'] == 'TGTG'
-    assert variants_summary['U00096.3', 45, 'G', 'Ref'] == 'A'
-    assert variants_summary['U00096.3', 45, 'C', 'Ref'] == 'A'
-
-    assert variants_summary['U00096.3', 35, 'C', 'Var_Zygosity'] == 'Het'
-    assert variants_summary['U00096.3', 36, 'A', 'Var_Zygosity'] == 'HOM'
-    assert variants_summary['U00096.3', 37, 'T', 'Var_Zygosity'] == 'Het'
-    assert variants_summary['U00096.3', 45, 'G', 'Var_Zygosity'] == 'REF'
-    assert variants_summary['U00096.3', 45, 'C', 'Var_Zygosity'] == 'Het'
