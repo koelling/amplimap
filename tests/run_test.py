@@ -219,8 +219,8 @@ def test_variants(capsys):
     assert variants_summary['U00096.3', 35, 'C', 'Ref'] == 'T'
     assert variants_summary['U00096.3', 36, 'A', 'Ref'] == 'C'
     assert variants_summary['U00096.3', 37, 'T', 'Ref'] == 'TGTG'
-    assert variants_summary['U00096.3', 45, 'G', 'Ref'] == 'A'
-    assert variants_summary['U00096.3', 45, 'C', 'Ref'] == 'A'
+    assert variants_summary['U00096.3', 45, 'G', 'Ref'] == 'T'
+    assert variants_summary['U00096.3', 45, 'C', 'Ref'] == 'T'
 
     assert variants_summary['U00096.3', 35, 'C', 'Var_Zygosity'] == 'Het'
     assert variants_summary['U00096.3', 36, 'A', 'Var_Zygosity'] == 'HOM'
