@@ -72,7 +72,7 @@ We recommend that you install amplimap through conda:
 ::
 
    wget https://raw.githubusercontent.com/koelling/amplimap/master/environment.yml
-	conda env create --file environment.yml
+   conda env create --file environment.yml
 
 Please see our
 `full installation instructions <https://amplimap.readthedocs.io/en/latest/extended_installation.html>`_
