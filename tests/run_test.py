@@ -9,6 +9,7 @@ sys.path.insert(0, packagedir)
 
 import shutil
 import subprocess
+import pathlib
 import pandas as pd
 
 import amplimap.run
@@ -253,42 +254,46 @@ def test_umi_dedup(capsys):
     assert n_dedup == 4 * 2
 
 
-# def test_variants(capsys):
-#     """For this test we have some intermediate results already, otherwise we would require a variant caller to be installed"""
+def test_variants(capsys):
+    """
+    For this test we have some intermediate results already, otherwise we would require a variant caller to be installed.
+    We also skip the annotation part.
+    """
 
-#     wd_path = os.path.join(packagedir, "sample_data", "special_wd_variants")
-#     init_wd(wd_path, os.path.join(packagedir, "sample_data", "sample_reads_in"), remove_analysis=False)
+    wd_path = os.path.join(packagedir, "sample_data", "special_wd_variants")
+    init_wd(wd_path, os.path.join(packagedir, "sample_data", "sample_reads_in"), remove_analysis=False)
 
-#     # clean up possible old results
-#     if os.path.exists(os.path.join(wd_path, 'analysis', 'variants_raw', 'variants_merged.csv')):
-#         os.unlink(os.path.join(wd_path, 'analysis', 'variants_raw', 'variants_merged.csv'))
+    # clean up possible old results
+    for file in ['config_used.yaml', 'variants_raw/variants_merged.csv']:
+        if os.path.exists(os.path.join(wd_path, 'analysis', file)):
+            os.unlink(os.path.join(wd_path, 'analysis', file))
 
-#     # touch the intermediate files to make sure they are seen as new enough
-#     for file in ['targets.bed', 'variants_raw/S1.vcf']:
-#         open(os.path.join(wd_path, 'analysis', file), 'a').close()
+    # touch the intermediate files to make sure they are seen as new enough
+    for file in ['targets.bed', 'variants_raw/S1.vcf']:
+        pathlib.Path(os.path.join(wd_path, 'analysis', file)).touch()
 
-#     # just run the variants rule, we can't run from scratch since we won't have a caller
-#     check_run(capsys, wd_path, rules = [os.path.join('analysis', 'variants_raw', 'variants_merged.csv'), '--resume'])
+    # just run the variants rule, we can't run from scratch since we won't have a caller
+    check_run(capsys, wd_path, rules = [os.path.join('analysis', 'variants_raw', 'variants_merged.csv'), '--resume'])
 
-#     # check variant files
-#     variants_merged = pd.read_csv(os.path.join(wd_path, 'analysis', 'variants_raw', 'variants_merged.csv'), index_cols=['Chr', 'Start'])
-#     assert len(variants_merged) == 5
-#     assert len(variants_summary['U00096.3', 35]) == 1
-#     assert len(variants_summary['U00096.3', 36]) == 1
-#     assert len(variants_summary['U00096.3', 37]) == 1
-#     assert len(variants_summary['U00096.3', 38]) == 2
+    # check variant files
+    variants_merged = pd.read_csv(os.path.join(wd_path, 'analysis', 'variants_raw', 'variants_merged.csv'), index_col=['Chr', 'Start'])
+    assert len(variants_merged) == 5
+    assert len(variants_merged['U00096.3', 35]) == 1
+    assert len(variants_merged['U00096.3', 36]) == 1
+    assert len(variants_merged['U00096.3', 37]) == 1
+    assert len(variants_merged['U00096.3', 45]) == 2
 
-#     variants_summary = pd.read_csv(os.path.join(wd_path, 'analysis', 'variants_raw', 'variants_summary.csv'), index_cols=['Chr', 'Start', 'Alt'])
-#     assert len(variants_summary) == 5
+    variants_summary = pd.read_csv(os.path.join(wd_path, 'analysis', 'variants_raw', 'variants_summary.csv'), index_col=['Chr', 'Start', 'Alt'])
+    assert len(variants_summary) == 5
     
-#     assert variants_summary['U00096.3', 35, 'T', 'Ref'] == 'G'
-#     assert variants_summary['U00096.3', 36, 'A', 'Ref'] == 'C'
-#     assert variants_summary['U00096.3', 37, 'T', 'Ref'] == 'TTT'
-#     assert variants_summary['U00096.3', 38, 'A', 'Ref'] == 'C'
-#     assert variants_summary['U00096.3', 38, 'T', 'Ref'] == 'C'
+    assert variants_summary['U00096.3', 35, 'C', 'Ref'] == 'T'
+    assert variants_summary['U00096.3', 36, 'A', 'Ref'] == 'C'
+    assert variants_summary['U00096.3', 37, 'T', 'Ref'] == 'TGTG'
+    assert variants_summary['U00096.3', 45, 'G', 'Ref'] == 'A'
+    assert variants_summary['U00096.3', 45, 'C', 'Ref'] == 'A'
 
-#     assert variants_summary['U00096.3', 35, 'T', 'Var_Zygosity'] == 'Het'
-#     assert variants_summary['U00096.3', 36, 'A', 'Var_Zygosity'] == 'HOM'
-#     assert variants_summary['U00096.3', 37, 'T', 'Var_Zygosity'] == 'Het'
-#     assert variants_summary['U00096.3', 38, 'A', 'Var_Zygosity'] == 'REF'
-#     assert variants_summary['U00096.3', 38, 'T', 'Var_Zygosity'] == 'Het'
+    assert variants_summary['U00096.3', 35, 'C', 'Var_Zygosity'] == 'Het'
+    assert variants_summary['U00096.3', 36, 'A', 'Var_Zygosity'] == 'HOM'
+    assert variants_summary['U00096.3', 37, 'T', 'Var_Zygosity'] == 'Het'
+    assert variants_summary['U00096.3', 45, 'G', 'Var_Zygosity'] == 'REF'
+    assert variants_summary['U00096.3', 45, 'C', 'Var_Zygosity'] == 'Het'

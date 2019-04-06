@@ -390,7 +390,7 @@ def process_pileup_row(
         
         non_maj = [i for i in range(len(call_types)) if call_counts[i] > 0 and call_counts[i] != row['maj_hq_count']]
         non_maj_counts = [call_counts[i] for i in non_maj]
-        non_maj_phreds = list(itertools.chain.from_iterable(( call_phreds[call_types[i]] for i in non_maj )))            
+        # non_maj_phreds = list(itertools.chain.from_iterable(( call_phreds[call_types[i]] for i in non_maj )))            
         row['non_maj_hq_calls'] = ';'.join([call_types[i] for i in non_maj])
         #row['non_maj_mean_phreds'] = ';'.join([str(row['phred_%s' % call_types[i]]) if 'phred_%s' % call_types[i] in row else 'NA' for i in non_maj])
         #row['non_maj_hq_phreds_mean'] = 1.0 * sum(non_maj_phreds) / len(non_maj_phreds) if len(non_maj_phreds) > 0 else None
