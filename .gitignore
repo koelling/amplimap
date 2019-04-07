@@ -121,3 +121,4 @@ setup.cfg
 # other
 venv_win/
 .vscode/
+docker/Dockerfile
