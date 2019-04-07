@@ -23,9 +23,9 @@ jobs:
       # install conda dependencies
       - restore_cache:
           keys:
-            - v2-dependencies-{{ checksum "environment.yml" }}
+            - v3-dependencies-{{ checksum "environment.yml" }}
             # fallback to using the latest cache if no exact match is found
-            - v2-dependencies-
+            - v3-dependencies-
 
       - run:
           name: install dependencies
@@ -40,11 +40,14 @@ jobs:
               conda install -y -n amplimap pytest  # we also need pytest
             fi
 
+            # install current version
+            easy_install .;
+
       - save_cache:
           paths:
             - /opt/conda/
             - /root/.conda/
-          key: v2-dependencies-{{ checksum "environment.yml" }}
+          key: v3-dependencies-{{ checksum "environment.yml" }}
       
       # reference genome
       - restore_cache:
