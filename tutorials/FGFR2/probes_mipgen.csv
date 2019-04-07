@@ -1,0 +1,3 @@
+chr,ext_probe_sequence,lig_probe_sequence,mip_scan_start_position,mip_scan_stop_position,probe_strand,mip_name
+chr10,GCAGTCAACCAAGAAAAG,CCTCAAAAGTTACATTCCGAAT,123276799,123276910,+,2_54_FGFR2_p.S236C
+chr10,CTTGTTTTCTAGGCCGCC,ACTCTGCATGGTTGACAGTTCT,123276860,123276971,-,2_55_FGFR2_p.C227S

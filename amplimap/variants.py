@@ -252,8 +252,12 @@ def merge_variants_unannotated(input_vcfs, output_file):
     merged = None
     for file in input_vcfs:
         sname = os.path.basename(file).split('.')[0]
-        print('Reading', file, ' ( Sample =', sname, ')...')
-        try:
+        fileinfo = os.stat(file)
+        print('Reading', file, ' ( Sample =', sname, ') with size', fileinfo.st_size, ' bytes...')
+
+        if fileinfo.st_size == 0:
+            print('Empty file, skipping')
+        else:
             rows = []
             with pysam.VariantFile(file) as vcf:
                 for variant in vcf:
@@ -268,18 +272,16 @@ def merge_variants_unannotated(input_vcfs, output_file):
                     row['Alt'] = ','.join(variant.alts)
                     row['Otherinfo'] = str(variant).strip()
                     rows.append(row)
-            df = pd.DataFrame(rows)
 
-            print('Data shape:', str(df.shape))
-            if len(df) > 0:
+            if len(rows) > 0:
+                print('Found', len(rows), 'rows.')
+                df = pd.DataFrame(rows)
                 if merged is None:
                     merged = df
                 else:
                     merged = merged.append(df, ignore_index = True)
             else:
                 print('Ignoring - empty!')
-        except pd.io.common.EmptyDataError:
-            print('No data for', file, ', skipping.')
 
     if merged is None:
         print('No variants found in any of the samples, creating empty file!')

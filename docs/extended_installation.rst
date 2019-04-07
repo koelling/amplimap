@@ -73,13 +73,12 @@ Once you have downloaded this file you need to prepare it for use in amplimap:
 
     # decompress the file (if it ends in .gz)
     gunzip Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz
-
     # index FASTA file
     samtools faidx Homo_sapiens.GRCh38.dna.primary_assembly.fa
-
+    # create dictionary for GATK
+    picard CreateSequenceDictionary R=Homo_sapiens.GRCh38.dna.primary_assembly.fa
     # build bwa index, if you want to use bwa:
     bwa index Homo_sapiens.GRCh38.dna.primary_assembly.fa
-
     # build bowtie2 index, if you want to use bowtie2:
     bowtie2-build Homo_sapiens.GRCh38.dna.primary_assembly.fa Homo_sapiens.GRCh38.dna.primary_assembly.fa
 
@@ -156,10 +155,11 @@ located in ``~/data/example_wd``:
 
     # build indices for ~/references/ecoli.fasta
     docker run -v ~/references:/references koelling/amplimap samtools faidx /references/ecoli.fasta
+    docker run -v ~/references:/references koelling/amplimap picard CreateSequenceDictionary R=/references/ecoli.fasta
     docker run -v ~/references:/references koelling/amplimap bwa index /references/ecoli.fasta
 
     # run amplimap with working directory ~/data/example_wd
-    docker run -v ~/references:/references -v ~/data:/data koelling/amplimap amplimap --working-directory=/data/example_wd coverages pileups
+    docker run -v ~/references:/references -v ~/data:/data koelling/amplimap amplimap --working-directory=/data/example_wd coverages pileups variants
 
 Note that in this example you would have to provide the paths to your reference genome
 in the ``~/data/example_wd/config.yaml`` file:

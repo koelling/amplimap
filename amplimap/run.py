@@ -201,12 +201,19 @@ def main(argv = None):
                     % (input_directory)
                 )
 
-        #check some basic settings
-        aligners = ['naive', 'bwa', 'bowtie2', 'star'] #allowed values for the aligner
+        aligners = ['naive', 'bwa', 'bowtie2', 'star']  # allowed values for the aligner
+        # add custom tools
+        for tool_name, tool_config in config['tools']:
+            if 'align_command' in tool_config:
+                aligners.append(tool_name)
         if not config['align']['aligner'] in aligners:
             raise Exception('align: aligner must be one of {}!'.format(','.join(aligners)))
 
-        callers = ['gatk', 'platypus'] #allowed values for the variant caller
+        callers = ['gatk', 'platypus']  # allowed values for the variant caller
+        # add custom tools
+        for tool_name, tool_config in config['tools']:
+            if 'call_command' in tool_config:
+                callers.append(tool_name)
         if not config['variants']['caller'] in callers:
             raise Exception('variants: caller must be one of {}!'.format(','.join(callers)))
 

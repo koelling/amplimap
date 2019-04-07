@@ -1,0 +1,10 @@
+general:
+  genome_name: "hg19"
+
+align:
+  aligner: "bowtie2"
+
+paths:
+  hg19:
+    bowtie2: "/root/refs/hg19.fa"
+    fasta: "/root/refs/hg19.fa"

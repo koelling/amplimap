@@ -1,0 +1,15 @@
+general:
+  genome_name: "hg19"
+  umi_min_consensus_count: 2
+
+parse_reads:
+  umi_one: 5
+  umi_two: 5
+
+align:
+  aligner: "bowtie2"
+
+paths:
+  hg19:
+    bowtie2: "/root/refs/hg19.fa"
+    fasta: "/root/refs/hg19.fa"

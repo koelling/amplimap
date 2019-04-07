@@ -49,6 +49,7 @@ jobs:
       # reference genome
       - restore_cache:
           keys:
+            - reference-genome-v2
             - reference-genome-v1
 
       - run:
@@ -83,13 +84,19 @@ jobs:
               samtools faidx /root/refs/hg19.fa;
               ls -la /root/refs/;
             fi
+            
+            if [ ! -f /root/refs/hg19.dict ]; then
+              echo "Generating dict..."
+              picard CreateSequenceDictionary R=/root/refs/hg19.fa;
+              ls -la /root/refs/;
+            fi
 
             conda deactivate;
 
       - save_cache:
           paths:
             - /root/refs/
-          key: reference-genome-v1
+          key: reference-genome-v2
 
       # run general tests
       - run:
@@ -103,7 +110,57 @@ jobs:
             conda deactivate;
 
       # run tutorials
-      # TODO
+      - run:
+          name: run fgfr2
+          command: |
+            . /opt/conda/etc/profile.d/conda.sh;
+            conda activate amplimap;
+
+            mkdir -p /wd/fgfr2;
+            cd /wd/fgfr2;
+            wget http://userweb.molbiol.ox.ac.uk/public/koelling/amplimap/tutorial_data/FGFR2.tar;
+            tar xf FGFR2.tar;
+            wget https://raw.githubusercontent.com/koelling/amplimap/master/tutorials/FGFR2/config.yaml;
+            wget https://raw.githubusercontent.com/koelling/amplimap/master/tutorials/FGFR2/probes_mipgen.csv;
+            wget https://raw.githubusercontent.com/koelling/amplimap/master/tutorials/FGFR2/targets.csv;
+
+            amplimap pileups --run;
+            cat analysis/reads_parsed/stats_reads.csv;
+            cat analysis/pileups/pileups_long_detailed.csv
+
+            conda deactivate;
+      - store_artifacts:
+          path: /wd/fgfr2/analysis/reads_parsed/stats_reads.csv
+          destination: fgfr2
+      - store_artifacts:
+          path: /wd/fgfr2/analysis/pileups/pileups_long_detailed.csv
+          destination: fgfr2
+
+      - run:
+          name: run tlk2
+          command: |
+            . /opt/conda/etc/profile.d/conda.sh;
+            conda activate amplimap;
+
+            mkdir -p /wd/tlk2;
+            cd /wd/tlk2;
+            wget http://userweb.molbiol.ox.ac.uk/public/koelling/amplimap/tutorial_data/TLK2.tar;
+            tar xf TLK2.tar;
+            wget https://raw.githubusercontent.com/koelling/amplimap/master/tutorials/TLK2/config.yaml;
+            wget https://raw.githubusercontent.com/koelling/amplimap/master/tutorials/TLK2/probes.csv;
+            wget https://raw.githubusercontent.com/koelling/amplimap/master/tutorials/TLK2/targets.csv;
+
+            amplimap variants coverages --run;
+            cat analysis/reads_parsed/stats_reads.csv;
+            cat analysis/pileups/pileups_long_detailed.csv
+
+            conda deactivate;
+      - store_artifacts:
+          path: /wd/tlk2/analysis/reads_parsed/stats_reads.csv
+          destination: tlk2
+      - store_artifacts:
+          path: /wd/tlk2/analysis/variants_raw/variants_summary.csv
+          destination: tlk2
 
       # save test results
       - store_artifacts:

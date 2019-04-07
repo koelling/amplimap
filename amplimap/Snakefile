@@ -275,7 +275,7 @@ rule tool_version:
             elif tool_name == 'bcftools':
                 commands += 'bcftools --version > "%s"' % (output[0])
             elif tool_name == 'picard':
-                commands += 'SamToFastq --version'
+                commands += '{config[tools][picard][prefix]} SamToFastq --version'
 
             elif tool_name == 'annovar':
                 commands += 'table_annovar.pl'
@@ -286,6 +286,8 @@ rule tool_version:
                 commands += 'gatk HaplotypeCaller --version > "%s"' % (output[0])
             elif tool_name == 'mutect2':
                 commands += 'gatk Mutect2 --version > "%s"' % (output[0])
+            elif tool_name in config['tools'] and 'version_command' in config['tools'][tool_name]:
+                commands += config['tools'][tool_name]['version_command']
             else:
                 raise Exception('Unexpected tool: {}/{}. Please report this bug.'.format(
                     tool_name, wildcards['tool']
@@ -343,9 +345,9 @@ rule tool_version:
             else:
                 #check that we actually got the right version
                 if tool_name == 'bedtools':
-                    pass #TODO: should check that we have at least v2.24.0, since the interface for bedtools coverage changed
+                    pass  # TODO: should check that we have at least v2.24.0, since the interface for bedtools coverage changed
                 elif tool_name == 'picard':
-                    pass #TODO: should we require v2+?
+                    pass  # TODO: should we require v2+?
                 else:
                     pass #we succeeded
 
@@ -642,7 +644,7 @@ if os.path.isdir('unmapped_bams_in'):
         run:
             shell("""
                 %s
-                SamToFastq \
+                {config[tools][picard][prefix]} SamToFastq \
                     INPUT={input[0]:q} \
                     FASTQ={output[0]:q} \
                     SECOND_END_FASTQ={output[1]:q} \
@@ -692,7 +694,7 @@ if os.path.isdir('unmapped_bams_in'):
                 %s%s
 
                 #attach tags from unmapped bam
-                MergeBamAlignment \
+                {config[tools][picard][prefix]} MergeBamAlignment \
                     ALIGNED={input[1]:q} \
                     UNMAPPED={input[0]:q} \
                     OUTPUT={output[2]:q} \
@@ -708,7 +710,7 @@ if os.path.isdir('unmapped_bams_in'):
                 #fix the read groups, which will otherwise come from unmapped bam
                 #note SILENT stringency to deal with invalid read groups from before
                 #(LENIENT would still spam the logs with errors)
-                AddOrReplaceReadGroups \
+                {config[tools][picard][prefix]} AddOrReplaceReadGroups \
                     I={output[2]:q} \
                     O={output[0]:q} \
                     RGID={wildcards.sample_full:q} \
@@ -988,6 +990,16 @@ rule align_pe:
                 mv "{output[0]}.Aligned.sortedByCoord.out.bam" {output[0]:q};
                 """ % (extra, my_index)
             )
+        elif config['align']['aligner'] in config['tools'] and 'align_command' in config['tools'][config['align']['aligner']]:
+            tool_command = config['tools'][config['align']['aligner']]['align_command'] % (
+                get_path('fasta'),
+            )
+
+            cmds = cmds % (
+                load_module_command('samtools', config),
+                load_module_command('star', config),
+                tool_command % (my_index)
+            )
         else:
             raise Exception("Invalid aligner specified in config!")
 
@@ -1078,6 +1090,16 @@ rule align_pe_CONSENSUS:
                 #fix names -- this will fail if no reads but should handle only unmapped thanks to --outSAMunmapped
                 mv "{output[0]}.Aligned.sortedByCoord.out.bam" {output[0]:q};
                 """ % (extra, my_index))
+        elif config['align']['aligner'] in config['tools'] and 'align_command' in config['tools'][config['align']['aligner']]:
+            tool_command = config['tools'][config['align']['aligner']]['align_command'] % (
+                get_path('fasta'),
+            )
+
+            cmds = cmds % (
+                load_module_command('samtools', config),
+                load_module_command('star', config),
+                tool_command % (my_index)
+            )
         else:
             raise Exception("Invalid aligner specified in config!")
 
@@ -1341,6 +1363,16 @@ rule call_variants_raw:
                 ;
                 """ % (load_module_command('gatk', config), get_path('fasta'))
             )
+        elif config['variants']['caller'] in config['tools'] and 'call_command' in config['tools'][config['variants']['caller']]:
+            tool_command = config['tools'][config['variants']['caller']]['call_command'] % (
+                get_path('fasta'),
+            )
+
+            shell("""
+                %s
+                %s
+                """ % (load_module_command(config['variants']['caller'], config), tool_command)
+            )
         else:
             raise Exception('Invalid variant caller specified')
 
@@ -1376,6 +1408,16 @@ rule call_variants_umi:
                     --output {output[0]:q} \
                 ;
                 """ % (load_module_command('gatk', config), get_path('fasta'))
+            )
+        elif config['variants']['caller'] in config['tools'] and 'call_command' in config['tools'][config['variants']['caller']]:
+            tool_command = config['tools'][config['variants']['caller']]['call_command'] % (
+                get_path('fasta'),
+            )
+
+            shell("""
+                %s
+                %s
+                """ % (load_module_command(config['variants']['caller'], config), tool_command)
             )
         else:
             raise Exception('Invalid variant caller specified')
