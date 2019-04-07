@@ -29,6 +29,9 @@ jobs:
           command: |
             set -e;
 
+            mkdir -p /root/refs/ || true;
+            ls -la /root/refs/;
+
             echo "Checking for reference genome..."
             if [ ! -f /root/refs/ucsc.hg19.fasta ]; then
               echo "Downloading reference..."
