@@ -275,7 +275,7 @@ rule tool_version:
             elif tool_name == 'bcftools':
                 commands += 'bcftools --version > "%s"' % (output[0])
             elif tool_name == 'picard':
-                commands += '{config[tools][picard][prefix]} SamToFastq --version'
+                commands += '%s SamToFastq --version' % (config['tools']['picard']['prefix'])
 
             elif tool_name == 'annovar':
                 commands += 'table_annovar.pl'
