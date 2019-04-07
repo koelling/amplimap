@@ -1,100 +1,100 @@
-#this is the amplimap default configuration file. please note that this is in YAML
-#format, where indentation (the number of spaces at the beginning of each line) is important.
+# this is the amplimap default configuration file. please note that this is in YAML
+# format, where indentation (the number of spaces at the beginning of each line) is important.
 
-#paths to one or more reference genome indices.
+# paths to one or more reference genome indices.
 paths:
-  #first reference genome name - each reference genome must have a unique name, eg. hg38, hg19, mm10, ...
+  # irst reference genome name - each reference genome must have a unique name, eg. hg38, hg19, mm10, ...
   hg38:
-    #path to bwa index prefix, if bwa is used as aligner
+    # ath to bwa index prefix, if bwa is used as aligner
     bwa: ""
-    #path to bowtie2 index prefix, if bowtie2 is used as aligner
+    # ath to bowtie2 index prefix, if bowtie2 is used as aligner
     bowtie2: ""
-    #path to STAR genome directory, if STAR is used as aligner
+    # ath to STAR genome directory, if STAR is used as aligner
     star: ""
-    #path to reference genome FASTA file (indexed using samtools faidx)
+    # ath to reference genome FASTA file (indexed using samtools faidx)
     fasta: ""
-    #path to directory with annovar indices
+    # ath to directory with annovar indices
     annovar: ""
-    #reference genome name used by annovar (leave empty if same as name above)
+    # eference genome name used by annovar (leave empty if same as name above)
     annovar_name: ""
 
-  #second reference genome
+  # econd reference genome
   mm10:
     bwa: ""
 
-#general setup
+# general setup
 general:
-  #default reference genome (must match name in `paths`)
+  # efault reference genome (must match name in `paths`)
   genome_name: "hg38"
-  #whether to ignore UMIs during pileups and alignment stats (if any)
+  # hether to ignore UMIs during pileups and alignment stats (if any)
   ignore_umis: false
-  #minimum number of reads supporting the consensus call in a UMI group
+  # inimum number of reads supporting the consensus call in a UMI group
   umi_min_consensus_count: 1
-  #minimum fraction of reads supporting the consensus call in a UMI group
+  # inimum fraction of reads supporting the consensus call in a UMI group
   umi_min_consensus_percentage: 51
-  #when using FASTQs as input: number of lanes (should be detected automatically if set to 0)
+  # hen using FASTQs as input: number of lanes (should be detected automatically if set to 0)
   lanes: 0
-  #when using unmapped BAMs as input: tag in which the UMI has been saved
+  # hen using unmapped BAMs as input: tag in which the UMI has been saved
   umi_tag_name: ""
-  #beta: optional bed file specifying bases that should be masked with Ns
-  #if specified, amplimap will try to create a masked copy of the reference genome
-  #and build custom bwa/bowtie2/star indices for it
+  # eta: optional bed file specifying bases that should be masked with Ns
+  # f specified, amplimap will try to create a masked copy of the reference genome
+  # nd build custom bwa/bowtie2/star indices for it
   mask_bed: ""
-  #set to true if probe data is not available. this means you do not need to provide
-  #a probes.csv file, but disables trimming of primers, stats_reads etc.
+  # et to true if probe data is not available. this means you do not need to provide
+  #  probes.csv file, but disables trimming of primers, stats_reads etc.
   use_raw_reads: false
 
-#settings for FASTQ read parsing
+# settings for FASTQ read parsing
 parse_reads:
-  #maximum number of mismatches between expected primer arm and beginning of read (per mate)
+  # aximum number of mismatches between expected primer arm and beginning of read (per mate)
   max_mismatches: 2
-  #length of UMI on read 1
+  # ength of UMI on read 1
   umi_one: 0
-  #length of UMI on read 2
+  # ength of UMI on read 2
   umi_two: 0
-  #abort pipeline if fewer than this percentage of reads have a valid pair of primer arms
+  # bort pipeline if fewer than this percentage of reads have a valid pair of primer arms
   min_percentage_good: 0
-  #whether to trim off primers from beginning of reads
+  # hether to trim off primers from beginning of reads
   trim_primers: true
-  #quality trimming threshold as fraction between 0 and 1 (false = no trimming)
+  # uality trimming threshold as fraction between 0 and 1 (false = no trimming)
   quality_trim_threshold: false  
-  #quality phred score encoding (usually phred-33 or phred-64)
+  # uality phred score encoding (usually phred-33 or phred-64)
   quality_trim_phred_base: 33
-  #minimum read length required after primer and quality trimming
+  # inimum read length required after primer and quality trimming
   trim_min_length: 20
 
-#alignment settings
+# alignment settings
 align:
-  #default aligner (bwa/bowtie2/star)
+  # default aligner (bwa/bowtie2/star)
   aligner: "bwa"
-  #settings for bowtie2
+  # settings for bowtie2
   bowtie2:
-    #number of alignments to report (increase to allow multi-mapping reads)
+    # number of alignments to report (increase to allow multi-mapping reads)
     report_n: 1
 
-#pileup settings
+# pileup settings
 pileup:
-  #minimum mapping quality
+  # minimum mapping quality
   min_mapq: 0
-  #minimum base quality - amplimap will provide both total counts and counts with baseq>X in output files
+  # minimum base quality - amplimap will provide both total counts and counts with baseq>X in output files
   min_baseq: 30
-  #maximum depth of reads to process at each base (set to false to leave practically unlimited, currently 1e7)
+  # maximum depth of reads to process at each base (set to false to leave practically unlimited, currently 1e7)
   subsample_reads: false
-  #only consider base calls from reads that fall within the expected coordinates of their probe
-  #this will remove errorneous calls due to untrimmed primer arms from overlapping probes
+  # only consider base calls from reads that fall within the expected coordinates of their probe
+  # this will remove errorneous calls due to untrimmed primer arms from overlapping probes
   validate_probe_targets: false
-  #filter reads with softclipped bases (but still consider mate)
+  # filter reads with softclipped bases (but still consider mate)
   filter_softclipped: false
-  #only group reads together if they also have the same mate start positions (in addition to their UMI matching)
+  # only group reads together if they also have the same mate start positions (in addition to their UMI matching)
   group_with_mate_positions: false
 
-#variant calling settings
+# variant calling settings
 variants:
-  #default variant caller (platypus/gatk)
+  # default variant caller (platypus/gatk)
   caller: "gatk"
-  #beta: variant caller to use for low frequency variant calling (only mutect2 currently supported)
+  # beta: variant caller to use for low frequency variant calling (only mutect2 currently supported)
   caller_low_frequency: "mutect2"
-  #caller-specific parameters to use
+  # caller-specific parameters to use
   gatk:
     parameters: "--disable-read-filter MappingQualityAvailableReadFilter --disable-read-filter WellformedReadFilter"
   mutect2:
@@ -102,31 +102,31 @@ variants:
   platypus:
     parameters: "--filterDuplicates=0 --filterReadsWithDistantMates=0 --minFlank=0 --trimOverlapping=0 --sbThreshold=0 --abThreshold=0"
 
-#variant annotation settings
+# variant annotation settings
 annotate:
-  #currently only annovar is supported
+  # currently only annovar is supported
   annovar:
-    #annovar protocols to use. note that these must have been downloaded to the index directory specified above
-    #the "refGene" database is required for variant annotation, all others are optional
+    # annovar protocols to use. note that these must have been downloaded to the index directory specified above
+    # the "refGene" database is required for variant annotation, all others are optional
     protocols: 'refGene,esp6500siv2_all,1000g2014oct_all,avsnp147,cosmic82,dbnsfp33a,clinvar_20150629,dbscsnv11,exac03,gnomad_genome,gnomad_exome'
-    #operations corresponding to the protocols. must be the same length as the protocols
+    # operations corresponding to the protocols. must be the same length as the protocols
     operations: 'g,f,f,f,f,f,f,f,f,f,f'
 
-#cluster submission commands. you can specify multiple cluster commands here, each with their own name.
-#if you specify the command as 'cluster_sync' it should pause until the job is completed,
-#if you specify it as 'cluster_nosync' it does not need to.
-#these will be used as the value of the --cluster or --cluster-sync parameters to Snakemake
-#logfiles should be placed into a directory called '{workflow.workdir_init}/cluster_log' which will
-#be created automatically on execution
+# cluster submission commands. you can specify multiple cluster commands here, each with their own name.
+# if you specify the command as 'cluster_sync' it should pause until the job is completed,
+# if you specify it as 'cluster_nosync' it does not need to.
+# these will be used as the value of the --cluster or --cluster-sync parameters to Snakemake
+# logfiles should be placed into a directory called '{workflow.workdir_init}/cluster_log' which will
+# be created automatically on execution
 clusters:
   qsub:
     command_sync: 'qsub -o {workflow.workdir_init}/cluster_log/ -sync yes -j y -m n'
   bsub:
     command_nosync: 'bsub -oo {workflow.workdir_init}/cluster_log/%J.log'
 
-#if you are using the 'modules' system to provide additional software, specify the required module names here.
-#eg. if the bwa aligner is provided in the module bwa/0.7.12, set bwa: 'bwa/0.7.12'.
-#if a module is specified here, amplimap will load it before executing the corresponding command
+# if you are using the 'modules' system to provide additional software, specify the required module names here.
+# eg. if the bwa aligner is provided in the module bwa/0.7.12, set bwa: 'bwa/0.7.12'.
+# if a module is specified here, amplimap will load it before executing the corresponding command
 modules:
   bedtools: ''
   samtools: ''
@@ -139,6 +139,17 @@ modules:
   annovar: ''
   picard: ''
 
+# options for external tools used by amplimap
 tools:
   picard:
+    # prefix to use when execute a picard tool. for example, if your prefix is 'picard' then amplimap will run
+    # `picard SamToFastq` to execute the `SamToFastq` tool
     prefix: 'picard'
+
+  # you can specify additional tools here:
+  example_tool:
+    # each tool needs a version_command that returns the version of the tool with exit code 0.
+    version_command: 'my_tool --version'
+    # specify these to make this tool available as aligner/caller. refer to the examples to see the parameters you can use.
+    # align_command: 'my_tool align --reference-fasta=%s --threads={threads} --read1={input[0]:q} --read2={input[1]:q} --output={output[0]:q} --sample={wildcards.sample_full:q}' 
+    # call_command: 'my_tool call --reference-fasta=%s --targets={input.targets:q} --input-bam={input[0]:q} --output-vcf={output[0]:q}'
