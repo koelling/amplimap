@@ -22,83 +22,83 @@ jobs:
       
       # reference genome
       - restore_cache:
-        key: reference-genome-v1
+          key: reference-genome-v1
 
       - run:
-        name: prepare reference genome
-        command: |
-          set -e;
+          name: prepare reference genome
+          command: |
+            set -e;
 
-          echo "Checking for reference genome..."
-          if [ ! -f /root/refs/ucsc.hg19.fasta ]; then
-            echo "Downloading reference..."
-            wget ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/hg19/ucsc.hg19.fasta.gz /root/refs/ucsc.hg19.fasta.gz;
-            echo "Unzipping..."
-            gunzip /root/refs/ucsc.hg19.fasta.gz;
-          fi
-          
-          if [ ! -f /root/refs/ucsc.hg19.fasta.fai ]; then
-            echo "Indexing reference..."
-            samtools faidx /root/refs/ucsc.hg19.fasta;
-          fi
-          
-          if [ ! -f /root/refs/ucsc.hg19.fasta.sa ]; then
-            echo "Building BWA index for reference..."
-            bwa index /root/refs/ucsc.hg19.fasta;
-          fi
+            echo "Checking for reference genome..."
+            if [ ! -f /root/refs/ucsc.hg19.fasta ]; then
+              echo "Downloading reference..."
+              wget ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/hg19/ucsc.hg19.fasta.gz /root/refs/ucsc.hg19.fasta.gz;
+              echo "Unzipping..."
+              gunzip /root/refs/ucsc.hg19.fasta.gz;
+            fi
+            
+            if [ ! -f /root/refs/ucsc.hg19.fasta.fai ]; then
+              echo "Indexing reference..."
+              samtools faidx /root/refs/ucsc.hg19.fasta;
+            fi
+            
+            if [ ! -f /root/refs/ucsc.hg19.fasta.sa ]; then
+              echo "Building BWA index for reference..."
+              bwa index /root/refs/ucsc.hg19.fasta;
+            fi
 
       - save_cache:
-        paths:
-          - /root/refs/
-        key: reference-genome-v1        
+          paths:
+            - /root/refs/
+          key: reference-genome-v1        
 
       # install conda dependencies
       - restore_cache:
-        keys:
-          - v2-dependencies-{{ checksum "environment.yml" }}
-          # fallback to using the latest cache if no exact match is found
-          - v2-dependencies-
+          keys:
+            - v2-dependencies-{{ checksum "environment.yml" }}
+            # fallback to using the latest cache if no exact match is found
+            - v2-dependencies-
 
       - run:
-        name: install dependencies
-        command: |
-          set -e;
-          
-          if [ ! -d /opt/conda/envs/amplimap/ ]; then
-            apt-get update --fix-missing
-            apt-get install -y gcc
-            apt-get clean 
-            conda env create --force --file environment.yml
-            pip uninstall -y amplimap  # we don't actually want the pip amplimap
-            conda install -y -n amplimap pytest  # we also need pytest
-          fi
+          name: install dependencies
+          command: |
+            set -e;
+            
+            if [ ! -d /opt/conda/envs/amplimap/ ]; then
+              apt-get update --fix-missing
+              apt-get install -y gcc
+              apt-get clean 
+              conda env create --force --file environment.yml
+              pip uninstall -y amplimap  # we don't actually want the pip amplimap
+              conda install -y -n amplimap pytest  # we also need pytest
+            fi
 
       - save_cache:
-        paths:
-          - /opt/conda/
-          - /root/.conda/
-        key: v2-dependencies-{{ checksum "environment.yml" }}
+          paths:
+            - /opt/conda/
+            - /root/.conda/
+          key: v2-dependencies-{{ checksum "environment.yml" }}
 
       # activate
       - run:
-        name: activate
-        command: |
-          . /opt/conda/etc/profile.d/conda.sh
-          conda activate amplimap
+          name: activate
+          command: |
+            . /opt/conda/etc/profile.d/conda.sh
+            conda activate amplimap
 
       # run general tests
       - run:
-        name: run tests
-        command: |
-          pytest --junitxml=test-reports/general/junit.xml tests/
+          name: run tests
+          command: |
+            pytest --junitxml=test-reports/general/junit.xml tests/
 
       # run tutorials
       # TODO
 
       # save test results
       - store_artifacts:
-        path: test-reports
-        destination: test-reports
+          path: test-reports
+          destination: test-reports
 
       - store_test_results:
-        path: test-reports
+          path: test-reports
