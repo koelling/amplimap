@@ -124,11 +124,11 @@ def get_alignment_index_filename(real_path):
     if real_path:
         if config['align']['aligner'] == 'naive':
             return my_path+'.fai'
-        elif config['align']['aligner'] == 'bwa':    
+        elif config['align']['aligner'] == 'bwa':
             return my_path+'.bwt'
-        elif config['align']['aligner'] == 'bowtie2':    
+        elif config['align']['aligner'] == 'bowtie2':
             return my_path+'.1.bt2'
-        elif config['align']['aligner'] == 'star':    
+        elif config['align']['aligner'] == 'star':
             return os.path.join(my_path, 'Genome')
         else:
             raise Exception('unexpected aligner')

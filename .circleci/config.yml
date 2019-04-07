@@ -49,6 +49,7 @@ jobs:
       # reference genome
       - restore_cache:
           keys:
+            - reference-genome-v4
             - reference-genome-v3
             - reference-genome-v2
             - reference-genome-v1
@@ -74,9 +75,17 @@ jobs:
               apt-get clean;
               unzip /root/refs/hg19.zip -d /root/refs/;
               ls -la /root/refs/;
+            fi
 
+            if [ ! -f /root/refs/hg19.fa.1.bt2 ]; then
+              echo "Renaming..."
+              rename 's/hg19/hg19.fa/' /root/refs/hg19*bt2;
+              ls -la /root/refs/;
+            fi
+            
+            if [ ! -f /root/refs/hg19.fa ]; then
               echo "Creating FASTA..."
-              bowtie2-inspect /root/refs/hg19 > /root/refs/hg19.fa;
+              bowtie2-inspect /root/refs/hg19.fa > /root/refs/hg19.fa;
               ls -la /root/refs/;
             fi
 
@@ -102,7 +111,7 @@ jobs:
       - save_cache:
           paths:
             - /root/refs/
-          key: reference-genome-v3
+          key: reference-genome-v4
 
       # run general tests
       - run:
