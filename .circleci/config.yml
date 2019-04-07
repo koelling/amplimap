@@ -33,7 +33,7 @@ jobs:
             apt-get update --fix-missing
             apt-get install -y gcc
             apt-get clean 
-            conda env create --file environment.yml
+            conda env create --force --file environment.yml
 
       - save_cache:
           paths:
@@ -41,10 +41,10 @@ jobs:
             - /root/.conda/
           key: v1-dependencies-{{ checksum "environment.yml" }}
 
-      # run tests!
       - run:
           name: run tests
           command: |
+            . /opt/conda/etc/profile.d/conda.sh
             conda activate amplimap
             pytest .
 
