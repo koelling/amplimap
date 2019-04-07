@@ -19,41 +19,6 @@ jobs:
 
     steps:
       - checkout
-      
-      # reference genome
-      - restore_cache:
-          key: reference-genome-v1
-
-      - run:
-          name: prepare reference genome
-          command: |
-            set -e;
-
-            mkdir -p /root/refs/ || true;
-            ls -la /root/refs/;
-
-            echo "Checking for reference genome..."
-            if [ ! -f /root/refs/ucsc.hg19.fasta ]; then
-              echo "Downloading reference..."
-              wget -O /root/refs/ucsc.hg19.fasta.gz ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/hg19/ucsc.hg19.fasta.gz;
-              echo "Unzipping..."
-              gunzip /root/refs/ucsc.hg19.fasta.gz;
-            fi
-            
-            if [ ! -f /root/refs/ucsc.hg19.fasta.fai ]; then
-              echo "Indexing reference..."
-              samtools faidx /root/refs/ucsc.hg19.fasta;
-            fi
-            
-            if [ ! -f /root/refs/ucsc.hg19.fasta.sa ]; then
-              echo "Building BWA index for reference..."
-              bwa index /root/refs/ucsc.hg19.fasta;
-            fi
-
-      - save_cache:
-          paths:
-            - /root/refs/
-          key: reference-genome-v1        
 
       # install conda dependencies
       - restore_cache:
@@ -88,6 +53,44 @@ jobs:
           command: |
             . /opt/conda/etc/profile.d/conda.sh
             conda activate amplimap
+      
+      # reference genome
+      - restore_cache:
+          key: reference-genome-v1
+
+      - run:
+          name: prepare reference genome
+          command: |
+            set -e;
+
+            mkdir -p /root/refs/ || true;
+            ls -la /root/refs/;
+
+            echo "Checking for reference genome..."
+            if [ ! -f /root/refs/ucsc.hg19.fasta ]; then
+              echo "Downloading reference..."
+              wget -O /root/refs/ucsc.hg19.fasta.gz ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/hg19/ucsc.hg19.fasta.gz;
+              echo "Unzipping..."
+              gunzip /root/refs/ucsc.hg19.fasta.gz;
+              ls -la /root/refs/;
+            fi
+            
+            if [ ! -f /root/refs/ucsc.hg19.fasta.fai ]; then
+              echo "Indexing reference..."
+              samtools faidx /root/refs/ucsc.hg19.fasta;
+              ls -la /root/refs/;
+            fi
+            
+            if [ ! -f /root/refs/ucsc.hg19.fasta.sa ]; then
+              echo "Building BWA index for reference..."
+              bwa index /root/refs/ucsc.hg19.fasta;
+              ls -la /root/refs/;
+            fi
+
+      - save_cache:
+          paths:
+            - /root/refs/
+          key: reference-genome-v1
 
       # run general tests
       - run:
