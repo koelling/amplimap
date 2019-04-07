@@ -80,7 +80,7 @@ jobs:
               ls -la /root/refs/;
             fi
 
-            if [ -f rm -f /root/refs/hg19.zip ]; then
+            if [ -f /root/refs/hg19.zip ]; then
               echo "Removing old ZIP"
               rm -f /root/refs/hg19.zip;
             fi
