@@ -70,7 +70,7 @@ jobs:
               apt-get update --fix-missing;
               apt-get install -y unzip;
               apt-get clean;
-              unzip /root/refs/hg19.zip;
+              unzip /root/refs/hg19.zip -d /root/refs/;
               ls -la /root/refs/;
 
               echo "Creating FASTA..."
