@@ -1,6 +1,7 @@
 .. image:: https://raw.githubusercontent.com/koelling/amplimap/master/amplimap_logo_400px.png
 	:width: 400px
 
+
 .. image:: https://circleci.com/gh/koelling/amplimap.svg?style=svg
    :target: https://circleci.com/gh/koelling/amplimap
 .. image:: https://readthedocs.org/projects/amplimap/badge/?version=latest
@@ -54,8 +55,9 @@ Some of the protocols we have analyzed with amplimap include:
 - PCR-based targeted resequencing (single/multiplex)
 - `smMIPs with and without UMIs <https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3638140/>`_
 - Probe based target enrichment, for example:
-   + `IDT xGen Lockdown probes <https://www.idtdna.com/pages/products/next-generation-sequencing/hybridization-capture/custom-probes-panels/xgen-lockdown-probes>`_
-   + `Twist Bioscience Custom Panels <https://twistbioscience.com/products/ngs#product-featured-2911>`_
+
+   - `IDT xGen Lockdown probes <https://www.idtdna.com/pages/products/next-generation-sequencing/hybridization-capture/custom-probes-panels/xgen-lockdown-probes>`_
+   - `Twist Bioscience Custom Panels <https://twistbioscience.com/products/ngs#product-featured-2911>`_
 
 Tutorials
 ---------

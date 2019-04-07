@@ -56,8 +56,9 @@ Some of the protocols we have analyzed with amplimap include:
 - PCR-based targeted resequencing (single/multiplex)
 - `smMIPs with and without UMIs <https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3638140/>`_
 - Probe based target enrichment, for example:
-   + `IDT xGen Lockdown probes <https://www.idtdna.com/pages/products/next-generation-sequencing/hybridization-capture/custom-probes-panels/xgen-lockdown-probes>`_
-   + `Twist Bioscience Custom Panels <https://twistbioscience.com/products/ngs#product-featured-2911>`_
+
+   - `IDT xGen Lockdown probes <https://www.idtdna.com/pages/products/next-generation-sequencing/hybridization-capture/custom-probes-panels/xgen-lockdown-probes>`_
+   - `Twist Bioscience Custom Panels <https://twistbioscience.com/products/ngs#product-featured-2911>`_
 
 Documentation contents
 ------------------------
