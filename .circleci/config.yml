@@ -63,21 +63,24 @@ jobs:
             echo "Checking for reference genome..."
             if [ ! -f /root/refs/ucsc.hg19.fasta ]; then
               echo "Downloading reference..."
-              wget -O /root/refs/ucsc.hg19.fasta.gz ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/hg19/ucsc.hg19.fasta.gz;
+              wget -O /root/refs/hg19.zip ftp://ftp.ccb.jhu.edu/pub/data/bowtie2_indexes/hg19.zip
+              ls -la /root/refs/;
+
               echo "Unzipping..."
-              gunzip /root/refs/ucsc.hg19.fasta.gz;
+              apt-get update --fix-missing;
+              apt-get install -y unzip;
+              apt-get clean;
+              unzip /root/refs/hg19.zip;
+              ls -la /root/refs/;
+
+              echo "Creating FASTA..."
+              bowtie2-inspect /root/refs/hg19 > /root/refs/hg19.fa;
               ls -la /root/refs/;
             fi
             
-            if [ ! -f /root/refs/ucsc.hg19.fasta.fai ]; then
+            if [ ! -f /root/refs/hg19.fa.fai ]; then
               echo "Indexing reference..."
-              samtools faidx /root/refs/ucsc.hg19.fasta;
-              ls -la /root/refs/;
-            fi
-            
-            if [ ! -f /root/refs/ucsc.hg19.fasta.sa ]; then
-              echo "Building BWA index for reference..."
-              bwa index /root/refs/ucsc.hg19.fasta;
+              samtools faidx /root/refs/hg19.fa;
               ls -la /root/refs/;
             fi
 
