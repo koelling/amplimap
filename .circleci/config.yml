@@ -146,9 +146,8 @@ jobs:
             wget https://raw.githubusercontent.com/koelling/amplimap/master/tutorials/FGFR2/probes_mipgen.csv;
             wget https://raw.githubusercontent.com/koelling/amplimap/master/tutorials/FGFR2/targets.csv;
 
+            amplimap --version;
             amplimap pileups --run;
-            cat analysis/reads_parsed/stats_reads.csv;
-            cat analysis/pileups/pileups_long_detailed.csv
 
             conda deactivate;
       - store_artifacts:
@@ -172,9 +171,8 @@ jobs:
             wget https://raw.githubusercontent.com/koelling/amplimap/master/tutorials/TLK2/probes.csv;
             wget https://raw.githubusercontent.com/koelling/amplimap/master/tutorials/TLK2/targets.csv;
 
+            amplimap --version;
             amplimap variants coverages --run;
-            cat analysis/reads_parsed/stats_reads.csv;
-            cat analysis/pileups/pileups_long_detailed.csv
 
             conda deactivate;
       - store_artifacts:
