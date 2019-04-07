@@ -35,7 +35,7 @@ jobs:
             echo "Checking for reference genome..."
             if [ ! -f /root/refs/ucsc.hg19.fasta ]; then
               echo "Downloading reference..."
-              wget ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/hg19/ucsc.hg19.fasta.gz /root/refs/ucsc.hg19.fasta.gz;
+              wget -O /root/refs/ucsc.hg19.fasta.gz ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/hg19/ucsc.hg19.fasta.gz;
               echo "Unzipping..."
               gunzip /root/refs/ucsc.hg19.fasta.gz;
             fi
