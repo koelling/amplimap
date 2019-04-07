@@ -46,13 +46,6 @@ jobs:
             - /opt/conda/
             - /root/.conda/
           key: v2-dependencies-{{ checksum "environment.yml" }}
-
-      # activate
-      - run:
-          name: activate
-          command: |
-            . /opt/conda/etc/profile.d/conda.sh
-            conda activate amplimap
       
       # reference genome
       - restore_cache:
@@ -61,7 +54,8 @@ jobs:
       - run:
           name: prepare reference genome
           command: |
-            set -e;
+            . /opt/conda/etc/profile.d/conda.sh;
+            conda activate amplimap;
 
             mkdir -p /root/refs/ || true;
             ls -la /root/refs/;
@@ -87,6 +81,8 @@ jobs:
               ls -la /root/refs/;
             fi
 
+            conda deactivate;
+
       - save_cache:
           paths:
             - /root/refs/
@@ -96,7 +92,12 @@ jobs:
       - run:
           name: run tests
           command: |
-            pytest --junitxml=test-reports/general/junit.xml tests/
+            . /opt/conda/etc/profile.d/conda.sh;
+            conda activate amplimap;
+
+            pytest --junitxml=test-reports/general/junit.xml tests/;
+
+            conda deactivate;
 
       # run tutorials
       # TODO
