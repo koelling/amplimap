@@ -34,7 +34,7 @@ jobs:
             apt-get install -y gcc
             apt-get clean 
             conda env create --force --file environment.yml
-            conda install -n amplimap pytest
+            conda install -y -n amplimap pytest
 
       - save_cache:
           paths:
