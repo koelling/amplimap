@@ -1,6 +1,13 @@
 .. image:: https://raw.githubusercontent.com/koelling/amplimap/master/amplimap_logo_400px.png
 	:width: 400px
 
+.. image:: https://circleci.com/gh/koelling/amplimap.svg?style=svg
+   :target: https://circleci.com/gh/koelling/amplimap
+.. image:: https://readthedocs.org/projects/amplimap/badge/?version=latest
+   :target: https://amplimap.readthedocs.io/en/latest/?badge=latest
+   :alt: Documentation Status
+
+
 ==========================================================
 amplimap: amplicon mapping and analysis pipeline
 ==========================================================
