@@ -47,7 +47,7 @@ jobs:
           command: |
             . /opt/conda/etc/profile.d/conda.sh
             conda activate amplimap
-            pytest .
+            pytest --junitxml=test-reports/junit.xml .
 
       - store_artifacts:
           path: test-reports
