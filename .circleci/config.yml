@@ -20,22 +20,26 @@ jobs:
     steps:
       - checkout
 
-      # # Download and cache dependencies
-      # - restore_cache:
-      #     keys:
-      #       - v1-dependencies-{{ checksum "environment.yml" }}
-      #       # fallback to using the latest cache if no exact match is found
-      #       - v1-dependencies-
+      # Download and cache dependencies
+      - restore_cache:
+          keys:
+            - v1-dependencies-{{ checksum "environment.yml" }}
+            # fallback to using the latest cache if no exact match is found
+            - v1-dependencies-
 
       - run:
           name: install dependencies
           command: |
+            apt-get update --fix-missing
+            apt-get install -y gcc
+            apt-get clean 
             conda env create --file environment.yml
 
-      # - save_cache:
-      #     paths:
-      #       - ./venv
-      #     key: v1-dependencies-{{ checksum "environment.yml" }}
+      - save_cache:
+          paths:
+            - /opt/conda/
+            - /root/.conda/
+          key: v1-dependencies-{{ checksum "environment.yml" }}
 
       # run tests!
       - run:
