@@ -13,7 +13,7 @@ For more details, see :ref:`installation-pip`.
 
 .. _installation-miniconda:
 
-Installing amplimap through Miniconda
+Installing amplimap through Conda
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 1. Install Miniconda 3
@@ -133,24 +133,33 @@ please make sure you activated the conda environment as described above.
 
 Installing amplimap through Docker
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-We also have a `Docker image <https://cloud.docker.com/repository/docker/koelling/amplimap/general>`_
+We also have a `Docker image <https://hub.docker.com/r/koelling/amplimap>`_
 available.
-To use this, install `Docker <https://www.docker.com/>`_ and then run
-``docker pull koelling/amplimap`` to download the image.
-Then you can run amplimap commands using ``docker run amplimap``,
-forwarding directories from your host into the docker container with ``-v``.
+To use this, install `Docker <https://www.docker.com/>`_ and then
+prefix your amplimap commands with ``docker run koelling/amplimap``,
+forwarding directories from your host into the docker container using
+Docker's ``-v`` parameter.
 
 For example, here are some commands you could use to prepare
 indices for an *E. coli* :download:`reference genome FASTA <../sample_data/ecoli.fasta>`
-saved as ``~/references/ecoli.fasta`` and then run amplimap
-on some :download:`example data <../sample_data/example_wd.tar>` you saved in ``~/data/example_wd``:
+located under ``~/references/ecoli.fasta`` and then run amplimap
+on some :download:`example data <../sample_data/example_wd.tar>`
+located in ``~/data/example_wd``:
 
 ::
 
+    # download the docker image (only need to run this once)
     docker pull koelling/amplimap
-    docker run -v ~/references:/references amplimap samtools faidx /references/ecoli.fasta
-    docker run -v ~/references:/references amplimap bwa index /references/ecoli.fasta
-    docker run -v ~/references:/references -v ~/data:/data amplimap amplimap --working-directory=/data/example_wd coverages pileups
+
+    # check version
+    docker run koelling/amplimap amplimap --version
+
+    # build indices for ~/references/ecoli.fasta
+    docker run -v ~/references:/references koelling/amplimap samtools faidx /references/ecoli.fasta
+    docker run -v ~/references:/references koelling/amplimap bwa index /references/ecoli.fasta
+
+    # run amplimap with working directory ~/data/example_wd
+    docker run -v ~/references:/references -v ~/data:/data koelling/amplimap amplimap --working-directory=/data/example_wd coverages pileups
 
 Note that in this example you would have to provide the paths to your reference genome
 in the ``~/data/example_wd/config.yaml`` file:
@@ -169,7 +178,7 @@ and adding your reference genome to your ``config_default.yaml`` as described he
 
 ::
 
-    docker run -t -i amplimap /bin/bash
+    docker run -t -i koelling/amplimap /bin/bash
 
 To annotate variant calls you would also have to install Annovar inside the Docker container
 and add the path to the Annovar indices to your config.

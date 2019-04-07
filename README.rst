@@ -74,16 +74,17 @@ Links
 
 Installation
 -------------------
-We recommend that you install amplimap through conda:
+We recommend that you install amplimap through Conda:
 
 ::
 
    wget https://raw.githubusercontent.com/koelling/amplimap/master/environment.yml
    conda env create --file environment.yml
 
+We also have a `Docker image <https://hub.docker.com/r/koelling/amplimap>`_ available.
 Please see our
 `full installation instructions <https://amplimap.readthedocs.io/en/latest/extended_installation.html>`_
-for additional details and alternative ways to install amplimap (pip, Docker).
+for additional details.
 
 
 Citation and License
