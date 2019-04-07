@@ -203,7 +203,7 @@ def main(argv = None):
 
         aligners = ['naive', 'bwa', 'bowtie2', 'star']  # allowed values for the aligner
         # add custom tools
-        for tool_name, tool_config in config['tools']:
+        for tool_name, tool_config in config['tools'].items():
             if 'align_command' in tool_config:
                 aligners.append(tool_name)
         if not config['align']['aligner'] in aligners:
@@ -211,7 +211,7 @@ def main(argv = None):
 
         callers = ['gatk', 'platypus']  # allowed values for the variant caller
         # add custom tools
-        for tool_name, tool_config in config['tools']:
+        for tool_name, tool_config in config['tools'].items():
             if 'call_command' in tool_config:
                 callers.append(tool_name)
         if not config['variants']['caller'] in callers:
