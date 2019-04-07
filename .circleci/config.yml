@@ -152,10 +152,10 @@ jobs:
             conda deactivate;
       - store_artifacts:
           path: /wd/fgfr2/analysis/reads_parsed/stats_reads.csv
-          destination: fgfr2
+          destination: fgfr2_reads.csv
       - store_artifacts:
           path: /wd/fgfr2/analysis/pileups/pileups_long_detailed.csv
-          destination: fgfr2
+          destination: fgfr2_pileups.csv
 
       - run:
           name: run tlk2
@@ -177,10 +177,10 @@ jobs:
             conda deactivate;
       - store_artifacts:
           path: /wd/tlk2/analysis/reads_parsed/stats_reads.csv
-          destination: tlk2
+          destination: tlk2_reads.csv
       - store_artifacts:
           path: /wd/tlk2/analysis/variants_raw/variants_summary.csv
-          destination: tlk2
+          destination: tlk2_variants.csv
 
       # save test results
       - store_artifacts:
