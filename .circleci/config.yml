@@ -30,12 +30,11 @@ jobs:
       - run:
           name: install dependencies
           command: |
-            set -e;
-            
+            apt-get update --fix-missing;
+            apt-get install -y gcc;
+            apt-get clean;
+
             if [ ! -d /opt/conda/envs/amplimap/ ]; then
-              apt-get update --fix-missing
-              apt-get install -y gcc
-              apt-get clean 
               conda env create --force --file environment.yml
               pip uninstall -y amplimap  # we don't actually want the pip amplimap
               conda install -y -n amplimap pytest  # we also need pytest
@@ -49,7 +48,8 @@ jobs:
       
       # reference genome
       - restore_cache:
-          key: reference-genome-v1
+          keys:
+            - reference-genome-v1
 
       - run:
           name: prepare reference genome
