@@ -61,7 +61,7 @@ jobs:
             ls -la /root/refs/;
 
             echo "Checking for reference genome..."
-            if [ ! -f /root/refs/ucsc.hg19.fasta ]; then
+            if [ ! -f /root/refs/hg19.fa ]; then
               echo "Downloading reference..."
               wget -O /root/refs/hg19.zip ftp://ftp.ccb.jhu.edu/pub/data/bowtie2_indexes/hg19.zip
               ls -la /root/refs/;
