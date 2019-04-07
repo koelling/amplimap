@@ -23,9 +23,9 @@ jobs:
       # Download and cache dependencies
       - restore_cache:
           keys:
-            - v1-dependencies-{{ checksum "environment.yml" }}
+            - v2-dependencies-{{ checksum "environment.yml" }}
             # fallback to using the latest cache if no exact match is found
-            - v1-dependencies-
+            - v2-dependencies-
 
       - run:
           name: install dependencies
@@ -34,12 +34,13 @@ jobs:
             apt-get install -y gcc
             apt-get clean 
             conda env create --force --file environment.yml
+            conda install -n amplimap pytest
 
       - save_cache:
           paths:
             - /opt/conda/
             - /root/.conda/
-          key: v1-dependencies-{{ checksum "environment.yml" }}
+          key: v2-dependencies-{{ checksum "environment.yml" }}
 
       - run:
           name: run tests
