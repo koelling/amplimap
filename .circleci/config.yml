@@ -49,6 +49,7 @@ jobs:
       # reference genome
       - restore_cache:
           keys:
+            - reference-genome-v3
             - reference-genome-v2
             - reference-genome-v1
 
@@ -78,6 +79,11 @@ jobs:
               bowtie2-inspect /root/refs/hg19 > /root/refs/hg19.fa;
               ls -la /root/refs/;
             fi
+
+            if [ -f rm -f /root/refs/hg19.zip ]; then
+              echo "Removing old ZIP"
+              rm -f /root/refs/hg19.zip;
+            fi
             
             if [ ! -f /root/refs/hg19.fa.fai ]; then
               echo "Indexing reference..."
@@ -96,7 +102,7 @@ jobs:
       - save_cache:
           paths:
             - /root/refs/
-          key: reference-genome-v2
+          key: reference-genome-v3
 
       # run general tests
       - run:
