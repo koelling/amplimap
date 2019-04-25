@@ -323,17 +323,14 @@ def main(argv = None):
                 else:
                     sys.stderr.write('Warning: Skipping input file check.\n')
 
-        #ensure analysis dir exists now
-        try:
-            os.makedirs(analysis_dir)
-        except OSError as e:
-            pass
+        # ensure analysis dir exists now
+        os.makedirs(analysis_dir, exist_ok=True)
 
-        #write config to analysis directory, and then use that for snakemake
+        # write config to analysis directory, and then use that for snakemake
         with open(configfile, 'w') as f:
             yaml.dump(config, f, default_flow_style=False)
 
-        #set up cluster commands
+        # set up cluster commands
         cluster_command_nosync = None
         cluster_command_sync = None
 
@@ -354,10 +351,7 @@ def main(argv = None):
 
             # make sure cluster log directory exists (this assumed the cluster command is using this as a parameter)
             cluster_logs = os.path.join(args.working_directory, 'cluster_log')
-            try:
-                os.makedirs(cluster_logs)
-            except OSError as e:
-                pass
+            os.makedirs(cluster_logs, exist_ok=True)
             sys.stderr.write('Will write cluster logs to: {}\n'.format(cluster_logs))
         else:
             sys.stderr.write('Running locally with {} cores\n'.format(args.ncores))
