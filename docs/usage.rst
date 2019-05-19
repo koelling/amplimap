@@ -75,7 +75,7 @@ probes.csv
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
 This file contains information about the sequences of the primers and
-their expected location on the reference genome. It can be generated
+their expected location on the reference genome. It can also be generated
 directly from the output table created by *MIPGEN* - see below!
 
 The columns are:
@@ -94,15 +94,15 @@ The columns are:
 The first row of the file should be the header listing these column names. Any
 additional columns are ignored.
 
-No two probe arms should be so similar to each other that a read could
+No two primers should be so similar to each other that a read could
 match both of them. Otherwise, the read will be ambigous and may end up
 being counted multiple times, once for each probe. This will skew any
 downstream analysis.
 
 If you have two probes for the same region to account for a SNP in the
-arm sequence, you need to provide a single merged entry for this. To
-create such a merged probe, simply replace all ambiguous (SNP)
-nucleotides in the arm sequences with a dot (``.``). This way, any
+primer sequence, you need to provide these as a single entry. To
+make that merged entry match both primers, replace all ambiguous (SNP)
+nucleotides in the primer sequences with a dot (``.``). This way, any
 nucleotide will be allowed in this location and reads from either
 version of the probe will be counted together.
 
@@ -115,20 +115,23 @@ style line endings.
 
 .. _probes-mipgen-csv:
 
-MIPGEN probe design table (probes_mipgen.csv)
+MIPGEN probe design table (picked_mips.txt)
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 Instead of the standard ``probes.csv`` file you can also provide a
-*MIPGEN* probe design table. Simply save it in CSV format using the
-filename ``probes_mipgen.csv``. When you run amplimap, this file will
-automatically be converted into a ``probes.csv`` file with the right
+*MIPGEN* probe design table. Copy the ``xxxxx.picked_mips.txt`` file
+to the working directory and rename it to ``picked_mips.txt``.
+When you run amplimap, this file will
+automatically be converted into a ``probes.csv`` file in the right
 format.
 
 If *MIPGEN* generated two versions of the same probe to account for a
 SNP, ``amplimap`` will detect this based on the identical value in the
-``mip_name`` column and merge them into a single line, replacing any
-differences in the primer sequences by a dot (see above). Any duplicate
-probe names that differ in their location, or by more than 10 characters
-will cause an error.
+``mip_name`` column (optionally followed by ``_SNP_a`` and ``_SNP_b``)
+and merge them into a single entry, replacing any
+differences in the primer sequences by a dot (see above). Probes
+with the same name but not the same location, or probes
+where the primers differ by more than 10 characters,
+are not expected and will result in an error.
 
 .. _targets-csv:
 
@@ -406,16 +409,16 @@ All analysis results will be written to the subdirectory ``analysis`` inside
 the working directory. These include:
 
 -  ``reads_parsed/stats_samples.csv``: Sample statistics - number of
-   read pairs matching expected arms per sample, etc.
+   read pairs matching expected primers per sample, etc.
 -  ``reads_parsed/stats_reads.csv``: Read statistics - number of reads
    per probe per sample, number of UMIs per probe per sample, etc.
 -  ``bams/``: BAM files with aligned reads
 -  ``stats_alignment/stats_alignment.csv``: Alignment statistics for
    each sample - number of read pairs and unique UMI groups aligning in
    the expected location, etc.
--  ``reads_parsed/``: unknown arm files - sequences from the start of reads that didn’t
+-  ``reads_parsed/``: unknown primer arm files - sequences from the start of reads that didn’t
    match any of the expected primer sequences. Will only include data for the
-   first 10,000 read pairs with unknown arms.
+   first 10,000 read pairs with unknown primer arms.
 - ``versions/`` and ``versions.yaml``: a set of files providing the version numbers of various tools used for the analysis.
 
 In addition, the ``analysis`` directory will contain

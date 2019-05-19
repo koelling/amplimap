@@ -255,6 +255,8 @@ def main(argv = None):
             read_new_probe_design(os.path.join(args.working_directory, 'probes.csv'), reference_type = 'genome')
         if os.path.isfile(os.path.join(args.working_directory, 'probes_mipgen.csv')):
             process_probe_design(read_and_convert_mipgen_probes(os.path.join(args.working_directory, 'probes_mipgen.csv')))
+        if os.path.isfile(os.path.join(args.working_directory, 'picked_mips.txt')):
+            process_probe_design(read_and_convert_mipgen_probes(os.path.join(args.working_directory, 'picked_mips.txt'), sep='\t'))
         if os.path.isfile(os.path.join(args.working_directory, 'probes_heatseq.tsv')):
             process_probe_design(read_and_convert_heatseq_probes(os.path.join(args.working_directory, 'probes_heatseq.tsv')))
         if os.path.isfile(os.path.join(args.working_directory, 'targets.csv')):

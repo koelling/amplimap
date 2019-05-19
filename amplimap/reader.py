@@ -121,15 +121,14 @@ def merge_probes_by_id(rows: pd.DataFrame) -> pd.Series:
         assert first_row['n_wildcards'] > 0, 'found multiple rows with same probe name but primer sequences were identical: %s' % first_row['id']
         assert first_row['n_wildcards'] < 10, 'found too many differences between primer sequences: %s' % first_row['id']
 
-    del first_row['id'] #remove this, will be attached again later
     return first_row
 
-def read_and_convert_mipgen_probes(path: str) -> pd.DataFrame:
+def read_and_convert_mipgen_probes(path: str, sep=',') -> pd.DataFrame:
     """
-    Read probes file from MIPGEN in CSV format and generate an amplimap probes.csv from it.
+    Read probes file from MIPGEN in CSV or TSV format and generate an amplimap probes.csv from it.
     """
     try:
-        design = pd.read_csv(path)
+        design = pd.read_csv(path, sep=sep)
 
         log.info('Read mipgen table from %s -- found %d probes', path, len(design))
         original_len = len(design)
@@ -138,28 +137,32 @@ def read_and_convert_mipgen_probes(path: str) -> pd.DataFrame:
             log.info('%d probes after dropping empty rows', len(design))
         assert len(design) > 0, 'mipgen table is empty!'
 
-        #make sure we have all the columns we expect
+        # make sure we have all the columns we expect
         for column in mipgen_columns:
             if not column in design.columns:
                 raise Exception('invalid mipgen table: column %s is missing!' % column)
 
-        #rename columns
+        # rename columns
         design.rename(columns = {'mip_scan_start_position': 'target_start', 'mip_scan_stop_position': 'target_end', 'probe_strand': 'strand', 'mip_name': 'id'}, inplace=True)
 
-        #in smMIPs, the first arm (read1) seems to be the reverse primer, which would normally be the second arm
-        #its sequence in the table seems to be on the forward strand, which needs to be RC'd to get the actual read sequence (5p->3p)
+        # in smMIPs, the first arm (read1) seems to be the reverse primer, which would normally be the second arm
+        # its sequence in the table seems to be on the forward strand, which needs to be RC'd to get the actual read sequence (5p->3p)
         design['first_primer_5to3'] = [str(Bio.Seq.Seq(s).reverse_complement()) for s in design['lig_probe_sequence'].str.upper()]
         design['second_primer_5to3'] = design['ext_probe_sequence'].str.upper()
 
-        #detect SNPs and replace them by dot
+        # if we have a probe with a SNP in it we'll get multiple probes with NAME_SNP_a, NAME_SNP_b, etc
+        # here we will figure out the normal id, which we then use for grouping
+        design['id_parts'] = design['id'].str.split('_SNP_')
+        design['id'] = [row.id_parts[0] if len(row.id_parts) == 2 else row.id for row in design.itertuples()]
+        # design['snp_index'] = [row.id_parts[1] if len(row.id_parts) == 2 else None for row in design.itertuples()]
+
+        # find probes with duplicate ID and replace their different bases by dots
         original_len = len(design)
-        design = design.groupby('id').apply(merge_probes_by_id)
+        design = design.groupby('id', as_index=False).apply(merge_probes_by_id)
         if original_len != len(design):
             log.info('%d/%d probes left after merging probes by ID', len(design), original_len)
-        #reset index to turn id into column again
-        design.reset_index(inplace=True)  
 
-        #reorder and extract columns
+        # reorder and extract columns
         design = design[probe_columns]
     except Exception as e:
         raise AmplimapReaderException(e, filename = path,  should_have_header = True).with_traceback(sys.exc_info()[2])
@@ -285,7 +288,7 @@ def process_probe_design(design: pd.DataFrame, reference_type: str = 'genome') -
     #     design.loc[~design['chr'].str.startswith('chr'), 'chr'] = ['chr' + c for c in design.loc[~design['chr'].str.startswith('chr'), 'chr']]
 
     #check that probe ids don't contain unexpected characters (space breaks bam files for example, since umi will be added as tag)
-    assert design['id'].str.contains(r'^[a-zA-Z0-9._:+-]*$').all(), 'probe names may only contain alphanumeric characters and ._:+-'
+    assert design['id'].str.contains(r'^[a-zA-Z0-9/._:+-]*$').all(), 'probe names may only contain alphanumeric characters and /._:+-'
 
     #check for dupes
     any_dup = design.duplicated(subset = ['chr', 'probe_start', 'probe_end', 'strand'], keep = False)

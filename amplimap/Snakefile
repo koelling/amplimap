@@ -9,7 +9,9 @@ When running this manually set ``config['general']['amplimap_parent_dir']`` to s
 directory to load amplimap from, otherwise the amplimap package installed system-wide will be used.
 """
 
-import os, shutil, sys
+import os
+import shutil
+import sys
 
 #make sure we can import amplimap, and we are using the correct path
 #by adding it to the beginning of sys.path (but fall back on default if we don't have it)
@@ -26,7 +28,7 @@ localrules: all, \
     start_analysis, check_test_variant, \
     copy_probes, copy_snps, copy_targets_bed, convert_targets_csv,
     link_tagged_bais_1, link_tagged_bais_2, link_tagged_bams, link_unmapped_bams, \
-    convert_mipgen_probes, convert_heatseq_probes, \
+    convert_mipgen_probes, convert_mipgen_probes_txt, convert_heatseq_probes, \
     link_reads, merge_targets, stats_samples_agg, stats_reads_agg, stats_alignment_agg, coverage_agg, stats_replacements_agg, \
     variants_summary, variants_summary_excel
 
@@ -405,6 +407,18 @@ if os.path.isfile("probes_mipgen.csv"):
         run:
             import amplimap.reader
             design = amplimap.reader.read_and_convert_mipgen_probes(input['mipgen'])
+            design.to_csv(output['probes'], index=False)
+
+if os.path.isfile("picked_mips.txt"):
+    rule convert_mipgen_probes_txt:
+        input:
+            rules.start_analysis.output,
+            mipgen = "picked_mips.txt"
+        output:
+            probes = "{analysis_dir}/probes.csv"
+        run:
+            import amplimap.reader
+            design = amplimap.reader.read_and_convert_mipgen_probes(input['mipgen'], sep='\t')
             design.to_csv(output['probes'], index=False)
 
 if os.path.isfile("probes_heatseq.csv"):
@@ -820,8 +834,16 @@ rule stats_samples_agg:
         print('Merged data shape:', str(merged.shape))
         merged.sort_values(['sample'], inplace=True)
 
-        assert merged['pairs_good_arms'].sum() > 0, \
-            '\n\nABORTED: Did not find any read pairs with the expected primers sequences. Please check the reads, probe design, and config files for errors.\n\n'
+        assert merged['pairs_good_arms'].sum() > 0, (
+            '\n\nABORTED: Did not find any read pairs with the expected primers sequences.'
+            ' This is usually caused by incorrect primer sequences (eg. flipped or reverse complemented)'
+            ' in the probes file or incorrect/missing UMI lengths in the config file.'
+            ' The UMI length settings are currently {} bp for read one and {} bp for read two.'
+            ' Please check the reads, probe design, and config files for errors.\n\n'
+        ).format(
+            config['parse_reads']['umi_one'],
+            config['parse_reads']['umi_two']
+        )
 
         #should we ensure that we have at least X good reads?
         percentage_good = (100.0 * merged['pairs_good_arms'].sum() / merged['pairs_total'].sum())

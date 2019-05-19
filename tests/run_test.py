@@ -169,6 +169,51 @@ def test_naive_pileups(capsys):
     check_default_pileups(wd_path)
 
 
+# NOTE: capfd instead of capsys here to also catch output from Snakemake
+def test_mipgen(capfd):
+    "Check that we can convert a MIPGEN table"
+
+    wd_path = os.path.join(packagedir, "sample_data", "wd_mipgen")
+    init_wd(wd_path, os.path.join(packagedir, "sample_data", "sample_reads_in"))
+
+    amplimap.run.main(['--working-directory={}'.format(wd_path), 'pileups'])
+    captured = capfd.readouterr()
+    assert '{} {} dry run successful.'.format(amplimap.run.__title__, amplimap.run.__version__) in captured.err.strip()
+
+    amplimap.run.main(['--run', '--working-directory={}'.format(wd_path), 'pileups'])
+    captured = capfd.readouterr()
+
+    assert '2/3 probes left after merging probes by ID' in captured.err.strip()
+    assert 'ABORTED: Did not find any read pairs with the expected primers sequences' in captured.err.strip()
+    assert 'The UMI length settings are currently {} bp for read one and {} bp for read two.'.format(
+        0, 0
+    ) in captured.err.strip()
+
+
+# NOTE: capfd instead of capsys here to also catch output from Snakemake
+def test_config_umi_error(capfd):
+    "Check that we get the correct error message if UMI lengths are wrong"
+
+    os.environ['AMPLIMAP_CONFIG'] = os.path.join(packagedir, "sample_data", "config_default_wrong_umi.yaml")
+
+    wd_path = os.path.join(packagedir, "sample_data", "wd_naive")
+    init_wd(wd_path, os.path.join(packagedir, "sample_data", "sample_reads_in"))
+
+    amplimap.run.main(['--working-directory={}'.format(wd_path), 'pileups'])
+    captured = capfd.readouterr()
+    assert '{} {} dry run successful.'.format(amplimap.run.__title__, amplimap.run.__version__) in captured.err.strip()
+
+    amplimap.run.main(['--run', '--working-directory={}'.format(wd_path), 'pileups'])
+    captured = capfd.readouterr()
+
+    assert 'ABORTED: Did not find any read pairs with the expected primers sequences' in captured.err.strip()
+    assert 'The UMI length settings are currently {} bp for read one and {} bp for read two.'.format(
+        3, 1
+    ) in captured.err.strip()
+
+    os.environ['AMPLIMAP_CONFIG'] = test_config_path  # reset, so we don't affect later tests
+
+
 def test_variants(capsys):
     """
     For this test we have some intermediate results already, otherwise we would require a variant caller to be installed.
