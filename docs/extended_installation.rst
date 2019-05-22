@@ -38,7 +38,8 @@ into a new conda environment:
 
 If you want to run germline variant calling and annotation you also need to `download and install
 Annovar <http://annovar.openbioinformatics.org/en/latest/user-guide/download/>`_ manually. Make sure you also download
-the relevant indices for the reference genome you want to use.
+the relevant indices for the reference genome you want to use and add the directory containing the Annovar scripts to your ``PATH``
+environment variable.
 
 
 3. Activate amplimap environment

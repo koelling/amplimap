@@ -273,8 +273,8 @@ def process_probe_design(design: pd.DataFrame, reference_type: str = 'genome') -
     design.loc[design['strand'] == '-', 'probe_start'] = design.loc[design['strand'] == '-', 'target_start'] - design.loc[design['strand'] == '-', 'second_primer_5to3'].str.len()
     design.loc[design['strand'] == '+', 'probe_end'] = design.loc[design['strand'] == '+', 'target_end'] + design.loc[design['strand'] == '+', 'second_primer_5to3'].str.len()
     design.loc[design['strand'] == '-', 'probe_end'] = design.loc[design['strand'] == '-', 'target_end'] + design.loc[design['strand'] == '-', 'first_primer_5to3'].str.len()
-    design['target_start_0'] = design['target_start'] - 1 #we have 1-based coords now
-    design['probe_start_0'] = design['probe_start'] - 1 #we have 1-based coords now
+    design['target_start_0'] = design['target_start'] - 1   # we have 1-based coords now
+    design['probe_start_0'] = design['probe_start'] - 1   # we have 1-based coords now
     design['capture_size'] = design['probe_end'] - design['probe_start_0']
     design['target_length'] = design['target_end'] - design['target_start_0']
 
