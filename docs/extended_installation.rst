@@ -177,12 +177,18 @@ in the ``~/data/example_wd/config.yaml`` file:
 You can avoid having to specify these paths every time by running a shell inside the Docker container
 and adding your reference genome to your ``config_default.yaml`` as described here: :ref:`installation-setup`.
 
+To get a bash shell inside the Docker container:
+
 ::
 
     docker run -t -i koelling/amplimap /bin/bash
 
-To annotate variant calls you would also have to install Annovar inside the Docker container
-and add the path to the Annovar indices to your config.
+
+
+To annotate variant calls, also install Annovar inside the Docker container
+and add the path to the Annovar indices to your config. 
+Make sure you also add the directory containing
+the Annovar Perl scripts to your ``PATH`` so that amplimap can find them.
 
 
 .. _installation-pip:

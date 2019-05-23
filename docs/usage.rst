@@ -85,7 +85,7 @@ The columns are:
    orientation (needs to match start of read 1)
 3. ``second_primer_5to3``: sequence of the reverse primer, in 5’ to 3’
    orientation (needs to match start of read 2)
-4. ``chr``: chromosome (should start with *chr*)
+4. ``chr``: chromosome (needs to match the naming scheme used for the reference genome, eg. ``1`` for Ensembl or ``chr1`` for UCSC)
 5. ``target_start``: start of the target region (after the primer,
    1-based coordinate system)
 6. ``target_end``: end of the target region
@@ -141,7 +141,7 @@ targets.csv
 List of target regions (e.g. exons, not the MIPs themselves) in CSV format.
 This file should contain the following columns:
 
-1. ``chr`` (chromosome, should start with *chr*)
+1. ``chr`` (needs to match the naming scheme used for the reference genome, eg. ``1`` for Ensembl or ``chr1`` for UCSC)
 2. ``start`` (start position, 1-based coordinate system)
 3. ``end`` (end position)
 4. [optional] ``id`` (name of the target)
@@ -172,7 +172,7 @@ snps.txt (for allele counting pileup)
 If you have certain SNPs that you want to generate pileups for, you can
 provide a list in tab-separated text format here. The columns are:
 
-1. ``chr`` (should start with *chr*)
+1. ``chr`` (needs to match the naming scheme used for the reference genome, eg. ``1`` for Ensembl or ``chr1`` for UCSC)
 2. ``pos`` (1-based coordinate system)
 3. ``id``
 4. ``snp_ref``
