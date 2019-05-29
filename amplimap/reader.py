@@ -382,7 +382,7 @@ def read_targets(path: str, check_overlaps: bool = False, reference_type: str = 
             if skiprows > 0:
                 log.info('Skipping %d browser/track rows from target BED files', skiprows)
 
-            targets = pd.read_table(path, header = None, skiprows = skiprows)
+            targets = pd.read_csv(path, header=None, skiprows=skiprows, sep='\t')
             log.info('Read targets from %s: %d rows', path, len(targets))
 
             if targets.shape[1] == 6:
@@ -482,13 +482,13 @@ def read_snps_txt(path: str, reference_type: str = 'genome') -> pd.DataFrame:
     """
     try:
         log.info('Loading SNPs from %s', path)
-        snps = pd.read_table(path, header = None) #pos is 1-based!
+        snps = pd.read_csv(path, header=None, sep='\t')  # pos is 1-based!
 
         #detect potential issues with spaces instead of tabs
         if snps.shape[1] == 1:
             if ' ' in snps.iloc[0, 0]:
                 log.info('SNP table does not seem to be tab-separated, trying again with spaces')
-                snps = pd.read_table(path, header = None, sep=r'\s+')
+                snps = pd.read_csv(path, header=None, sep=r'\s+')
 
         if snps.shape[1] == 5:
             snps.columns = ['chr', 'pos', 'id', 'snp_ref', 'snp_alt']
