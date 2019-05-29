@@ -51,7 +51,7 @@ def load_gene_exons(file: str, genes: list) -> dict:
 
     #load gene exon information from flat table
     print('Loading exon table from ', file)
-    gene_exon_df = pd.read_table(file, header = None)
+    gene_exon_df = pd.read_csv(file, header=None, sep='\t')
     gene_exon_df.rename(columns={2: 'chr', 3: 'strand', 8: 'n_exons', 9: 'exon_starts', 10: 'exon_ends', 12: 'gene'}, inplace=True)
     print('Loaded ', len(gene_exon_df), ' rows.')
 
@@ -60,7 +60,7 @@ def load_gene_exons(file: str, genes: list) -> dict:
     print('Filtered to ', len(gene_exon_df), ' rows for ', len(genes), ' genes.')
 
     #identify standard chrs
-    regex_standard_chr = re.compile(r'^chr([0-9MXY]+)$')
+    regex_standard_chr = re.compile(r'^(chr)?([0-9MXY]+)$')
 
     #make dict of genes to exon locations
     gene_exons = {}
@@ -153,7 +153,7 @@ def find_closest_exon(row: pd.Series, gexs: dict) -> int:
         return None
 
     gex = gexs[row['Gene.refGene']]
-    assert row['Chr'] == gex['chr']
+    assert (row['Chr'] == gex['chr']) or (row['Chr'] == 'chr'+gex['chr']) or ('chr'+row['Chr'] == gex['chr'])
     
     #upstream of start = negative, downstream of end = positive
     start_dist = [row['End'] - boundary_pos for boundary_pos in gex['starts'] if boundary_pos >= row['End']]
@@ -333,22 +333,31 @@ def make_summary_dataframe(
     ) -> pd.DataFrame:
     """Process merged Annovar dataframe (with optional targets and sample_info data frames) into a large summary table."""
 
-    #process targets (to add a targets column)
+    # process targets (to add a targets column)
     target_intervals = None
     if targets is not None:
         target_intervals = collections.defaultdict(interlap.InterLap)
         for target in targets.itertuples():
             target_intervals[target.chr].add( (int(target.start_0), int(target.end), target) ) #note the double parentheses!
 
-    #process sample information table
+    # process sample information table
     sample_info_columns = []
     if sample_info is not None:
         sample_info_columns = list(sample_info.columns)
 
+    # read original data from VCF columns
     vcf = merged['Otherinfo'].apply(lambda x: pd.Series(x.split('\t')))
     vcf.replace('.', np.nan, inplace=True) #replace dots with NAs again
     vcf.columns = ['Chr', 'Pos', 'ID', 'Ref', 'Alt', 'Qual', 'Filter', 'Info', 'Fields', 'SampleData']
-    assert (merged['Chr'] == vcf['Chr']).all(), 'chr mismatch'
+
+    # make sure chromosome match between VCF data and annotation (they alwyas should)
+    assert (
+        (merged['Chr'] == vcf['Chr']) |
+        (merged['Chr'] == ['chr'+c for c in vcf['Chr']]) |
+        (['chr'+c for c in merged['Chr']] == vcf['Chr'])
+    ).all(), 'Chromosome names mismatch between Annovar and VCF'
+    # set chromosome to the one recorded in VCF, since Annovar may have added 'chr' prefix
+    merged['Chr'] = vcf['Chr']
 
     #We are using the approach from /hts/data6/smcgowan/hts_scripts/TableAnnovar_to_spreadsheet.pl, which only looks for exons
     #for the given gene (as annotated by Annovar). This should work fine, but is a bit inefficient.
