@@ -26,6 +26,7 @@ from .reader import read_targets, read_sample_info
 
 #datatypes for variant summary tables
 variants_dtypes = {
+    'Chr': str,
     'Ref': str,
     'Alt': str,
     'Start': int,
@@ -349,6 +350,7 @@ def make_summary_dataframe(
     vcf = merged['Otherinfo'].apply(lambda x: pd.Series(x.split('\t')))
     vcf.replace('.', np.nan, inplace=True) #replace dots with NAs again
     vcf.columns = ['Chr', 'Pos', 'ID', 'Ref', 'Alt', 'Qual', 'Filter', 'Info', 'Fields', 'SampleData']
+    vcf['Chr'] = vcf['Chr'].astype(str)
 
     # make sure chromosome match between VCF data and annotation (they alwyas should)
     assert (
