@@ -3,64 +3,64 @@
 
 # paths to one or more reference genome indices.
 paths:
-  # irst reference genome name - each reference genome must have a unique name, eg. hg38, hg19, mm10, ...
+  # first reference genome name - each reference genome must have a unique name, eg. hg38, hg19, mm10, ...
   hg38:
-    # ath to bwa index prefix, if bwa is used as aligner
+    # path to bwa index prefix, if bwa is used as aligner
     bwa: ""
-    # ath to bowtie2 index prefix, if bowtie2 is used as aligner
+    # path to bowtie2 index prefix, if bowtie2 is used as aligner
     bowtie2: ""
-    # ath to STAR genome directory, if STAR is used as aligner
+    # path to STAR genome directory, if STAR is used as aligner
     star: ""
-    # ath to reference genome FASTA file (indexed using samtools faidx)
+    # path to reference genome FASTA file (indexed using samtools faidx)
     fasta: ""
-    # ath to directory with annovar indices
+    # path to directory with annovar indices
     annovar: ""
-    # eference genome name used by annovar (leave empty if same as name above)
+    # reference genome name used by annovar (leave empty if same as name above)
     annovar_name: ""
 
-  # econd reference genome
+  # second reference genome
   mm10:
     bwa: ""
 
 # general setup
 general:
-  # efault reference genome (must match name in `paths`)
+  # default reference genome (must match name in `paths`)
   genome_name: "hg38"
-  # hether to ignore UMIs during pileups and alignment stats (if any)
+  # whether to ignore UMIs during pileups and alignment stats (if any)
   ignore_umis: false
-  # inimum number of reads supporting the consensus call in a UMI group
+  # minimum number of reads supporting the consensus call in a UMI group
   umi_min_consensus_count: 1
-  # inimum fraction of reads supporting the consensus call in a UMI group
+  # minimum fraction of reads supporting the consensus call in a UMI group
   umi_min_consensus_percentage: 51
-  # hen using FASTQs as input: number of lanes (should be detected automatically if set to 0)
+  # when using FASTQs as input: number of lanes (should be detected automatically if set to 0)
   lanes: 0
-  # hen using unmapped BAMs as input: tag in which the UMI has been saved
+  # when using unmapped BAMs as input: tag in which the UMI has been saved
   umi_tag_name: ""
-  # eta: optional bed file specifying bases that should be masked with Ns
-  # f specified, amplimap will try to create a masked copy of the reference genome
-  # nd build custom bwa/bowtie2/star indices for it
+  # beta: optional bed file specifying bases that should be masked with Ns.
+  # if specified, amplimap will try to create a masked copy of the reference genome
+  # and build custom bwa/bowtie2/star indices for it
   mask_bed: ""
-  # et to true if probe data is not available. this means you do not need to provide
-  #  probes.csv file, but disables trimming of primers, stats_reads etc.
+  # set to true if probe data is not available. this means you do not need to provide
+  # a probes.csv file, but it disables trimming of primers, stats_reads etc.
   use_raw_reads: false
 
 # settings for FASTQ read parsing
 parse_reads:
-  # aximum number of mismatches between expected primer arm and beginning of read (per mate)
+  # maximum number of mismatches between expected primer arm and beginning of read (per mate)
   max_mismatches: 2
-  # ength of UMI on read 1
+  # length of UMI on read 1
   umi_one: 0
-  # ength of UMI on read 2
+  # length of UMI on read 2
   umi_two: 0
-  # bort pipeline if fewer than this percentage of reads have a valid pair of primer arms
+  # sbort pipeline if fewer than this percentage of reads have a valid pair of primer arms
   min_percentage_good: 0
-  # hether to trim off primers from beginning of reads
+  # whether to trim off primers from beginning of reads
   trim_primers: true
-  # uality trimming threshold as fraction between 0 and 1 (false = no trimming)
+  # quality trimming threshold as fraction between 0 and 1 (false = no trimming)
   quality_trim_threshold: false  
-  # uality phred score encoding (usually phred-33 or phred-64)
+  # quality phred score encoding (usually phred-33 or phred-64)
   quality_trim_phred_base: 33
-  # inimum read length required after primer and quality trimming
+  # minimum read length required after primer and quality trimming
   trim_min_length: 20
 
 # alignment settings
