@@ -23,15 +23,15 @@ jobs:
       # install conda dependencies
       - restore_cache:
           keys:
-            - v3-dependencies-{{ checksum "environment.yml" }}
+            - v4-dependencies-{{ checksum "environment.yml" }}
             # fallback to using the latest cache if no exact match is found
-            - v3-dependencies-
+            - v4-dependencies-
 
       - run:
           name: install dependencies
           command: |
             apt-get update --fix-missing;
-            apt-get install -y gcc;
+            apt-get install -y gcc rename;
             apt-get clean;
 
             if [ ! -d /opt/conda/envs/amplimap/ ]; then
