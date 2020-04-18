@@ -23,7 +23,7 @@ jobs:
       # install conda dependencies
       - restore_cache:
           keys:
-            - v4-dependencies-{{ checksum "environment.yml" }}
+            - v4-dependencies-{{ checksum "environment.yml" }}-{{ checksum "setup.py" }}
             # fallback to using the latest cache if no exact match is found
             - v4-dependencies-
 
@@ -51,7 +51,7 @@ jobs:
           paths:
             - /opt/conda/
             - /root/.conda/
-          key: v3-dependencies-{{ checksum "environment.yml" }}
+          key: v4-dependencies-{{ checksum "environment.yml" }}-{{ checksum "setup.py" }}
       
       # reference genome
       - restore_cache:
