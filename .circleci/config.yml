@@ -127,11 +127,12 @@ jobs:
             . /opt/conda/etc/profile.d/conda.sh;
             conda activate amplimap;
 
+            mkdir -p test-reports/general/ || true;
             conda list > test-reports/general/conda.txt;
             pip freeze > test-reports/general/pip.txt;
             
-            cat test-reports/general/conda.txt;
-            cat test-reports/general/pip.txt;
+            cat test-reports/general/conda.txt || true;
+            cat test-reports/general/pip.txt || true;
             
             pytest --junitxml=test-reports/general/junit.xml tests/;
 
