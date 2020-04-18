@@ -23,9 +23,9 @@ jobs:
       # install conda dependencies
       - restore_cache:
           keys:
-            - v4-dependencies-{{ checksum "environment.yml" }}-{{ checksum "setup.py" }}
+            - v5-dependencies-{{ checksum "environment.yml" }}-{{ checksum "setup.py" }}
             # fallback to using the latest cache if no exact match is found
-            - v4-dependencies-
+            - v5-dependencies-
 
       - run:
           name: install dependencies
@@ -51,7 +51,7 @@ jobs:
           paths:
             - /opt/conda/
             - /root/.conda/
-          key: v4-dependencies-{{ checksum "environment.yml" }}-{{ checksum "setup.py" }}
+          key: v5-dependencies-{{ checksum "environment.yml" }}-{{ checksum "setup.py" }}
       
       # reference genome
       - restore_cache:
@@ -127,6 +127,12 @@ jobs:
             . /opt/conda/etc/profile.d/conda.sh;
             conda activate amplimap;
 
+            conda list > test-reports/general/conda.txt;
+            pip freeze > test-reports/general/pip.txt;
+            
+            cat test-reports/general/conda.txt;
+            cat test-reports/general/pip.txt;
+            
             pytest --junitxml=test-reports/general/junit.xml tests/;
 
             conda deactivate;
