@@ -54,7 +54,7 @@ setup(
     python_requires='>=3',
 
     install_requires=[
-        'snakemake>=3.11.2,<6',
+        'snakemake>=3.11.2,<5.7',
         'pyyaml>=3.12,<4',
         'numpy>=1.13.1,<2',
         'biopython>=1.69,<2',
