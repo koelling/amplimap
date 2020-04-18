@@ -68,7 +68,7 @@ Tutorials
 
 Links
 --------
- 
+
 - Package: https://pypi.org/project/amplimap/
 - Code: https://github.com/koelling/amplimap/
 - Documentation: https://amplimap.readthedocs.io/
@@ -92,8 +92,9 @@ for additional details.
 Citation and License
 --------------------
 Licensed under the Apache License, version 2.0.
-Copyright 2019 Nils Koelling.
-When you use amplimap, please cite it in your work. For example:
+Copyright 2020 Nils Koelling.
+When you use amplimap,
+please cite the `amplimap paper <https://academic.oup.com/bioinformatics/article/35/24/5349/5539690>`_
+in your work:
 
-  Koelling, Nils. "amplimap: amplicon mapping and analysis pipeline". https://github.com/koelling/amplimap/
-
+   Nils Koelling, Marie Bernkopf, Eduardo Calpena, Geoffrey J Maher, Kerry A Miller, Hannah K Ralph, Anne Goriely, Andrew O M Wilkie, amplimap: a versatile tool to process and analyze targeted NGS data, Bioinformatics, Volume 35, Issue 24, 15 December 2019, Pages 5349–5350, https://doi.org/10.1093/bioinformatics/btz582
