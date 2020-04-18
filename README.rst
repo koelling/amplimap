@@ -19,6 +19,20 @@ From raw sequencing reads, amplimap generates a variety of output files includin
 
 In addition to its focus on user-friendliness and reproducibility, amplimap supports advanced features such as the generation of consensus base calls for read families based on molecular identifiers/barcodes (UMIs) and the detection of chimeric reads caused by amplification of off-target loci.
 
+Installation
+-------------------
+We recommend that you install amplimap through Conda:
+
+::
+
+   wget https://raw.githubusercontent.com/koelling/amplimap/master/environment.yml
+   conda env create --file environment.yml
+
+We also have a `Docker image <https://hub.docker.com/r/koelling/amplimap>`_ available.
+Please see our
+`full installation instructions <https://amplimap.readthedocs.io/en/latest/extended_installation.html>`_
+for additional details.
+
 Overview
 ----------
 To run amplimap you create a directory containing a small set of input files:
@@ -72,21 +86,6 @@ Links
 - Package: https://pypi.org/project/amplimap/
 - Code: https://github.com/koelling/amplimap/
 - Documentation: https://amplimap.readthedocs.io/
-
-
-Installation
--------------------
-We recommend that you install amplimap through Conda:
-
-::
-
-   wget https://raw.githubusercontent.com/koelling/amplimap/master/environment.yml
-   conda env create --file environment.yml
-
-We also have a `Docker image <https://hub.docker.com/r/koelling/amplimap>`_ available.
-Please see our
-`full installation instructions <https://amplimap.readthedocs.io/en/latest/extended_installation.html>`_
-for additional details.
 
 
 Citation and License
