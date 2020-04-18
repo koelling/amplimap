@@ -23,9 +23,9 @@ jobs:
       # install conda dependencies
       - restore_cache:
           keys:
-            - v5-dependencies-{{ checksum "environment.yml" }}-{{ checksum "setup.py" }}
+            - v6-dependencies-{{ checksum "environment.yml" }}-{{ checksum "setup.py" }}
             # fallback to using the latest cache if no exact match is found
-            - v5-dependencies-
+            - v6-dependencies-
 
       - run:
           name: install dependencies
@@ -43,7 +43,8 @@ jobs:
             . /opt/conda/etc/profile.d/conda.sh;
             conda activate amplimap;
             # uninstall conda version
-            pip uninstall -y amplimap 
+            # temporarily added snakemake here to work around version issue
+            pip uninstall -y amplimap snakemake
             # install current version
             easy_install .;
 
@@ -51,7 +52,7 @@ jobs:
           paths:
             - /opt/conda/
             - /root/.conda/
-          key: v5-dependencies-{{ checksum "environment.yml" }}-{{ checksum "setup.py" }}
+          key: v6-dependencies-{{ checksum "environment.yml" }}-{{ checksum "setup.py" }}
       
       # reference genome
       - restore_cache:
@@ -130,9 +131,6 @@ jobs:
             mkdir -p test-reports/general/ || true;
             conda list > test-reports/general/conda.txt;
             pip freeze > test-reports/general/pip.txt;
-            
-            cat test-reports/general/conda.txt || true;
-            cat test-reports/general/pip.txt || true;
             
             pytest --junitxml=test-reports/general/junit.xml tests/;
 
