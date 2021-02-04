@@ -62,7 +62,7 @@ def read_config_file(print_config, path):
             sys.stderr.write('Reading additional configuration file: {}\n'.format(path))
         with open(path, 'r') as config_file:
             this_config = yaml.safe_load(config_file.read())
-        
+
         #make sure we always get an empty dict, yaml.safe_load may give us None for an empty file
         if this_config is None:
             this_config = {}
@@ -89,7 +89,7 @@ def main(argv = None):
     try:
         basedir = os.path.dirname(os.path.realpath(__file__))
         #sys.stderr.write('Called with arguments: "{}"\n'.format('" "'.join(sys.argv)))
-        
+
         #parse the arguments, which will be available as properties of args (e.g. args.probe)
         parser = argparse.ArgumentParser(
             description = "amplimap v{} - amplicon mapping and analysis pipeline".format(__version__),
@@ -209,7 +209,7 @@ def main(argv = None):
         if not config['align']['aligner'] in aligners:
             raise Exception('align: aligner must be one of {}!'.format(','.join(aligners)))
 
-        callers = ['gatk', 'platypus']  # allowed values for the variant caller
+        callers = ['gatk', 'platypus', 'wecall']  # allowed values for the variant caller
         # add custom tools
         for tool_name, tool_config in config['tools'].items():
             if 'call_command' in tool_config:
@@ -420,4 +420,3 @@ def main(argv = None):
 
 if __name__ == '__main__':
     sys.exit(main())
-

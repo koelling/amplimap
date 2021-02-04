@@ -18,7 +18,7 @@ log.addHandler(sh)
 
 #for bam creation
 import pysam
-#for getting ref chrs 
+#for getting ref chrs
 import pyfaidx
 #for fastq reading
 import Bio.SeqIO
@@ -36,7 +36,7 @@ class AmplimapNoAlignment(Exception):
 def align_and_find_cigar(read, ref, debug = False, reverse = False) -> tuple:
     """
     Align read and reference sequence using parwise global alignment and return start offset and CIGAR ops.
-    """ 
+    """
     assert not reverse, 'not in use'
 
     #we always want to be left-aligned with the proper seq (although it's not clear whether this actually makes a diff)
@@ -56,7 +56,7 @@ def align_and_find_cigar(read, ref, debug = False, reverse = False) -> tuple:
 def find_cigar_for_alignment(read_len, alignment, debug) -> tuple:
     """
     Generate tuple of start offset and CIGAR operations for given alignment.
-    """ 
+    """
     cigartuples = []
     cigar_ref_consumed = 0
     cigar_read_consumed = 0
@@ -99,7 +99,7 @@ def find_cigar_for_alignment(read_len, alignment, debug) -> tuple:
 
         # if debug:
         #     print(char_read, cigar_read_consumed, char_ref, cigar_ref_consumed, char_cigar, cigar_read_start_offset)
-        
+
         #cigar should not get longer than read
         if cigar_read_consumed == read_len:
             break
@@ -118,7 +118,7 @@ def find_cigar_for_alignment(read_len, alignment, debug) -> tuple:
 
     #make these into actual tuples
     cigartuples = [ tuple(x) for x in cigartuples ]
-            
+
     return cigar_read_start_offset, cigartuples
 
 def create_bam(
@@ -195,11 +195,11 @@ def create_bam(
 
                     #untested: if we haven't trimmed off the primers then we need to start aligning from the primer start location!
                     if has_trimmed_primers:
-                        probe_start = probes_dict['target_start_0'][read_probe] + 1
-                        probe_end = probes_dict['target_end'][read_probe]
+                        probe_start = int(probes_dict['target_start_0'][read_probe] + 1)
+                        probe_end = int(probes_dict['target_end'][read_probe])
                     else:
-                        probe_start = probes_dict['probe_start_0'][read_probe] + 1
-                        probe_end = probes_dict['probe_end'][read_probe]
+                        probe_start = int(probes_dict['probe_start_0'][read_probe] + 1)
+                        probe_end = int(probes_dict['probe_end'][read_probe])
 
                     if probes_dict['strand'][read_probe] == '+':
                         read_starts = [ probe_start, probe_end - read_lens[1] + 1 ]
@@ -219,14 +219,14 @@ def create_bam(
                     if has_trimmed_primers:
                         assert len(probe_target_sequence) == probes_dict['target_length'][read_probe]
                     else:
-                        assert len(probe_target_sequence) == probes_dict['capture_size'][read_probe]                        
+                        assert len(probe_target_sequence) == probes_dict['capture_size'][read_probe]
 
                     if debug:
                         print(read_name, read_probe, read_umi)
                         print(probe_chr, probe_chr_index, probe_start, probe_end)
                         print(read_starts)
-                        print(read_reverse)                       
-                        print(probe_target_sequence)               
+                        print(read_reverse)
+                        print(probe_target_sequence)
                         print(read_pair)
 
                     try:

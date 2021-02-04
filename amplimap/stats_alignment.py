@@ -64,7 +64,7 @@ import argparse
 
 #for pileup
 import pysam
-#for getting ref base 
+#for getting ref base
 import pyfaidx
 #for debugging umi distance
 import distance
@@ -88,13 +88,13 @@ def aggregate(folder):
             df = pd.read_csv(os.path.join(folder, file))
             log.info('Found %d rows in %s -> %s', len(df), file, sample)
 
-            df['sample'] = sample            
+            df['sample'] = sample
 
             if agg is None:
                 agg = df
             else:
-                agg = agg.append(df)                    
-        except pd.io.common.EmptyDataError:
+                agg = agg.append(df)
+        except pd.errors.EmptyDataError:
             log.exception("No data found: %s", file)
 
     assert agg is not None and len(agg) > 0, \
@@ -225,8 +225,8 @@ def process_file(
 
         iter = samfile.fetch(until_eof = True)
         for x in iter:
-            qname = x.query_name     
-            assert qname is not None   
+            qname = x.query_name
+            assert qname is not None
             rindex = 1 if x.is_read1 else 2 if x.is_read2 else None
             assert rindex is not None
             other_rindex = 3 - rindex
@@ -501,7 +501,7 @@ def process_file(
         df.sort_index(0, inplace=True)
 
         #ASSERTIONS
-        #read_pairs_total should be == read_pairs_total from stats_overview            
+        #read_pairs_total should be == read_pairs_total from stats_overview
         assert df['read_pairs_total'].sum() == len(reads_processed) #each read pair should be in one probe row
         #assert df['alignments_total'].sum()*2 == n_rows #each alignment has two rows -- this falls apart if one mate is outside the target region!
         assert (df['read_pairs_total'] == df['alignments_total'] - df['multimapping_alignments']).all() #should have one non-multimapping alignment per pair
@@ -518,7 +518,7 @@ def process_file(
 
 def main():
     log.info('Called with arguments: "%s"', '" "'.join(sys.argv))
-    
+
     #parse the arguments, which will be available as properties of args (e.g. args.probe)
     parser = argparse.ArgumentParser()
     #specify parameters

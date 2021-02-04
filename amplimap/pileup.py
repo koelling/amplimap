@@ -30,7 +30,7 @@ import operator
 
 #for pileup
 import pysam
-#for getting ref base 
+#for getting ref base
 import pyfaidx
 #for debugging umi distance
 import distance
@@ -70,7 +70,7 @@ def get_pileup_row(chrom, pos_0, raw_coverage = 0, target_id = None, target_type
     row['group_no_call'] = 0
     row['number_called'] = 0
     row['number_called_hq'] = 0
-    
+
     row['filtered_umi_n'] = 0
     row['filtered_low_quality'] = 0
     row['filtered_flagged'] = 0
@@ -88,7 +88,7 @@ def get_pileup_row(chrom, pos_0, raw_coverage = 0, target_id = None, target_type
     for call in call_types:
         row['count_hq_%s' % call] = 0
 
-    return row   
+    return row
 
 class PileupRowFilterException(Exception):
     """Raised when row fails a pileup filter, with filter_column being the column to count this in."""
@@ -138,7 +138,7 @@ def process_pileup_read(
         if 'S' in pr.alignment.cigarstring:
             raise PileupRowFilterException('filtered_softclipped', skip_read_pair = False) #we don't want to skip the entire pair!
 
-    #get read metadata        
+    #get read metadata
     read_name = pr.alignment.query_name
     mate_starts = get_al_mate_starts(pr.alignment) if group_with_mate_positions else None
     if ignore_groups:
@@ -192,7 +192,7 @@ def process_pileup_read(
                 raise Exception('pos = %d but len = %d' % (pos, len(query_sequence)))
             elif pos < 0:
                 raise Exception('query position < 0: %d' % pos)
-            
+
             my_call = query_sequence[pos]
             my_phred = pr.alignment.query_qualities[pos]
     except:
@@ -234,7 +234,7 @@ def get_group_consensus(group_calls, min_consensus_count = 1, min_consensus_frac
     """
     group_call_counts = collections.defaultdict(int)
     group_calls_maxphred = collections.defaultdict(int)
-    
+
     #count how often we saw each call
     for (my_call, my_phred, _) in group_calls:
         group_call_counts[my_call] += 1
@@ -243,7 +243,7 @@ def get_group_consensus(group_calls, min_consensus_count = 1, min_consensus_frac
     #find call with highest count
     #note: as long as min_consensus_fraction is >0.5 we should never end up with a duplicate call
     #in the end, since if we have a duplicate its fraction has to be <= 50%
-    group_consensus_call, group_consensus_count = None, 0    
+    group_consensus_call, group_consensus_count = None, 0
     for my_call, my_count in group_call_counts.items():
         if my_count > group_consensus_count:
             group_consensus_call = my_call
@@ -271,7 +271,7 @@ def get_group_consensus(group_calls, min_consensus_count = 1, min_consensus_frac
         if debug:
             print('-> Consensus: ', group_consensus_call, ' (', group_consensus_count, 'x ), max Q =', group_consensus_phred)
 
-    return group_consensus_call, group_consensus_count, group_consensus_phred   
+    return group_consensus_call, group_consensus_count, group_consensus_phred
 
 def process_pileup_row(
         row,
@@ -282,7 +282,7 @@ def process_pileup_row(
         min_consensus_count,
         min_consensus_fraction,
         min_baseq,
-        ref,        
+        ref,
         debug = False):
     """
     Generate a pileup table row from processed read data and calculate some additional stats and annotation.
@@ -329,10 +329,10 @@ def process_pileup_row(
         except PileupGroupFilterException as ex:
             #if the row is filtered, we raise a PileupRowFilterException with message being the corresponding filter column
             row[ex.filter_column] += 1
-    
-    #mean phred score for position 
+
+    #mean phred score for position
     if len(phreds) > 0:
-        row['phred_mean'] = 1.0 * sum(phreds) / len(phreds)    
+        row['phred_mean'] = 1.0 * sum(phreds) / len(phreds)
     else:
         row['phred_mean'] = None
 
@@ -356,7 +356,7 @@ def process_pileup_row(
             row['ref_hq_count'] = None
             row['nonref_hq_count'] = None
             row['alts'] = None
-    
+
         #make a list of umi groups with the nonref call
         row['nonref_call_groups_5'] = ';'.join(nonref_call_groups)
         if row['nonref_hq_count'] is not None and row['nonref_hq_count'] > 5:
@@ -374,7 +374,7 @@ def process_pileup_row(
         else:
             row['snp_ref_hq_count'] = None
             row['snp_alt_hq_count'] = None
-    
+
     #maj/second/nonmaj count
     row['maj_hq_count'] = max(call_counts)
     if row['maj_hq_count'] > 0:
@@ -384,13 +384,13 @@ def process_pileup_row(
         row['maj_hq_percent'] = 100.0 * row['maj_hq_count'] / row['number_called_hq']
         row['maj_hq_calls'] = ';'.join([call_types[i] for i in range(len(call_types)) if call_counts[i] == row['maj_hq_count']])
         row['maj_hq_phreds'] = ';'.join([str(row['phred_%s' % call_types_bases[i]]) for i in range(len(call_types_bases)) if call_counts[i] == row['maj_hq_count']])
-        
+
         row['non_maj_hq_count'] = sum([cc for cc in call_counts if cc != row['maj_hq_count']])
         #row['non_maj_hq_percent'] = 100.0 * row['non_maj_hq_count'] / row['number_called_hq']
-        
+
         non_maj = [i for i in range(len(call_types)) if call_counts[i] > 0 and call_counts[i] != row['maj_hq_count']]
         non_maj_counts = [call_counts[i] for i in non_maj]
-        # non_maj_phreds = list(itertools.chain.from_iterable(( call_phreds[call_types[i]] for i in non_maj )))            
+        # non_maj_phreds = list(itertools.chain.from_iterable(( call_phreds[call_types[i]] for i in non_maj )))
         row['non_maj_hq_calls'] = ';'.join([call_types[i] for i in non_maj])
         #row['non_maj_mean_phreds'] = ';'.join([str(row['phred_%s' % call_types[i]]) if 'phred_%s' % call_types[i] in row else 'NA' for i in non_maj])
         #row['non_maj_hq_phreds_mean'] = 1.0 * sum(non_maj_phreds) / len(non_maj_phreds) if len(non_maj_phreds) > 0 else None
@@ -411,9 +411,9 @@ def process_pileup_row(
     else:
         row['maj_hq_percent'] = None
         row['maj_hq_calls'] = None
-        row['maj_hq_phreds'] = None                    
+        row['maj_hq_phreds'] = None
         row['non_maj_hq_count'] = None
-        row['non_maj_hq_calls'] = None                        
+        row['non_maj_hq_calls'] = None
         row['second_hq_count'] = None
         row['second_hq_percent'] = None
         row['second_hq_calls'] = None
@@ -492,11 +492,11 @@ def process_pileup_base(
                 else:
                     #just group by read name (every read is its own group)
                     my_group = read_name
-         
+
                 #record read straight in umi group - should be fast
                 is_overlap = record_read_in_group(call_groups[my_group], read_call, read_phred, read_umi, read_name)
                 if is_overlap:
-                    row['overlapping_mates'] += 1        
+                    row['overlapping_mates'] += 1
             except PileupRowFilterException as ex:
                 #if the row is filtered, we raise a PileupRowFilterException with message being the corresponding filter column
                 row[ex.filter_column] += 1
@@ -565,7 +565,7 @@ def aggregate(folder, snps_file, ref, generate_calls):
 
                 #set filter status to NA
                 df['filter'] = '--'
-                    
+
                 #columns to join on
                 cols = None
                 #columns we actually want to output in the end
@@ -679,7 +679,7 @@ def aggregate(folder, snps_file, ref, generate_calls):
 
                 #stats
                 log.info('%d/%d: Pileup rows processed, agg shape now %s, agg long shape now %s', ixfile, len(files), str(agg.shape), str(agg_long.shape))
-        except pd.io.common.EmptyDataError:
+        except pd.errors.EmptyDataError:
             log.exception("No data found: %s", file)
 
         coverage_file = file.replace('.pileup.csv', '.targets.csv')
@@ -695,15 +695,15 @@ def aggregate(folder, snps_file, ref, generate_calls):
                     coverage_df['sample'] = sample
                     coverage_long = pd.concat([coverage_long, coverage_df], ignore_index=True, copy=True)
 
-                    #remove some default columns that we don't need 
+                    #remove some default columns that we don't need
                     coverage_df = coverage_df[ [c for c in coverage_df.columns if not c in ['chr', 'start_0', 'end', 'length', 'type']] ]
                     coverage_df.columns = [ c if c == 'id' else sample + '_' + c for c in coverage_df.columns ]
 
-                    if coverage_agg is None:                
+                    if coverage_agg is None:
                         coverage_agg = coverage_df
                     else:
                         coverage_agg = coverage_agg.merge(coverage_df, how='outer', on = 'id')
-            except pd.io.common.EmptyDataError:
+            except pd.errors.EmptyDataError:
                 log.exception("No data found: %s", coverage_file)
 
     if agg is None:
@@ -803,14 +803,14 @@ def aggregate(folder, snps_file, ref, generate_calls):
             sys.exit('Cannot call variants when analysing known SNPs')
         if not ref:
             sys.exit('Cannot call variants without reference genome')
-            
+
         def call_variants(pileup_rows):
             #use: 'ref_hq_count', 'nonref_hq_count, alts
             pass
 
         grouped_pileups = agg_long.groupby(['chr', 'pos', 'ref'])
         variant_calls = grouped_pileups.aggregate(call_variants)
-        
+
         outname = os.path.join(folder, 'variant_calls.csv')
         variant_calls.to_csv(outname, index=False)
         print(outname)
@@ -922,7 +922,7 @@ def process_file(input, output, probes_file, snps_file, targets_file, validate_p
             region_id = region[3]
             region_length = region[2] - region[1]
             region_coverage = [0] * region_length
-            region_coverage_hq = [0] * region_length      
+            region_coverage_hq = [0] * region_length
 
             #first figure out umi groups
             umi_to_group = dict()
@@ -934,7 +934,7 @@ def process_file(input, output, probes_file, snps_file, targets_file, validate_p
             else:
                 log.info('Grouping reads in region #%d: %s (length = %d)', region_index, region, region_length)
                 iter_grouping = samfile.fetch(region[0], region[1], region[2])
-                
+
                 if debug_umi_groups:
                     mate_start_counts = collections.defaultdict(collections.Counter)
                     read_alignment_counter = collections.Counter()
@@ -1011,7 +1011,7 @@ def process_file(input, output, probes_file, snps_file, targets_file, validate_p
 
                 #free up memory
                 log.info('%s: Processed UMIs from %d read pairs with %d alignments.', region_id, len(read_metadata), n_alignments)
-                 
+
                 umi_id_offset = 0
                 target_raw_umi_count = 0
                 if debug_umi_groups:
@@ -1044,7 +1044,7 @@ def process_file(input, output, probes_file, snps_file, targets_file, validate_p
 
             #then do actual pileup
             #note: do not filter at this stage since we will do this ourselves
-            iter_pileup = samfile.pileup(region[0], region[1], region[2], max_depth = max_depth, stepper = 'nofilter') 
+            iter_pileup = samfile.pileup(region[0], region[1], region[2], max_depth = max_depth, stepper = 'nofilter')
             log.info('Piling up in region #%d: %s (length = %d)', region_index, region, region_length)
 
             seen_positions = set()
@@ -1076,8 +1076,8 @@ def process_file(input, output, probes_file, snps_file, targets_file, validate_p
                     pileup_base,
                     min_consensus_count,
                     min_consensus_fraction,
-                    min_mapq,        
-                    min_baseq,              
+                    min_mapq,
+                    min_baseq,
                     ignore_groups,
                     group_with_mate_positions,
                     validate_probe_targets,
@@ -1157,7 +1157,7 @@ def process_file(input, output, probes_file, snps_file, targets_file, validate_p
                     targets.loc[region_index, 'called_hq_zero_percentage'] = 100.0 * coverage_hq_zeros / region_length
                 else:
                     log.info('Not recording coverage for region #%d because it is not a target region (SNP?)', region_index)
-                
+
         log.info('Pileups resulted in %d rows', len(rows))
         outname = output + '.pileup.csv'
         if len(rows) > 0:
@@ -1201,7 +1201,7 @@ def process_file(input, output, probes_file, snps_file, targets_file, validate_p
 
 def main():
     print('Called with arguments: "%s"' % '" "'.join(sys.argv))
-    
+
     #parse the arguments, which will be available as properties of args (e.g. args.probe)
     parser = argparse.ArgumentParser()
     #specify parameters
@@ -1239,7 +1239,7 @@ def main():
     args.generate_calls = None #TODO
 
     if args.aggregate:
-        aggregate(args.aggregate, args.snps, args.ref, args.generate_calls)            
+        aggregate(args.aggregate, args.snps, args.ref, args.generate_calls)
     else:
         assert not (args.ref and args.fasta is None)
         assert args.input is not None

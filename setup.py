@@ -58,12 +58,12 @@ setup(
         'pyyaml>=3.12,<4',
         'numpy>=1.13.1,<2',
         'biopython>=1.69,<2',
-        'pandas>=0.20.3',
+        'pandas>=0.20.3,<1',
         'interlap>=0.2.5',
         'pysam>=0.11.1,<0.14',  # pysam seem to have some issues in 0.14, so we force something in-between here
         'pyfaidx>=0.4.8.4',
         'distance>=0.1.3',
-        'umi_tools>=0.5.0,<1',  # umi_tools 1 changed the API used in find_umi_groups 
+        'umi_tools>=0.5.0,<1',  # umi_tools 1 changed the API used in find_umi_groups
     ],
 
     setup_requires=[

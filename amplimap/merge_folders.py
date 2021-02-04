@@ -40,7 +40,7 @@ def merge_folders(output_folder, folders, force, unique_sample_id_column, additi
     for folder in folders:
         log.info('Reading files from %s...', folder)
 
-        for file in files_to_merge:     
+        for file in files_to_merge:
             fn = os.path.join(folder, file)
             try:
                 folder_data = pd.read_csv(fn, index_col = False, dtype = 'object')
@@ -59,7 +59,7 @@ def merge_folders(output_folder, folders, force, unique_sample_id_column, additi
                     data[file] = pd.concat([data[file], folder_data], ignore_index = True)
                 else:
                     data[file] = folder_data
-            except pd.io.common.EmptyDataError:
+            except pd.errors.EmptyDataError:
                 log.info('Skipping empty file: %s', fn)
 
     #add additional coverage data from another file -- to override coverage numbers with sanger sequencing
@@ -74,7 +74,7 @@ def merge_folders(output_folder, folders, force, unique_sample_id_column, additi
                 folder_data['Notes'] = ''
 
             data['bams/coverages/coverage_full.csv'] = pd.concat([data['bams/coverages/coverage_full.csv'], folder_data], ignore_index = True)
-        except pd.io.common.EmptyDataError:
+        except pd.errors.EmptyDataError:
             log.info('Empty additional coverage file: %s', additional_coverage)
             raise
 
@@ -168,7 +168,7 @@ def merge_folders(output_folder, folders, force, unique_sample_id_column, additi
 
 def main():
     log.info('Called with arguments: "%s"', '" "'.join(sys.argv))
-    
+
     parser = argparse.ArgumentParser()
     parser.add_argument("-f", "--force", help="overwrite existing files", action='store_true')
     parser.add_argument("-c", "--unique-sample-id-column", help="column which contains the unique sample id (to remove duplicates)")

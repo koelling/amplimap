@@ -89,7 +89,7 @@ def load_gene_exons(file: str, genes: list) -> dict:
                         for start, end in zip(exon_data['starts'], exon_data['ends']):
                             n_total += 1
 
-                            #try to find existing pair that matches                        
+                            #try to find existing pair that matches
                             for existing_start, existing_end in zip(gene_exons[gex.gene]['starts'], gene_exons[gex.gene]['ends']):
                                 if existing_start == start and existing_end == end:
                                     break
@@ -155,15 +155,15 @@ def find_closest_exon(row: pd.Series, gexs: dict) -> int:
 
     gex = gexs[row['Gene.refGene']]
     assert (row['Chr'] == gex['chr']) or (row['Chr'] == 'chr'+gex['chr']) or ('chr'+row['Chr'] == gex['chr'])
-    
+
     #upstream of start = negative, downstream of end = positive
     start_dist = [row['End'] - boundary_pos for boundary_pos in gex['starts'] if boundary_pos >= row['End']]
     end_dist = [row['Start'] - boundary_pos for boundary_pos in gex['ends'] if boundary_pos <= row['Start']]
-    
+
     #find smallest abs(value) for each
     closest_start = max(start_dist) if len(start_dist) > 0 else None
     closest_end = min(end_dist) if len(end_dist) > 0 else None
-    
+
     #figure out whether we are closer to start or end
     if closest_start is None and closest_end is None:
         closest_distance = None
@@ -173,7 +173,7 @@ def find_closest_exon(row: pd.Series, gexs: dict) -> int:
         closest_distance = closest_start
     else:
         closest_distance = closest_start if abs(closest_start) < closest_end else closest_end
-    
+
     #if gene strand is negative it's actually the opposite
     if closest_distance is None:
         return None
@@ -237,7 +237,7 @@ def merge_variants_from_annovar(input, output):
                     merged = merged.append(df, ignore_index = True)
             else:
                 print ('Ignoring - empty!')
-        except pd.io.common.EmptyDataError:
+        except pd.errors.EmptyDataError:
             print('No data for', file, ', skipping.')
 
     if merged is None:
@@ -318,7 +318,7 @@ def make_summary(input: list, output: list, config: dict, exon_table_path: str =
             exon_table_path = exon_table_path,
         )
         merged.to_csv(output[0], index = False)
-    except pd.io.common.EmptyDataError:
+    except pd.errors.EmptyDataError:
         print('No variants found, creating empty file!')
         open(output[0], 'a').close()
 
@@ -381,9 +381,9 @@ def make_summary_dataframe(
     vcf_infos = vcf['Info'].apply(lambda x: pd.Series(dict( [ tuple(pair.split('=')) if '=' in pair else (pair, True) for pair in x.split(';') ] )))
     #handle multiple alt alleles (not usually expected)
     if 'TR' in vcf_infos:
-        vcf_infos.loc[vcf_infos['TR'].str.contains(','), 'TR'] = '-1' 
-        vcf_infos.loc[vcf_infos['NF'].str.contains(','), 'NF'] = '-1' 
-        vcf_infos.loc[vcf_infos['NR'].str.contains(','), 'NR'] = '-1' 
+        vcf_infos.loc[vcf_infos['TR'].str.contains(','), 'TR'] = '-1'
+        vcf_infos.loc[vcf_infos['NF'].str.contains(','), 'NF'] = '-1'
+        vcf_infos.loc[vcf_infos['NR'].str.contains(','), 'NR'] = '-1'
     if 'NR' in vcf_sample:
         vcf_sample.loc[vcf_sample['NR'].str.contains(','), 'NR'] = '-1' #also need to fix this, for assertion below
         vcf_sample.loc[vcf_sample['NV'].str.contains(','), 'NV'] = '-1' #also need to fix this, for assertion below
@@ -523,7 +523,7 @@ def make_summary_dataframe(
     ignored_cols = ['GeneDetail.refGene']
 
     #select and reorder columns
-    merged.sort_values(['Sample', 'Chr', 'Start'], inplace=True)     
+    merged.sort_values(['Sample', 'Chr', 'Start'], inplace=True)
     merged = merged[first_cols + [c for c in merged.columns if not c in first_cols + last_cols + ignored_cols] + last_cols]
 
     #output
@@ -571,7 +571,7 @@ def make_summary_condensed(input, output):
 
             #output
             merged.to_csv(output[do_filter], index = False)
-        except pd.io.common.EmptyDataError:
+        except pd.errors.EmptyDataError:
             print('No variants found, creating empty file!')
             open(output[do_filter], 'a').close()
 
@@ -626,6 +626,6 @@ def make_summary_condensed(input, output):
 #                 pass
 
 #             xlsx.save()
-#     except pd.io.common.EmptyDataError:
+#     except pd.errors.EmptyDataError:
 #         print('No variants found, creating empty file!')
 #         open(output[0], 'a').close()

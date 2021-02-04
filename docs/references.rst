@@ -21,4 +21,5 @@ Recommended additional software
 -  STAR: https://academic.oup.com/bioinformatics/article/29/1/15/272537
 -  Platypus: http://www.nature.com/ng/journal/v46/n8/full/ng.3036.html
 -  GATK: https://www.nature.com/articles/ng.806
+-  weCall: https://github.com/Genomicsplc/wecall
 -  Annovar: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2938201/

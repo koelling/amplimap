@@ -95,15 +95,15 @@ def make_simulated_reads(input, output, wildcards, config):
                                 replacement_umis.add(my_umi)
 
                 if mates_found == 1:
-                    counts['only_one_mate'] += 1                   
-            
+                    counts['only_one_mate'] += 1
+
             file_out0.write(read_lines[0])
             file_out1.write(read_lines[1])
 
         counts['total_umi_occurrences'] = len(occurrence_umis)
         counts['total_umi_replacements'] = len(replacement_umis)
 
-        stats.write('%s,%s\n' % (wildcards['sample_with_lane'], ','.join([str(counts[col]) for col in count_cols])))  
+        stats.write('%s,%s\n' % (wildcards['sample_with_lane'], ','.join([str(counts[col]) for col in count_cols])))
 
 def stats_replacements_agg(input, output):
     import pandas as pd
@@ -119,7 +119,7 @@ def stats_replacements_agg(input, output):
                 merged = df
             else:
                 merged = merged.append(df, ignore_index = True)
-        except pd.io.common.EmptyDataError:
+        except pd.errors.EmptyDataError:
             print('No data for', file, ', skipping.')
 
     print('Merged data shape:', str(merged.shape))
@@ -136,5 +136,3 @@ def stats_replacements_agg(input, output):
     assert merged['total_replacements'].sum() > 0, 'ERROR: no replacements made!'
 
     merged.to_csv(output[0], index = False)
-
-    

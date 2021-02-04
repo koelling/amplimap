@@ -44,8 +44,8 @@ elif os.path.isdir('unmapped_bams_in'):
     config['general']['lanes_actual'] = 1
 else:
     #check that samples for R1 and R2 agree
-    samples_with_lane1, = glob_wildcards("reads_in/{sample_with_lane}_R1_001.fastq.gz") 
-    samples_with_lane2, = glob_wildcards("reads_in/{sample_with_lane}_R1_001.fastq.gz") 
+    samples_with_lane1, = glob_wildcards("reads_in/{sample_with_lane}_R1_001.fastq.gz")
+    samples_with_lane2, = glob_wildcards("reads_in/{sample_with_lane}_R1_001.fastq.gz")
     samples_with_lane1.sort()
     samples_with_lane2.sort()
     assert samples_with_lane1 == samples_with_lane2, 'Did not find R1 and R2 fastq files for all samples!'
@@ -117,7 +117,7 @@ def get_alignment_index_filename(real_path):
     if config['general']['mask_bed'] and len(config['general']['mask_bed']) > 0:
         if config['align']['aligner'] in ['naive', 'bwa', 'bowtie2']:
             my_path = 'masked_reference/genome.fa'
-        elif config['align']['aligner'] == 'star':    
+        elif config['align']['aligner'] == 'star':
             my_path = 'masked_reference/star/'
         else:
             raise Exception('unexpected aligner')
@@ -163,7 +163,7 @@ rule start_analysis:
         import amplimap.reader
         with open(output['file_hashes'], 'w') as f:
             yaml.dump(amplimap.reader.get_file_hashes(), f, default_flow_style=False)
-    
+
 ##### target rules
 rule coverages:
     input:
@@ -200,7 +200,7 @@ rule variants_umi:
         rules.all.input,
         "analysis/variants_umi/variants_summary.csv",
         "analysis/variants_umi/variants_summary_filtered.csv"
-        
+
 rule variants_low_frequency:
     input:
         rules.all.input,
@@ -284,6 +284,8 @@ rule tool_version:
 
             elif tool_name == 'platypus':
                 commands += 'platypus > "%s"' % (output[0])
+            elif tool_name == 'wecall':
+                commands += 'weCall -h > "%s"' % (output[0])
             elif tool_name == 'gatk':
                 commands += 'gatk HaplotypeCaller --version > "%s"' % (output[0])
             elif tool_name == 'mutect2':
@@ -364,7 +366,7 @@ rule copy_targets_bed:
         print('Reading', input['targets'])
 
         import amplimap.reader
-        targets = amplimap.reader.read_targets(input['targets'], reference_type = 'genome', file_type = 'bed')        
+        targets = amplimap.reader.read_targets(input['targets'], reference_type = 'genome', file_type = 'bed')
         print(input['targets'], 'checked.')
 
         amplimap.reader.write_targets_bed(output['targets'], targets)
@@ -379,7 +381,7 @@ rule convert_targets_csv:
         print('Reading', input['targets'])
 
         import amplimap.reader
-        targets = amplimap.reader.read_targets(input['targets'], reference_type = 'genome', file_type = 'csv')        
+        targets = amplimap.reader.read_targets(input['targets'], reference_type = 'genome', file_type = 'csv')
         print(input['targets'], 'checked.')
 
         amplimap.reader.write_targets_bed(output['targets'], targets)
@@ -446,7 +448,7 @@ rule copy_snps:
 
         #just copy the file over to the analysis directory
         shutil.copyfile(input['snps'], output['snps'])
-    
+
 ##### MASKING
 rule mask_genome:
     input:
@@ -474,7 +476,7 @@ rule mask_genome_index_bwa:
     output:
         masked_index = 'masked_reference/genome.fa.bwt',
     shell:
-        """        
+        """
         %s
         bwa index {input[masked_fasta]:q};
         """ % (load_module_command('bwa', config))
@@ -485,7 +487,7 @@ rule mask_genome_index_bowtie2:
     output:
         masked_index = 'masked_reference/genome.fa.1.bt2',
     shell:
-        """        
+        """
         %s
         bowtie2-build {input[masked_fasta]:q} {input[masked_fasta]:q};
         """ % (load_module_command('bowtie2', config))
@@ -499,7 +501,7 @@ rule mask_genome_index_star:
         masked_index_file = 'masked_reference/star/Genome',
     threads: 4
     shell:
-        """        
+        """
         %s
         STAR \
             --runThreadN {threads} \
@@ -520,9 +522,9 @@ if os.path.isdir('bams_in'):
             r1 = "reads_in/{sample_full}_L001_R1_001.fastq.gz",
             r2 = "reads_in/{sample_full}_L001_R2_001.fastq.gz",
         run:
-            shell("%s bedtools bamtofastq -i {input[0]:q} -fq {output[r1]:q} -fq2 {output[r2]:q}" % load_module_command('bedtools', config))   
+            shell("%s bedtools bamtofastq -i {input[0]:q} -fq {output[r1]:q} -fq2 {output[r2]:q}" % load_module_command('bedtools', config))
 
-##### MERGE RAW READS 
+##### MERGE RAW READS
 if os.path.isdir('reads_in') and config['general']['use_raw_reads']:
     rule merge_raw_reads:
         input:
@@ -876,7 +878,7 @@ rule stats_reads_agg:
                     merged = df
                 else:
                     merged = merged.append(df, ignore_index = True)
-            except pd.io.common.EmptyDataError:
+            except pd.errors.EmptyDataError:
                 print('No data for', file, ', skipping.')
 
         assert merged is not None and len(merged) > 0, \
@@ -931,7 +933,7 @@ rule align_pe:
                 debug = False
             )
 
-            #we still need to sort and index these            
+            #we still need to sort and index these
             cmds = cmds % (
                 load_module_command('samtools', config),
                 '',
@@ -1291,7 +1293,7 @@ rule calc_coverage:
         targets = "{analysis_dir}/targets.bed",
     output:
         "{analysis_dir}/{bamdir}/coverages/{file}.coverage_raw.txt",
-    shell:        
+    shell:
         """
         %s
         bedtools coverage \
@@ -1368,7 +1370,7 @@ rule call_variants_raw:
                 ;
                 """ % (load_module_command('platypus', config), get_path('fasta'))
             )
-        elif config['variants']['caller'] == 'gatk':   
+        elif config['variants']['caller'] == 'gatk':
             #NB: We are not using duplicate marking, BQSR and VQSR here. this may result in suboptimal variant calls and increased false positives.
             #However, none of these tools seem to be suitable for targeted sequencing data:
             #- duplicate calling: we actually expect to see duplicates, since all reads are generated with the same primers and read length.
@@ -1384,6 +1386,18 @@ rule call_variants_raw:
                     --output {output[0]:q} \
                 ;
                 """ % (load_module_command('gatk', config), get_path('fasta'))
+            )
+        elif config['variants']['caller'] == 'wecall':
+            shell("""
+                %s
+                weCall \
+                    {config[variants][wecall][parameters]} \
+                    --refFile "%s" \
+                    --inputs {input[0]:q} \
+                    --output {output[0]:q} \
+                    --regions {input.targets:q} \
+                ;
+                """ % (load_module_command('wecall', config), get_path('fasta'))
             )
         elif config['variants']['caller'] in config['tools'] and 'call_command' in config['tools'][config['variants']['caller']]:
             tool_command = config['tools'][config['variants']['caller']]['call_command'] % (
@@ -1419,7 +1433,7 @@ rule call_variants_umi:
                 ;
                 """ % (load_module_command('platypus', config), get_path('fasta'))
             )
-        elif config['variants']['caller'] == 'gatk':   
+        elif config['variants']['caller'] == 'gatk':
             shell("""
                 %s
                 gatk HaplotypeCaller \
@@ -1430,6 +1444,18 @@ rule call_variants_umi:
                     --output {output[0]:q} \
                 ;
                 """ % (load_module_command('gatk', config), get_path('fasta'))
+            )
+        elif config['variants']['caller'] == 'wecall':
+            shell("""
+                %s
+                weCall \
+                    {config[variants][wecall][parameters]} \
+                    --refFile "%s" \
+                    --inputs {input[0]:q} \
+                    --output {output[0]:q} \
+                    --regions {input.targets:q} \
+                ;
+                """ % (load_module_command('wecall', config), get_path('fasta'))
             )
         elif config['variants']['caller'] in config['tools'] and 'call_command' in config['tools'][config['variants']['caller']]:
             tool_command = config['tools'][config['variants']['caller']]['call_command'] % (
@@ -1503,7 +1529,7 @@ rule normalize_variants:
                     {input[0]:q} \
                 ;
             """ % (load_module_command('bcftools', config), get_path('fasta')))
-            
+
             lines_after = 0
             import gzip
             with gzip.open(output[0], 'rb') as f:
@@ -1515,7 +1541,7 @@ rule normalize_variants:
                 lines_before,
                 lines_after
             ))
-            
+
             assert lines_after >= lines_before, 'Error: Got fewer lines after VCF normalization than before for {}'.format(input[0])
 
 
@@ -1553,7 +1579,7 @@ rule annotate_variants:
                     --outfile {input[0]:q} \
                 ;
             """ % (load_module_command('annovar', config), get_path('annovar'), get_annovar_name()))
-            
+
             lines_after = -1  # adjust for header line
             with open(output[0], 'rb') as f:
                 for line in f:
@@ -1563,7 +1589,7 @@ rule annotate_variants:
                 lines_before,
                 lines_after
             ))
-            
+
             assert lines_after >= lines_before, 'Error: Got fewer lines after VCF annotation than before for {}'.format(input[0])
 
 # only provide this rule if we have annovar

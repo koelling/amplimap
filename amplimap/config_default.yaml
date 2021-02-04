@@ -57,7 +57,7 @@ parse_reads:
   # whether to trim off primers from beginning of reads
   trim_primers: true
   # quality trimming threshold as fraction between 0 and 1 (false = no trimming)
-  quality_trim_threshold: false  
+  quality_trim_threshold: false
   # quality phred score encoding (usually phred-33 or phred-64)
   quality_trim_phred_base: 33
   # minimum read length required after primer and quality trimming
@@ -90,13 +90,15 @@ pileup:
 
 # variant calling settings
 variants:
-  # default variant caller (platypus/gatk)
+  # default variant caller (platypus/gatk/wecall)
   caller: "gatk"
   # beta: variant caller to use for low frequency variant calling (only mutect2 currently supported)
   caller_low_frequency: "mutect2"
   # caller-specific parameters to use
   gatk:
     parameters: "--disable-read-filter MappingQualityAvailableReadFilter --disable-read-filter WellformedReadFilter"
+  wecall:
+    parameters: ""
   mutect2:
     parameters: ""
   platypus:
@@ -136,6 +138,7 @@ modules:
   star: ''
   platypus: ''
   gatk: ''
+  wecall: ''
   annovar: ''
   picard: ''
 
@@ -151,5 +154,5 @@ tools:
     # each tool needs a version_command that returns the version of the tool with exit code 0.
     version_command: 'my_tool --version'
     # specify these to make this tool available as aligner/caller. refer to the examples to see the parameters you can use.
-    # align_command: 'my_tool align --reference-fasta=%s --threads={threads} --read1={input[0]:q} --read2={input[1]:q} --output={output[0]:q} --sample={wildcards.sample_full:q}' 
+    # align_command: 'my_tool align --reference-fasta=%s --threads={threads} --read1={input[0]:q} --read2={input[1]:q} --output={output[0]:q} --sample={wildcards.sample_full:q}'
     # call_command: 'my_tool call --reference-fasta=%s --targets={input.targets:q} --input-bam={input[0]:q} --output-vcf={output[0]:q}'
