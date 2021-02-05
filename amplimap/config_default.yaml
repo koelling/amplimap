@@ -125,6 +125,8 @@ clusters:
     command_sync: 'qsub -o {workflow.workdir_init}/cluster_log/ -sync yes -j y -m n'
   bsub:
     command_nosync: 'bsub -oo {workflow.workdir_init}/cluster_log/%J.log'
+  slurm:
+    command_nosync: 'sbatch -o {workflow.workdir_init}/cluster_log/%J.log'
 
 # if you are using the 'modules' system to provide additional software, specify the required module names here.
 # eg. if the bwa aligner is provided in the module bwa/0.7.12, set bwa: 'bwa/0.7.12'.
