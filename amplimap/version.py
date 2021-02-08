@@ -1,2 +1,2 @@
-__version__ = '0.4.14'
+__version__ = '0.4.15'
 __title__ = 'amplimap'

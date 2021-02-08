@@ -347,7 +347,7 @@ def make_summary_dataframe(
         sample_info_columns = list(sample_info.columns)
 
     # read original data from VCF columns
-    vcf = merged['Otherinfo'].apply(lambda x: pd.Series(x.split('\t')))
+    vcf = merged['Otherinfo' if 'Otherinfo' in merged.columns else 'Otherinfo1'].apply(lambda x: pd.Series(x.split('\t')))
     vcf.replace('.', np.nan, inplace=True) #replace dots with NAs again
     vcf.columns = ['Chr', 'Pos', 'ID', 'Ref', 'Alt', 'Qual', 'Filter', 'Info', 'Fields', 'SampleData']
     vcf['Chr'] = vcf['Chr'].astype(str)
@@ -361,10 +361,10 @@ def make_summary_dataframe(
     # set chromosome to the one recorded in VCF, since Annovar may have added 'chr' prefix
     merged['Chr'] = vcf['Chr']
 
-    #We are using the approach from /hts/data6/smcgowan/hts_scripts/TableAnnovar_to_spreadsheet.pl, which only looks for exons
-    #for the given gene (as annotated by Annovar). This should work fine, but is a bit inefficient.
-    #See here for better, more general solutions: https://www.biostars.org/p/53561/
-    #or actually just use the same approach as for targest (interlap.InterLap)
+    # We are using the approach from /hts/data6/smcgowan/hts_scripts/TableAnnovar_to_spreadsheet.pl, which only looks for exons
+    # for the given gene (as annotated by Annovar). This should work fine, but is a bit inefficient.
+    # See here for better, more general solutions: https://www.biostars.org/p/53561/
+    # or actually just use the same approach as for targest (interlap.InterLap)
     if include_exon_distance:
         if not 'Gene.refGene' in merged.columns or not 'Func.refGene' in merged.columns:
             log.warning('Variants have to be annotated with the Annovar refGene database to calculate exon distances.')
@@ -373,13 +373,13 @@ def make_summary_dataframe(
                 exon_table_path,
                 merged.loc[merged['Func.refGene'].isin(['intronic', 'upstream', 'downstream']), 'Gene.refGene']))
 
-    #get gt info
+    # get gt info
     vcf_sample = pd.DataFrame([ dict( zip( row.Fields.split(':'), row.SampleData.split(':') ) ) for row in vcf.itertuples() ])
     vcf_sample.replace('.', np.nan, inplace=True) #replace dots with NAs again
 
-    #parse out some fields
+    # parse out some fields
     vcf_infos = vcf['Info'].apply(lambda x: pd.Series(dict( [ tuple(pair.split('=')) if '=' in pair else (pair, True) for pair in x.split(';') ] )))
-    #handle multiple alt alleles (not usually expected)
+    # handle multiple alt alleles (not usually expected)
     if 'TR' in vcf_infos:
         vcf_infos.loc[vcf_infos['TR'].str.contains(','), 'TR'] = '-1'
         vcf_infos.loc[vcf_infos['NF'].str.contains(','), 'NF'] = '-1'
@@ -387,7 +387,7 @@ def make_summary_dataframe(
     if 'NR' in vcf_sample:
         vcf_sample.loc[vcf_sample['NR'].str.contains(','), 'NR'] = '-1' #also need to fix this, for assertion below
         vcf_sample.loc[vcf_sample['NV'].str.contains(','), 'NV'] = '-1' #also need to fix this, for assertion below
-    #now rename coverage fields and convert to ints
+    # now rename coverage fields and convert to ints
     have_fwd_ref = False
     vcf_infos['Total_Coverage'] = -1
     vcf_infos['Total_Coverage_fwd'] = -1
@@ -396,7 +396,7 @@ def make_summary_dataframe(
     vcf_infos['Total_Reads_Alt_fwd'] = -1
     vcf_infos['Total_Reads_Alt_rev'] = -1
 
-    #PLATYPUS will give us TC/TR
+    # PLATYPUS will give us TC/TR
     if 'TC' in vcf_infos:
         have_fwd_ref = True
         vcf_infos['Total_Coverage'] = vcf_infos['TC'].astype(int)
@@ -407,7 +407,7 @@ def make_summary_dataframe(
         vcf_infos['Total_Reads_Alt_fwd'] = vcf_infos['NF'].astype(int)
         vcf_infos['Total_Reads_Alt_rev'] = vcf_infos['NR'].astype(int)
 
-    #GATK will give us an AD value
+    # GATK will give us an AD value
     if 'AD' in vcf_sample:
         have_fwd_ref = False
         vcf_infos['Total_Reads_Ref'] = [int(x.split(',')[0]) for x in vcf_sample['AD']]
@@ -419,7 +419,7 @@ def make_summary_dataframe(
             #mutect2 won't
             vcf_infos['Total_Coverage'] = [int(x.split(',')[0]) + int(x.split(',')[1]) for x in vcf_sample['AD']]
 
-    #some error checking
+    # some error checking
     if ((vcf_infos['Total_Coverage_fwd'] != -1) & (vcf_infos['Total_Coverage_rev'] != -1)).any():
         assert (vcf_infos['Total_Coverage'] == vcf_infos['Total_Coverage_fwd'] + vcf_infos['Total_Coverage_rev']).all(), 'total coverage mismatch'
     if ((vcf_infos['Total_Reads_Alt_fwd'] != -1) & (vcf_infos['Total_Reads_Alt_rev'] != -1)).any():
@@ -429,10 +429,10 @@ def make_summary_dataframe(
     if 'NV' in vcf_sample:
         assert ((vcf_infos['Total_Reads_Alt'] == -1) | (vcf_infos['Total_Reads_Alt'] == vcf_sample['NV'].astype(int))).all(), 'variant coverage match'
 
-    #add info from VCF to table
+    # add info from VCF to table
     merged['Var_Zygosity'] = ['HOM' if gt == '1/1' else 'Het' if gt in ['0/1', '1/0'] else 'REF' if gt in ['0/0'] else '???' for gt in vcf_sample['GT']]
     merged['Var_FailedFilters'] = ['' if (filt == 'PASS' or filt == '.') else filt for filt in vcf['Filter']]
-    #mutect2 gives us AF
+    # mutect2 gives us AF
     if 'AF' in vcf_sample:
         merged['Var_AltFraction'] = [float(x.split(',')[0]) for x in vcf_sample['AF']]
     else:
@@ -453,14 +453,14 @@ def make_summary_dataframe(
         merged['Var_QualSample'] = None
     merged['Comments'] = ''
 
-    #manually add filter status for low coverage
+    # manually add filter status for low coverage
     merged.loc[merged['Var_TotalCoverage'] < 10, 'Var_FailedFilters'] = [filt + ';CovLt10' if len(filt) > 0 else 'CovLt10' for filt in merged.loc[merged['Var_TotalCoverage'] < 10, 'Var_FailedFilters']]
 
-    #calculate the deleterious score
+    # calculate the deleteriousness score
     if include_score:
         calculate_del_score(merged)
 
-    #add gbrowse and regionseq links
+    # add gbrowse and regionseq links
     if include_gbrowse_links:
         merged['GBrowse'] = ""
         merged['RegionSeq'] = ""
@@ -493,13 +493,14 @@ def make_summary_dataframe(
 
         merged['Target'] = found_targets
 
-    #join sample_info
+    # join sample_info
     if sample_info is not None:
         merged = merged.join(sample_info, on = ['Sample', 'Target'], how = 'left')
 
-    #drop useless columns
-    merged.drop(['Otherinfo'], axis=1, inplace=True)
-    #drop extra populations from ExAC/gnomAD (all columns that start with ExAC/gnomAD and don't end with _ALL)
+    # drop useless columns
+    merged.drop([c for c in merged.columns if c.startswith('Otherinfo')], axis=1, inplace=True)
+
+    # drop extra populations from ExAC/gnomAD (all columns that start with ExAC/gnomAD and don't end with _ALL)
     for db_prefix in ['ExAC', 'gnomAD_genome', 'gnomAD_exome']:
         merged.drop([column for column in merged.columns if column.startswith(db_prefix) and not column.endswith('_ALL')], axis=1, inplace=True)
 
