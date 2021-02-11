@@ -350,7 +350,23 @@ def make_summary_dataframe(
     vcf = merged['Otherinfo' if 'Otherinfo' in merged.columns else 'Otherinfo1'].apply(lambda x: pd.Series(x.split('\t')))
     vcf.replace('.', np.nan, inplace=True) #replace dots with NAs again
     vcf.columns = ['Chr', 'Pos', 'ID', 'Ref', 'Alt', 'Qual', 'Filter', 'Info', 'Fields', 'SampleData']
-    vcf['Chr'] = vcf['Chr'].astype(str)
+
+    # fix types
+    vcf = vcf.astype(
+        {
+            'Chr': str,
+            'Pos': int,
+            'ID': str,
+            'Ref': str,
+            'Alt': str,
+            'Qual': float,
+            'Filter': str,
+            'Info': str,
+            'Fields': str,
+            'SampleData': str,
+        },
+        errors = 'raise'
+    )
 
     # make sure chromosome match between VCF data and annotation (they alwyas should)
     assert (
@@ -358,6 +374,7 @@ def make_summary_dataframe(
         (merged['Chr'] == ['chr'+c for c in vcf['Chr']]) |
         (['chr'+c for c in merged['Chr']] == vcf['Chr'])
     ).all(), 'Chromosome names mismatch between Annovar and VCF'
+
     # set chromosome to the one recorded in VCF, since Annovar may have added 'chr' prefix
     merged['Chr'] = vcf['Chr']
 
