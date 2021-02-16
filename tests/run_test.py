@@ -5,7 +5,7 @@ This does some basic testing of the whole pipeline. Note this needs to be run th
 #make sure we can import from package directory
 import sys, os, re, gzip
 packagedir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, packagedir) 
+sys.path.insert(0, packagedir)
 
 import shutil
 import subprocess
@@ -37,7 +37,7 @@ def init_wd(path, reads_in_path, umi_one = 0, umi_two = 0, remove_analysis = Tru
     os.mkdir(os.path.join(path, 'reads_in'))
 
     #turn .fastq files into .fastq.gz
-    for file in os.listdir(reads_in_path):        
+    for file in os.listdir(reads_in_path):
         if umi_one > 0 and '_R1' in file:
             umi_len = umi_one
         elif umi_two > 0 and '_R2' in file:
@@ -64,19 +64,19 @@ def init_wd(path, reads_in_path, umi_one = 0, umi_two = 0, remove_analysis = Tru
                 fout.write(line)
 
 def test_version(capsys):
-    amplimap.run.main(['--version'])
+    assert amplimap.run.main(['--version']) == 0
     captured = capsys.readouterr()
     assert captured.out.strip() == '{} {}'.format(amplimap.run.__title__, amplimap.run.__version__)
 
 def test_config(capsys):
-    amplimap.run.main(['--print-config'])
+    assert amplimap.run.main(['--print-config']) == 0
     captured = capsys.readouterr()
     assert 'Reading additional configuration file: {}'.format(os.path.join(packagedir, "sample_data", "config_default.yaml")) in captured.err
 
 def test_config_env(capsys):
     extra_config_path = os.path.join(packagedir, "sample_data", "extra_config.yaml")
     os.environ['AMPLIMAP_CONFIG'] = extra_config_path
-    amplimap.run.main(['--print-config'])
+    assert amplimap.run.main(['--print-config']) == 0
     captured = capsys.readouterr()
     os.environ['AMPLIMAP_CONFIG'] = test_config_path #reset, so we don't affect later tests
 
@@ -88,10 +88,63 @@ def test_config_env(capsys):
     assert 'Reading additional configuration file: {}'.format(extra_config_path) in captured.err
     assert 'aligner: star' in captured.out
 
+def test_config_custom_caller(tmp_path, capsys):
+    cfg = tmp_path / "config.yaml"
+    cfg.write_text('''
+variants:
+  caller: custom_test
+modules:
+  custom_test: 'custom_test/123'
+tools:
+  custom_test:
+    call_command: 'date'
+    ''')
+
+    extra_config_path = str(cfg)
+    os.environ['AMPLIMAP_CONFIG'] = extra_config_path
+    assert amplimap.run.main(['--print-config']) == 0
+    captured = capsys.readouterr()
+    os.environ['AMPLIMAP_CONFIG'] = test_config_path # reset, so we don't affect later tests
+
+    assert 'Reading additional configuration file: {}'.format(extra_config_path) in captured.err
+    assert 'caller: custom_test' in captured.out
+
+def test_config_custom_module_missing_fails(tmp_path, capsys):
+    cfg = tmp_path / "config.yaml"
+    cfg.write_text('''
+modules:
+  custom_test: 'custom_test/123'
+    ''')
+
+    extra_config_path = str(cfg)
+    os.environ['AMPLIMAP_CONFIG'] = extra_config_path
+    assert amplimap.run.main(['--print-config']) == 1
+    captured = capsys.readouterr()
+    os.environ['AMPLIMAP_CONFIG'] = test_config_path # reset, so we don't affect later tests
+
+    assert 'Reading additional configuration file: {}'.format(extra_config_path) in captured.err
+    assert 'unknown or invalid settings:\n\t- modules:custom_test' in captured.err
+
+def test_config_invalid_caller_fails(tmp_path, capsys):
+    cfg = tmp_path / "config.yaml"
+    cfg.write_text('''
+variants:
+  caller: custom_test
+    ''')
+
+    extra_config_path = str(cfg)
+    os.environ['AMPLIMAP_CONFIG'] = extra_config_path
+    assert amplimap.run.main(['--print-config']) == 1
+    captured = capsys.readouterr()
+    os.environ['AMPLIMAP_CONFIG'] = test_config_path # reset, so we don't affect later tests
+
+    assert 'Reading additional configuration file: {}'.format(extra_config_path) in captured.err
+    assert 'variants: caller must be one of' in captured.err
+
 def test_config_env_invalid(capsys):
     extra_config_path = os.path.join(packagedir, "sample_data", "extra_config_invalid.yaml")
     os.environ['AMPLIMAP_CONFIG'] = extra_config_path
-    amplimap.run.main(['--print-config'])
+    assert amplimap.run.main(['--print-config']) == 1
     captured = capsys.readouterr()
     os.environ['AMPLIMAP_CONFIG'] = test_config_path #reset, so we don't affect later tests
 
@@ -100,13 +153,13 @@ def test_config_env_invalid(capsys):
 
 def check_run(capsys, wd_path, rules=['pileups'], run=True):
     #dry-run
-    amplimap.run.main(['--working-directory={}'.format(wd_path)] + rules)
+    assert amplimap.run.main(['--working-directory={}'.format(wd_path)] + rules) == 0
     captured = capsys.readouterr()
     assert '{} {} dry run successful.'.format(amplimap.run.__title__, amplimap.run.__version__) in captured.err.strip()
 
     # full run
     if run:
-        amplimap.run.main(['--working-directory={}'.format(wd_path), '--run'] + rules)
+        assert amplimap.run.main(['--working-directory={}'.format(wd_path), '--run'] + rules) == 0
         captured = capsys.readouterr()
         assert '{} {} finished!'.format(amplimap.run.__title__, amplimap.run.__version__) in captured.err.strip()
 
@@ -154,7 +207,7 @@ def test_multiple_input_dirs(capsys):
     wd_path = os.path.join(packagedir, "sample_data", "wd_multi_input")
     init_wd(wd_path, os.path.join(packagedir, "sample_data", "sample_reads_in"))
 
-    amplimap.run.main(['--working-directory={}'.format(wd_path), 'pileups'])
+    assert amplimap.run.main(['--working-directory={}'.format(wd_path), 'pileups']) == 1
     captured = capsys.readouterr()
 
     assert 'Please only provide a single input directory with all your data.' in captured.err
@@ -176,11 +229,11 @@ def test_mipgen(capfd):
     wd_path = os.path.join(packagedir, "sample_data", "wd_mipgen")
     init_wd(wd_path, os.path.join(packagedir, "sample_data", "sample_reads_in"))
 
-    amplimap.run.main(['--working-directory={}'.format(wd_path), 'pileups'])
+    assert amplimap.run.main(['--working-directory={}'.format(wd_path), 'pileups']) == 0
     captured = capfd.readouterr()
     assert '{} {} dry run successful.'.format(amplimap.run.__title__, amplimap.run.__version__) in captured.err.strip()
 
-    amplimap.run.main(['--run', '--working-directory={}'.format(wd_path), 'pileups'])
+    assert amplimap.run.main(['--run', '--working-directory={}'.format(wd_path), 'pileups']) == 1
     captured = capfd.readouterr()
 
     assert '2/3 probes left after merging probes by ID' in captured.err.strip()
@@ -199,11 +252,11 @@ def test_config_umi_error(capfd):
     wd_path = os.path.join(packagedir, "sample_data", "wd_naive")
     init_wd(wd_path, os.path.join(packagedir, "sample_data", "sample_reads_in"))
 
-    amplimap.run.main(['--working-directory={}'.format(wd_path), 'pileups'])
+    assert amplimap.run.main(['--working-directory={}'.format(wd_path), 'pileups']) == 0
     captured = capfd.readouterr()
     assert '{} {} dry run successful.'.format(amplimap.run.__title__, amplimap.run.__version__) in captured.err.strip()
 
-    amplimap.run.main(['--run', '--working-directory={}'.format(wd_path), 'pileups'])
+    assert amplimap.run.main(['--run', '--working-directory={}'.format(wd_path), 'pileups']) == 1
     captured = capfd.readouterr()
 
     assert 'ABORTED: Did not find any read pairs with the expected primers sequences' in captured.err.strip()
@@ -234,7 +287,7 @@ def test_variants(capsys):
 
     rules_manual = [
         '--resume',
-        os.path.join('analysis', 'variants_raw', 'variants_summary.csv'), 
+        os.path.join('analysis', 'variants_raw', 'variants_summary.csv'),
     ]
 
     # just run the variants rule, we can't run from scratch since we won't have a caller
@@ -351,7 +404,7 @@ def test_umi_dedup(capsys):
     init_wd(wd_path, os.path.join(packagedir, "sample_data", "sample_reads_in"), umi_one = 3, umi_two = 4)
 
     check_run(capsys, wd_path, rules = ['dedup_bams'])
-    
+
     import pysam
     #before dedup we had five aligned read pairs
     n_in = pysam.AlignmentFile(os.path.join(wd_path, 'analysis', 'bams', 'S1.bam')).count(until_eof=True)
@@ -368,11 +421,11 @@ def test_naive_pileups_simulation(capsys):
     shutil.rmtree(os.path.join(wd_path, 'test__GGCAATATGT_GGCAATCTGT_100'), ignore_errors=True) #make sure this doesn't exist
 
     #run simulation, replacing A@30 to C
-    amplimap.run.main(['--working-directory={}'.format(wd_path), 'test__GGCAATATGT_GGCAATCTGT_100/test_pileups.done', '--run'])
+    assert amplimap.run.main(['--working-directory={}'.format(wd_path), 'test__GGCAATATGT_GGCAATCTGT_100/test_pileups.done', '--run']) == 0
     captured = capsys.readouterr()
     assert '{} {} finished!'.format(amplimap.run.__title__, amplimap.run.__version__) in captured.err.strip()
 
-    pileups = pd.read_csv(os.path.join(wd_path, 'test__GGCAATATGT_GGCAATCTGT_100', 'pileups', 'pileups_long.csv'))    
+    pileups = pd.read_csv(os.path.join(wd_path, 'test__GGCAATATGT_GGCAATCTGT_100', 'pileups', 'pileups_long.csv'))
     assert len(pileups) == 11
 
     #we should have an A>C SNP at pos 30, in addition to the others

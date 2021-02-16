@@ -88,13 +88,12 @@ def main(argv = None):
     """
     try:
         basedir = os.path.dirname(os.path.realpath(__file__))
-        #sys.stderr.write('Called with arguments: "{}"\n'.format('" "'.join(sys.argv)))
 
-        #parse the arguments, which will be available as properties of args (e.g. args.probe)
+        # parse the arguments, which will be available as properties of args (e.g. args.probe)
         parser = argparse.ArgumentParser(
             description = "amplimap v{} - amplicon mapping and analysis pipeline".format(__version__),
             formatter_class = argparse.ArgumentDefaultsHelpFormatter)
-        #specify parameters
+        # specify parameters
         parser.add_argument("-v", "--version", help="print version and exit", action="store_true")
         parser.add_argument("--basedir", help="print basedir and exit", action="store_true")
         parser.add_argument("--print-config", help="print configuration (including global and local settings) and exit", action="store_true")
@@ -109,7 +108,7 @@ def main(argv = None):
         parser.add_argument("--latency-wait", help="How long to wait for output files to appear after job completes. Increase this if you get errors about missing output files. (Snakemake parameter)", default=5, type=int)
         parser.add_argument("--snakemake-args", help="For debugging: Extra arguments to the snakemake function (comma-separated key=value pairs - eg. 'printreason=True')")
         parser.add_argument("--debug", help="debug mode", action="store_true")
-        #parser.add_argument("--debug-dag", help="debug DAG", action="store_true")
+        # parser.add_argument("--debug-dag", help="debug DAG", action="store_true")
         parser.add_argument("TARGET", help="targets to run (eg. pileups variants coverages)", nargs="*")
         if argv is None:
             args = parser.parse_args()
@@ -128,37 +127,48 @@ def main(argv = None):
             print(basedir)
             return 0
 
-        #read base config to know which parameters etc are allowed
+        # read base config to know which parameters etc are allowed
         default_config = read_config_file(args.print_config, os.path.join(basedir, 'config_default.yaml'))
         if not default_config:
             raise Exception('config_default.yaml file missing!')
 
-        #add undocumented config keys to make sure these don't raise an error
+        # add undocumented config keys to make sure these don't raise an error
         for key in ['include_gbrowse_links', 'include_exon_distance', 'include_score']:
             if not key in default_config['annotate']:
                 default_config['annotate'][key] = False
 
-        #override with data from /etc/amplimap, if exists
+        # override with data from /etc/amplimap, if exists
         etc_config = read_config_file(args.print_config, '/etc/amplimap/%s/config.yaml' % __version__)
 
-        #override with data from $AMPLIMAP_CONFIG, if exists
+        # override with data from $AMPLIMAP_CONFIG, if exists
         env_config = {}
         try:
             env_config = read_config_file(args.print_config, os.environ['AMPLIMAP_CONFIG'])
         except KeyError:
             pass
 
-        #read local config
+        # read local config
         local_config = read_config_file(args.print_config, os.path.join(args.working_directory, 'config.yaml'))
         if not local_config:
             if args.print_config:
                 sys.stderr.write('No local config.yaml found, using default configuration.\n')
 
-        #merge configs together
+        # merge configs together
         config = default_config
         for my_config in [etc_config, env_config, local_config]:
-            #check that all settings actually exist
+            # check that all settings actually exist
             differences = check_config_keys(default_config, my_config)
+
+            # allow custom tools
+            allowed_tools = set(default_config['tools'].keys())
+            if 'tools' in my_config:
+                allowed_tools.update(my_config['tools'].keys())
+            differences = [
+                d for d in differences
+                if not (len(d) == 2 and d[0] in ['modules'] and d[1] in allowed_tools)
+                and d[0] != 'tools'
+            ]
+
             if len(differences) > 0:
                 sys.stderr.write('Your configuration file(s) contain unknown or invalid settings:\n')
                 for diff in differences:
@@ -168,39 +178,7 @@ def main(argv = None):
 
             snakemake.utils.update_config(config, my_config)
 
-        if args.print_config:
-            yaml.dump(config, sys.stdout, default_flow_style=False)
-            return 0
-
-        #do some basic checks
-        assert os.path.isdir(args.working_directory), 'working directory does not exist'
-
-        #check for one (and only one) input directory
-        input_directory = None
-        input_directory_count = 0
-        input_directories = ['reads_in', 'unmapped_bams_in', 'mapped_bams_in', 'bams_in']
-        for input_name in input_directories:
-            if os.path.isdir(os.path.join(args.working_directory, input_name)):
-                input_directory_count += 1
-                input_directory = input_name
-        if input_directory_count < 1:
-            raise Exception(
-                'An input directory (one of: %s) needs to exist. Please see the documentation for the appropriate directory to use and place your sequencing data there.'
-                % (', '.join(input_directories))
-            )
-        elif input_directory_count > 1:
-            raise Exception(
-                'More than one of the possible input directories (%s) exists. Please only provide a single input directory with all your data.'
-                % (', '.join(input_directories))
-            )
-
-        if input_directory in ['unmapped_bams_in', 'mapped_bams_in']:
-            if not config['general']['use_raw_reads']:
-                raise Exception(
-                    'general: use_raw_reads needs to be set to true when using %s for input.'
-                    % (input_directory)
-                )
-
+        # check basic config
         aligners = ['naive', 'bwa', 'bowtie2', 'star']  # allowed values for the aligner
         # add custom tools
         for tool_name, tool_config in config['tools'].items():
@@ -248,6 +226,39 @@ def main(argv = None):
             if path.startswith('/PATH/TO/'):
                 raise Exception('Path for {} reference is set to {}, which is probably incorrect. Please set the correct path in your default configuration or your local config.yaml file, or leave it empty.'.format(
                     name, path))
+
+        if args.print_config:
+            yaml.dump(config, sys.stdout, default_flow_style=False)
+            return 0
+
+        #do some basic checks
+        assert os.path.isdir(args.working_directory), 'working directory does not exist'
+
+        #check for one (and only one) input directory
+        input_directory = None
+        input_directory_count = 0
+        input_directories = ['reads_in', 'unmapped_bams_in', 'mapped_bams_in', 'bams_in']
+        for input_name in input_directories:
+            if os.path.isdir(os.path.join(args.working_directory, input_name)):
+                input_directory_count += 1
+                input_directory = input_name
+        if input_directory_count < 1:
+            raise Exception(
+                'An input directory (one of: %s) needs to exist. Please see the documentation for the appropriate directory to use and place your sequencing data there.'
+                % (', '.join(input_directories))
+            )
+        elif input_directory_count > 1:
+            raise Exception(
+                'More than one of the possible input directories (%s) exists. Please only provide a single input directory with all your data.'
+                % (', '.join(input_directories))
+            )
+
+        if input_directory in ['unmapped_bams_in', 'mapped_bams_in']:
+            if not config['general']['use_raw_reads']:
+                raise Exception(
+                    'general: use_raw_reads needs to be set to true when using %s for input.'
+                    % (input_directory)
+                )
 
         #check input files
         sys.stderr.write('Checking input files...\n')
