@@ -23,9 +23,9 @@ jobs:
       # install conda dependencies
       - restore_cache:
           keys:
-            - v7-dependencies-{{ checksum "environment.yml" }}-{{ checksum "setup.py" }}
+            - v8-dependencies-{{ checksum "environment.yml" }}-{{ checksum "setup.py" }}
             # fallback to using the latest cache if no exact match is found
-            - v7-dependencies-
+            - v8-dependencies-
 
       - run:
           name: install dependencies
@@ -35,17 +35,16 @@ jobs:
             apt-get clean;
 
             if [ ! -d /opt/conda/envs/amplimap/ ]; then
-              conda env create --force --file environment.yml
-              conda install -y -n amplimap pytest  # we also need pytest
-              conda install -y -n amplimap -c conda-forge -c bioconda octopus  # we also need octopus
+              conda env create -c conda-forge -c bioconda --force --file environment.yml
+              conda install -c conda-forge -c bioconda -y -n amplimap pytest  # we also need pytest
+              conda install -c conda-forge -c bioconda -y -n amplimap octopus  # we also need octopus
             fi
 
             # activate
             . /opt/conda/etc/profile.d/conda.sh;
             conda activate amplimap;
             # uninstall conda version
-            # temporarily added snakemake here to work around version issue
-            pip uninstall -y amplimap snakemake
+            pip uninstall -y amplimap
             # install current version
             easy_install .;
 
@@ -53,7 +52,7 @@ jobs:
           paths:
             - /opt/conda/
             - /root/.conda/
-          key: v7-dependencies-{{ checksum "environment.yml" }}-{{ checksum "setup.py" }}
+          key: v8-dependencies-{{ checksum "environment.yml" }}-{{ checksum "setup.py" }}
 
       # reference genome
       - restore_cache:
