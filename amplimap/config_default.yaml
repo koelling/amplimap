@@ -148,16 +148,18 @@ modules:
 # options for external tools used by amplimap
 tools:
   picard:
-    # prefix to use when execute a picard tool. for example, if your prefix is 'picard' then amplimap will run
+    # prefix to use when execute a picard tool.
+    # for example, if your prefix is 'picard' then amplimap will run
     # `picard SamToFastq` to execute the `SamToFastq` tool
     prefix: 'picard'
 
   octopus:
     version_command: 'octopus --version'
-    call_command: octopus --reference=%s \
-        --regions-file={{input.targets:q} \
-        --reads={{input[0]:q} \
-        --output={{output[0]:q}
+    call_command: >-
+      octopus --reference=%s
+      --regions-file={input.targets:q}
+      --reads={input[0]:q}
+      --output={output[0]:q}
 
   # you can specify additional tools here:
   example_tool:

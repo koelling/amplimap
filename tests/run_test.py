@@ -400,13 +400,6 @@ def test_variants_octopus(tmp_path, capsys):
 {test_config_raw}
 variants:
   caller: octopus
-tools:
-  octopus:
-    version_command: 'octopus --version'
-    call_command: octopus --reference=%s \
-        --regions-file={{input.targets:q}} \
-        --reads={{input[0]:q}}
-        --output={{output[0]:q}} \
     ''')
 
     extra_config_path = str(cfg)
