@@ -1,7 +1,7 @@
 name: amplimap
 channels:
-- bioconda
 - conda-forge
+- bioconda
 dependencies:
 - bcftools>=1.5
 - bedtools=2.27.*
@@ -12,6 +12,7 @@ dependencies:
 - samtools>=1.5
 - star=2.5.*
 - python=3.6.*
+- octopus
 - pip
 - setuptools>=18.0
 - cython

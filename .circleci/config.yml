@@ -35,9 +35,8 @@ jobs:
             apt-get clean;
 
             if [ ! -d /opt/conda/envs/amplimap/ ]; then
-              conda env create -c conda-forge -c bioconda --force --file environment.yml
+              conda env create --force --file environment.yml
               conda install -c conda-forge -c bioconda -y -n amplimap pytest  # we also need pytest
-              conda install -c conda-forge -c bioconda -y -n amplimap octopus  # we also need octopus
             fi
 
             # activate
