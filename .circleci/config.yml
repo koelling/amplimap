@@ -23,9 +23,9 @@ jobs:
       # install conda dependencies
       - restore_cache:
           keys:
-            - v6-dependencies-{{ checksum "environment.yml" }}-{{ checksum "setup.py" }}
+            - v7-dependencies-{{ checksum "environment.yml" }}-{{ checksum "setup.py" }}
             # fallback to using the latest cache if no exact match is found
-            - v6-dependencies-
+            - v7-dependencies-
 
       - run:
           name: install dependencies
@@ -52,7 +52,7 @@ jobs:
           paths:
             - /opt/conda/
             - /root/.conda/
-          key: v6-dependencies-{{ checksum "environment.yml" }}-{{ checksum "setup.py" }}
+          key: v7-dependencies-{{ checksum "environment.yml" }}-{{ checksum "setup.py" }}
 
       # reference genome
       - restore_cache:
