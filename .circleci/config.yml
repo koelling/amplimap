@@ -132,7 +132,7 @@ jobs:
             conda list > test-reports/general/conda.txt;
             pip freeze > test-reports/general/pip.txt;
 
-            pytest --junitxml=test-reports/general/junit.xml tests/;
+            pytest -s --junitxml=test-reports/general/junit.xml tests/;
 
             conda deactivate;
 
