@@ -143,6 +143,7 @@ modules:
   wecall: ''
   annovar: ''
   picard: ''
+  octopus: ''
 
 # options for external tools used by amplimap
 tools:
@@ -151,10 +152,17 @@ tools:
     # `picard SamToFastq` to execute the `SamToFastq` tool
     prefix: 'picard'
 
+  octopus:
+    version_command: 'octopus --version'
+    call_command: octopus --reference=%s \
+        --regions-file={{input.targets:q} \
+        --reads={{input[0]:q} \
+        --output={{output[0]:q}
+
   # you can specify additional tools here:
   example_tool:
     # each tool needs a version_command that returns the version of the tool with exit code 0.
     version_command: 'my_tool --version'
-    # specify these to make this tool available as aligner/caller. refer to the examples to see the parameters you can use.
+    # specify one of these to make this tool available as aligner/caller, using the parameters as shown here:
     # align_command: 'my_tool align --reference-fasta=%s --threads={threads} --read1={input[0]:q} --read2={input[1]:q} --output={output[0]:q} --sample={wildcards.sample_full:q}'
     # call_command: 'my_tool call --reference-fasta=%s --targets={input.targets:q} --input-bam={input[0]:q} --output-vcf={output[0]:q}'

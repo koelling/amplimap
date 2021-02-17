@@ -43,14 +43,14 @@ class AmplimapReaderException(Exception):
             else:
                 header_note = 'Please note that this file SHOULD NOT contain any header line.'
 
-        #add better message to exception
+        # add better message to exception
         message = '\n\nError while reading file {}:\n{}\n\n{}\n\n'.format(
             filename,
             err,
             header_note
         )
 
-        #init base exception
+        # init base exception
         super().__init__(message)
 
 def get_code_versions(path: str = '.') -> dict:
@@ -90,7 +90,7 @@ def merge_probes_by_id(rows: pd.DataFrame) -> pd.Series:
     """
     Merge multiple probes.csv rows with the same probe ID together, to handle cases where MIPGEN generated multiple version because of a SNP.
     """
-    #grab first row as template (use .loc instead of .iloc?)
+    # grab first row as template (use .loc instead of .iloc?)
     first_row = rows.iloc[0].copy()
 
     first_row['n_merged'] = len(rows)
@@ -99,25 +99,25 @@ def merge_probes_by_id(rows: pd.DataFrame) -> pd.Series:
     if len(rows) > 1:
         first_row['n_wildcards'] = 0
 
-        #make sure these are all the same
+        # make sure these are all the same
         assert (rows['chr'] == first_row['chr']).all(), 'found multiple rows with same probe name but different chr: %s' % first_row['id']
         assert (rows['target_start'] == first_row['target_start']).all(), 'found multiple rows with same probe name but different target_start: %s' % first_row['id']
         assert (rows['target_end'] == first_row['target_end']).all(), 'found multiple rows with same probe name but different target_end: %s' % first_row['id']
         assert (rows['strand'] == first_row['strand']).all(), 'found multiple rows with same probe name but different strand: %s' % first_row['id']
 
-        #merge primers together
+        # merge primers together
         for primer_col in ['first_primer_5to3', 'second_primer_5to3']:
             assert (rows[primer_col].str.len() == len(first_row[primer_col])).all(), 'found multiple rows with same probe id but primer sequences were different lengths'
             for ixrow in range(1, len(rows)):
                 for ixchar in range(len(first_row[primer_col])):
-                    #if this row doesn't match the first row's sequence
+                    # if this row doesn't match the first row's sequence
                     if first_row[primer_col][ixchar] != rows.iloc[ixrow][primer_col][ixchar]:
-                        #replace character by dot, but only if it hasn't been replaced yet
+                        # replace character by dot, but only if it hasn't been replaced yet
                         if first_row[primer_col][ixchar] != '.':
                             first_row['n_wildcards'] += 1
                             first_row[primer_col] = first_row[primer_col][:ixchar] + '.' + first_row[primer_col][(ixchar+1):]
 
-        #make sure we actually replaced something with a wildcard
+        # make sure we actually replaced something with a wildcard
         assert first_row['n_wildcards'] > 0, 'found multiple rows with same probe name but primer sequences were identical: %s' % first_row['id']
         assert first_row['n_wildcards'] < 10, 'found too many differences between primer sequences: %s' % first_row['id']
 
@@ -183,28 +183,28 @@ def read_and_convert_heatseq_probes(path: str) -> pd.DataFrame:
             log.info('%d probes after dropping empty rows', len(design))
         assert len(design) > 0, 'heatseq table is empty!'
 
-        #make sure we have all the columns we expect
+        # make sure we have all the columns we expect
         for column in heatseq_columns:
             if not column in design.columns:
                 raise Exception('invalid heatseq table: column %s is missing!' % column)
 
-        #rename columns
+        # rename columns
         design.rename(columns = {'chromosome': 'chr', 'target_stop': 'target_end', 'probe_strand': 'strand', 'probe_id': 'id'}, inplace=True)
 
-        #In this protocol, read1 should contain extension primer and read2 the ligation primer
-        #Note that this is the opposite of smMIPs!
+        # In this protocol, read1 should contain extension primer and read2 the ligation primer
+        # Note that this is the opposite of smMIPs!
         design['second_primer_5to3'] = [str(Bio.Seq.Seq(s).reverse_complement()) for s in design['lig_sequence'].str.upper()]
         design['first_primer_5to3'] = design['ext_sequence'].str.upper()
 
-        #detect SNPs and replace them by dot
+        # detect SNPs and replace them by dot
         original_len = len(design)
         design = design.groupby('id').apply(merge_probes_by_id)
         if original_len != len(design):
             log.info('%d/%d probes left after merging probes by ID', len(design), original_len)
-        #reset index to turn id into column again
+        # reset index to turn id into column again
         design.reset_index(inplace=True)
 
-        #reorder and extract columns
+        # reorder and extract columns
         design = design[probe_columns]
     except Exception as e:
         raise AmplimapReaderException(e, filename = path,  should_have_header = True).with_traceback(sys.exc_info()[2])
@@ -220,15 +220,15 @@ def read_new_probe_design(path: str, reference_type: str = 'genome') -> pd.DataF
 
         log.info('Read probe design table from %s -- found %d probes', path, len(design))
         if list(design.columns) == mipgen_columns:
-            #NB: smmip data seems to be in F2R1 orientation (second read = fwd in genomic coordinates) for fwd probes
-            #but F1R2 orientation (second read = rev) for rev probes.
-            #cs-tag data seems to be in F1R2 orientation for fwd targets. unclear for rev targets, but presumably F2R1?
-            #in other words, CS-tag is in gene orientation, while smMIP is in opposite
-            #so both are swapped for MIPs.
-            #is this why sequences in probes.csv are currently so confusing?
+            # NB: smmip data seems to be in F2R1 orientation (second read = fwd in genomic coordinates) for fwd probes
+            # but F1R2 orientation (second read = rev) for rev probes.
+            # cs-tag data seems to be in F1R2 orientation for fwd targets. unclear for rev targets, but presumably F2R1?
+            # in other words, CS-tag is in gene orientation, while smMIP is in opposite
+            # so both are swapped for MIPs.
+            # is this why sequences in probes.csv are currently so confusing?
             log.info('Detected old MIPGEN format, converting...')
 
-            #read the probes file again in old mipgen format and convert
+            # read the probes file again in old mipgen format and convert
             design = read_and_convert_mipgen_probes(path)
 
         design = process_probe_design(design, reference_type)
@@ -241,19 +241,19 @@ def process_probe_design(design: pd.DataFrame, reference_type: str = 'genome') -
     """
     Read amplimap probes.csv file and return pandas dataframe.
     """
-    #now drop empty rows
+    # now drop empty rows
     original_len = len(design)
     design.dropna(axis=0, how='all', inplace=True)
     if original_len != len(design):
         log.info('%d probes after dropping empty rows', len(design))
     assert len(design) > 0, 'Probe design table is empty!'
 
-    #make sure we have all the columns we expect
+    # make sure we have all the columns we expect
     for column in probe_columns:
         if not column in design.columns:
             raise Exception('invalid probe design table: column %s is missing!' % column)
 
-    #fix data types
+    # fix data types
     design = design.astype(
         {
             'id': str,
@@ -261,14 +261,14 @@ def process_probe_design(design: pd.DataFrame, reference_type: str = 'genome') -
             'strand': str,
             'first_primer_5to3': str,
             'second_primer_5to3': str,
-            #these need to be int instead of uint, otherwise they'll get turned into floats when subtracting an int (as we do below)
+            # these need to be int instead of uint, otherwise they'll get turned into floats when subtracting an int (as we do below)
             'target_start': int,
             'target_end': int,
         },
         errors = 'raise'
     )
 
-    #calculate some additional columns
+    # calculate some additional columns
     design.loc[design['strand'] == '+', 'probe_start'] = design.loc[design['strand'] == '+', 'target_start'] - design.loc[design['strand'] == '+', 'first_primer_5to3'].str.len()
     design.loc[design['strand'] == '-', 'probe_start'] = design.loc[design['strand'] == '-', 'target_start'] - design.loc[design['strand'] == '-', 'second_primer_5to3'].str.len()
     design.loc[design['strand'] == '+', 'probe_end'] = design.loc[design['strand'] == '+', 'target_end'] + design.loc[design['strand'] == '+', 'second_primer_5to3'].str.len()
@@ -296,10 +296,10 @@ def process_probe_design(design: pd.DataFrame, reference_type: str = 'genome') -
     # if reference_type == 'genome':
     #     design.loc[~design['chr'].str.startswith('chr'), 'chr'] = ['chr' + c for c in design.loc[~design['chr'].str.startswith('chr'), 'chr']]
 
-    #check that probe ids don't contain unexpected characters (space breaks bam files for example, since umi will be added as tag)
+    # check that probe ids don't contain unexpected characters (space breaks bam files for example, since umi will be added as tag)
     assert design['id'].str.contains(r'^[a-zA-Z0-9/._:+-]*$').all(), 'probe names may only contain alphanumeric characters and /._:+-'
 
-    #check for dupes
+    # check for dupes
     any_dup = design.duplicated(subset = ['chr', 'probe_start', 'probe_end', 'strand'], keep = False)
     if any_dup.any():
         print('These lines in the design are duplicated:')
@@ -312,19 +312,19 @@ def process_probe_design(design: pd.DataFrame, reference_type: str = 'genome') -
 
         raise Exception('Stopping because of duplicate rows in probes.csv!')
 
-    #make sure probes are uppercase
+    # make sure probes are uppercase
     design['first_primer_5to3'] = design['first_primer_5to3'].str.upper()
     design['second_primer_5to3'] = design['second_primer_5to3'].str.upper()
 
-    #check strand
+    # check strand
     if 'strand' in design.columns:
         assert (design['strand'].isin(['+', '-'])).all(), 'strand must be + or -'
 
-    #get reverse complement of sequence for smart trimming and matching to arms reverse read
+    # get reverse complement of sequence for smart trimming and matching to arms reverse read
     for c in ['first_primer_5to3', 'second_primer_5to3']:
         design['%s__rc' % c] = [str(Bio.Seq.Seq(s).reverse_complement()) for s in design[c]]
 
-    #set the index to the probe id (useful for probe stats)
+    # set the index to the probe id (useful for probe stats)
     design.set_index('id', drop = False, inplace = True, verify_integrity = True)
 
     return design
@@ -346,26 +346,26 @@ def read_sample_info(path: str) -> pd.DataFrame:
         assert sample_infos.columns[0] == 'Sample' and sample_infos.columns[1] == 'Targets', \
             'Missing Sample/Targets columns! Got %d columns: %s' % (len(sample_infos.columns), '/'.join(sample_infos.columns))
 
-        #split up Targets column into list
+        # split up Targets column into list
         sample_infos['Target'] = sample_infos['Targets'].str.split(';')
 
-        #make new data frame by stacking the Target lists
-        #inspired by: https://stackoverflow.com/questions/38372016/split-nested-array-values-from-pandas-dataframe-cell-over-multiple-rows
+        # make new data frame by stacking the Target lists
+        # inspired by: https://stackoverflow.com/questions/38372016/split-nested-array-values-from-pandas-dataframe-cell-over-multiple-rows
         non_target_columns = [c for c in sample_infos.columns if c != 'Target']
         sample_infos.set_index(non_target_columns, inplace = True) #this needs need to be all unstacked columns
-        #stack each column (only Target actually)
+        # stack each column (only Target actually)
         sample_infos = sample_infos.apply(lambda col: col.apply(pd.Series).stack(), axis=0)
-        #turn multilevel index back into columns
+        # turn multilevel index back into columns
         sample_infos.reset_index(inplace = True)
-        #drop Targets column and target index column generated by reset_index
+        # drop Targets column and target index column generated by reset_index
         sample_infos.drop(['Targets', 'level_%d' % len(non_target_columns)], axis=1, inplace = True)
 
-        #check for dupes
+        # check for dupes
         if sample_infos.duplicated(['Sample', 'Target']).any():
             print(targets[sample_infos.duplicated(['Sample', 'Target'], keep=False)])
             raise Exception('Invalid sample_infos table -- found duplicated Sample/Target IDs!')
 
-        #set proper index
+        # set proper index
         sample_infos.set_index(['Sample', 'Target'], drop = True, inplace = True, verify_integrity = True)
 
         print(sample_infos.head(3))
@@ -396,7 +396,7 @@ def read_targets(path: str, check_overlaps: bool = False, reference_type: str = 
 
             if targets.shape[1] == 6:
                 targets.columns = ['chr', 'start_0', 'end', 'id', 'score', 'strand']
-                #targets = targets[['chr', 'start_0', 'end', 'id']] #remove score/strand
+                # targets = targets[['chr', 'start_0', 'end', 'id']] #remove score/strand
             elif targets.shape[1] == 4:
                 targets.columns = ['chr', 'start_0', 'end', 'id']
             elif targets.shape[1] == 3:
@@ -408,22 +408,22 @@ def read_targets(path: str, check_overlaps: bool = False, reference_type: str = 
         elif file_type == 'csv':
             targets = pd.read_csv(path)
 
-            #check columns
+            # check columns
             if not ('chr' in targets.columns and 'start' in targets.columns and 'end' in targets.columns):
                 print(targets)
                 raise Exception('Invalid target CSV: first line should contain column names, which must include "chr", "start" and "end".')
 
-            #add id if need be
+            # add id if need be
             if not 'id' in targets.columns:
                 targets['id'] = ['target_%d' % i for i in range(len(targets))]
 
-            #fix start and calculate start_0
+            # fix start and calculate start_0
             targets['start'] = targets['start'].astype(int)
             targets['start_0'] = targets['start'] - 1
         else:
             raise Exception('invalid target file type')
 
-        #fix data types
+        # fix data types
         targets = targets.astype(
             {
                 'id': str,
@@ -434,12 +434,12 @@ def read_targets(path: str, check_overlaps: bool = False, reference_type: str = 
             errors = 'raise'
         )
 
-        #make sure we have no duplicated ids
+        # make sure we have no duplicated ids
         if targets.duplicated('id').any():
             print(targets[targets.duplicated('id', keep=False)])
             raise Exception('Invalid target table: found duplicated target ID(s)!')
 
-        #check for overlaps
+        # check for overlaps
         if check_overlaps:
             targets_dict = targets.to_dict()
             for ixrow1 in range(len(targets_dict['chr'])-1):
@@ -456,7 +456,7 @@ def read_targets(path: str, check_overlaps: bool = False, reference_type: str = 
                             )
                         )
 
-        #chr should always start with chr
+        # chr should always start with chr
         targets['chr_original'] = targets['chr']
         # if reference_type == 'genome':
         #     targets.loc[~targets['chr'].str.startswith('chr'), 'chr'] = ['chr' + c for c in targets.loc[~targets['chr'].str.startswith('chr'), 'chr']]
@@ -493,7 +493,7 @@ def read_snps_txt(path: str, reference_type: str = 'genome') -> pd.DataFrame:
         log.info('Loading SNPs from %s', path)
         snps = pd.read_csv(path, header=None, sep='\t')  # pos is 1-based!
 
-        #detect potential issues with spaces instead of tabs
+        # detect potential issues with spaces instead of tabs
         if snps.shape[1] == 1:
             if ' ' in snps.iloc[0, 0]:
                 log.info('SNP table does not seem to be tab-separated, trying again with spaces')
@@ -512,7 +512,7 @@ def read_snps_txt(path: str, reference_type: str = 'genome') -> pd.DataFrame:
             print(snps)
             raise Exception('Invalid SNP table -- expected to find between 2 and 5 columns.')
 
-        #fix data types
+        # fix data types
         snps = snps.astype(
             {
                 'id': str,
@@ -526,17 +526,17 @@ def read_snps_txt(path: str, reference_type: str = 'genome') -> pd.DataFrame:
         # if reference_type == 'genome':
         #     snps.loc[~snps['chr'].str.startswith('chr'), 'chr'] = ['chr' + c for c in snps.loc[~snps['chr'].str.startswith('chr'), 'chr']]
 
-        #do we have genotypes for a snp?
+        # do we have genotypes for a snp?
         snps['snp_has_genotypes'] = False
         if 'snp_ref' in snps and 'snp_alt' in snps:
             snps.loc[snps['snp_ref'].notnull() & snps['snp_alt'].notnull(), 'snp_has_genotypes'] = True
 
-        #stop if we have duplicate chr/pos
+        # stop if we have duplicate chr/pos
         if snps.duplicated(['chr', 'pos']).any():
             print(snps[snps.duplicated(['chr', 'pos'], keep=False)])
             raise Exception('Invalid SNPs table -- found duplicated chromosome/position!')
 
-        #set the index to the snp id (stops if duplicate IDs)
+        # set the index to the snp id (stops if duplicate IDs)
         snps.set_index('id', drop = False, inplace = True, verify_integrity = True)
 
         log.info('Found SNP info for %d SNPs -- shape = %s', len(snps), str(snps.shape))

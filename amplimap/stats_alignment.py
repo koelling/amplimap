@@ -5,8 +5,8 @@ This includes the number of reads and read families per probe, per sample as wel
 alignments.
 """
 
-#python 3 compat
-#http://python-future.org/compatible_idioms.html
+# python 3 compat
+# http://python-future.org/compatible_idioms.html
 from __future__ import print_function
 
 import sys
@@ -53,23 +53,23 @@ sh.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(me
 log.addHandler(sh)
 import time
 
-#use pandas to read the CSV file and write output files
+# use pandas to read the CSV file and write output files
 import pandas as pd
-#for defaultdict + sorting
+# for defaultdict + sorting
 import collections
 import operator
 
-#use python's argumentparser to support command line parameters like --probe=62
+# use python's argumentparser to support command line parameters like --probe=62
 import argparse
 
-#for pileup
+# for pileup
 import pysam
-#for getting ref base
+# for getting ref base
 import pyfaidx
-#for debugging umi distance
+# for debugging umi distance
 import distance
 
-#import reader script for reading probe design
+# import reader script for reading probe design
 from .reader import read_new_probe_design
 
 def aggregate(folder):
@@ -159,10 +159,10 @@ def process_file(
     assert input_path is not None, 'input file path missing'
     assert output_path is not None, 'output file path missing'
 
-    #if we did not get a design path we can only look at on/off target
+    # if we did not get a design path we can only look at on/off target
     if probes_path is None or len(probes_path) == 0:
         assert target_path is not None, 'target file path is missing'
-        #TODO
+        # TODO
 
     design = read_new_probe_design(probes_path)
 
@@ -203,7 +203,7 @@ def process_file(
         n_umis_good_coverage_ge_MIN = collections.defaultdict(int)
         probe_offtarget_locations = collections.defaultdict(collections.Counter)
 
-        #make sure we have zeros for each probe id
+        # make sure we have zeros for each probe id
         for pname in design['id']:
             for counter in [
                 n_pairs,
@@ -231,16 +231,16 @@ def process_file(
             assert rindex is not None
             other_rindex = 3 - rindex
 
-            #supplementary alignments mess up the assumption that each mate has one other mate
-            #so we ignore them for now
+            # supplementary alignments mess up the assumption that each mate has one other mate
+            # so we ignore them for now
             if x.is_supplementary:
-                #log.warn('Ignorning supplementary alignment for %s', x.query_name)
+                # log.warn('Ignorning supplementary alignment for %s', x.query_name)
                 continue
 
-            #only count rows after this to fulfil assumption later
+            # only count rows after this to fulfil assumption later
             n_rows += 1
 
-            #parse info from read name (should be bowtie2 compatible)
+            # parse info from read name (should be bowtie2 compatible)
             read_name, read_probe, read_umi = parse_extended_read_name(qname)
 
             rdata = {}
@@ -248,7 +248,7 @@ def process_file(
             rdata['mapq'] = x.mapping_quality
             rdata['has_bad_flags'] = (x.is_qcfail) or \
                 (x.is_supplementary)
-                #(x.is_secondary) or \ #TODO: removed this to allow secondary hits from bowtie2, not sure if good idea or not. this column is often (always?) zero for bwa runs though...
+                # (x.is_secondary) or \ #TODO: removed this to allow secondary hits from bowtie2, not sure if good idea or not. this column is often (always?) zero for bwa runs though...
             rdata['unmapped'] = x.is_unmapped
             if x.is_unmapped:
                 rdata['chr'] = None
@@ -267,38 +267,38 @@ def process_file(
             if debug:
                 print('>', qname, '-', rindex, '(', rdata['probe'], '/', rdata['chr'], ':', rdata['start'], '-', rdata['end'], ')', 'mate mapped =', not x.mate_is_unmapped)
 
-            #keep track of whether we processed this alignment pair now
+            # keep track of whether we processed this alignment pair now
             unprocessed = False
 
-            #are we unmapped
+            # are we unmapped
             if x.is_unmapped:
                 if debug:
                     print('is unmapped -- mate_is_unmapped =', x.mate_is_unmapped, ', read1 =', x.is_read1)
 
-                #is our mate also unmapped, and this is read1
+                # is our mate also unmapped, and this is read1
                 if x.mate_is_unmapped and x.is_read1:
                     n_alignments_unmapped_both[pname] += 1
                 else:
-                    #if this is read2 we already counted read1 (or will count)
-                    #if mate is not unmapped we will count this when we read the mate
+                    # if this is read2 we already counted read1 (or will count)
+                    # if mate is not unmapped we will count this when we read the mate
                     unprocessed = True
-            #are we mapped but our mate is unmapped?
+            # are we mapped but our mate is unmapped?
             elif x.mate_is_unmapped:
                 if debug:
                     print('is mapped but mate_is_unmapped ==', x.mate_is_unmapped)
 
                 n_alignments_unmapped_single[pname] += 1
-            #mapped pair
+            # mapped pair
             else:
-                #figure out where the mate should be
+                # figure out where the mate should be
                 mate_reference_id = x.next_reference_id
                 mate_start = x.next_reference_start + 1 #one-indexed to agree with above
 
-                #did we already see the paired mate?
+                # did we already see the paired mate?
                 paired_mate_number = None
                 if other_rindex in reads[qname]:
                     for other_mate_number, other_mate_alignment in enumerate(reads[qname][other_rindex]):
-                        #is this the correct alignment that we are mated with?
+                        # is this the correct alignment that we are mated with?
                         if (mate_reference_id == 0 or mate_reference_id == other_mate_alignment['reference_id']) and mate_start == other_mate_alignment['start']:
                             paired_mate_number = other_mate_number
                             break
@@ -307,21 +307,21 @@ def process_file(
                     print('mate @ #', mate_reference_id, ':', mate_start, ' -> paired_mate_number =', paired_mate_number)
 
                 if paired_mate_number is None:
-                    #for debugging
+                    # for debugging
                     rdata['qname'] = qname
                     rdata['mate_reference_id'] = mate_reference_id
                     rdata['mate_start'] = mate_start
 
-                    #we will be matching using the id, not the chr name
+                    # we will be matching using the id, not the chr name
                     rdata['reference_id'] = x.reference_id
 
-                    #keep this read around until we find the mate
+                    # keep this read around until we find the mate
                     if not rindex in reads[qname]:
                         reads[qname][rindex] = list()
                     reads[qname][rindex].append(rdata)
                     unprocessed = True
                 else:
-                    #process the pair
+                    # process the pair
                     rd = {}
                     rd[rindex] = rdata
                     rd[other_rindex] = reads[qname][other_rindex][paired_mate_number]
@@ -330,23 +330,23 @@ def process_file(
                         print('Processing pair:')
                         print(rd)
 
-                    #make sure this is a good pair
+                    # make sure this is a good pair
                     is_valid_pair = True
                     is_valid_pair = is_valid_pair and rd[1]['reverse'] != rd[2]['reverse']
                     is_valid_pair = is_valid_pair and rd[1]['chr'] == rd[2]['chr']
                     if debug:
                         print('is_valid_pair =', is_valid_pair)
 
-                    #sanity checks
+                    # sanity checks
                     if rd[1]['probe'] != rd[2]['probe']:
                         log.error('Probe mismatch for %s', qname)
                         print(rd)
                         assert False
 
-                    #this should not happen anymore, since we catch these abvoe
+                    # this should not happen anymore, since we catch these abvoe
                     assert not (rd[1]['unmapped'] or rd[2]['unmapped'])
 
-                    #check probe data
+                    # check probe data
                     probe_data = design.loc[pname, :]
                     covers_entire_probe = False
                     matches_probe = rd[1]['chr'] == probe_data['chr']
@@ -362,7 +362,7 @@ def process_file(
                     if debug:
                         print('matches_probe =', matches_probe)
 
-                    #decide which bin to put this in
+                    # decide which bin to put this in
                     if not is_valid_pair:
                         n_alignments_invalid[pname] += 1
                     elif rd[1]['has_bad_flags'] or rd[2]['has_bad_flags']:
@@ -378,7 +378,7 @@ def process_file(
                             assert rd[1]['umi'] == rd[2]['umi']
                             probe_umi_alignments[pname][ rd[1]['umi'].encode('utf-8') ] += 1
                     else:
-                        #otherwise we had a good mapping, but not in the expected location
+                        # otherwise we had a good mapping, but not in the expected location
                         n_alignments_off_target[pname] += 1
 
                         start_name = '%s:%d-%d' % (rd[1]['chr'], rd[1]['start'], rd[2]['end'])
@@ -390,26 +390,26 @@ def process_file(
                         log.warn('Breaking for debug')
                         break
 
-                    #remove paired mate from memory
+                    # remove paired mate from memory
                     del reads[qname][other_rindex][paired_mate_number]
-                    #also remove the containing lists
+                    # also remove the containing lists
                     if len(reads[qname][other_rindex]) == 0:
                         del reads[qname][other_rindex]
                     if len(reads[qname]) == 0:
                         del reads[qname]
 
-            #keep track of processed read pairs
+            # keep track of processed read pairs
             if not unprocessed:
                 n_alignments[pname] += 1
 
-                #remember we processed this one
+                # remember we processed this one
                 if qname in reads_processed:
                     n_alignments_multimappers[pname] += 1
                 else:
                     n_pairs[pname] += 1
                     reads_processed.add(qname)
 
-            #print some stats
+            # print some stats
             t_now = time.time()
             if n_rows > 0 and (n_rows % 10000 == 0 or (t_now - t_shown > 60)):
                 t_shown = t_now
@@ -419,23 +419,23 @@ def process_file(
                     (t_now - t_start) / n_rows,
                     n_rows / (t_now - t_start))
 
-        #summary stats
+        # summary stats
         log.info('processed %d alignment rows total.', n_rows)
         log.info('processed %d reads total.', len(reads_processed))
 
-        #check if we have any reads left over?!
+        # check if we have any reads left over?!
         orphan_reads = [r for rs in reads.values() for r in rs.values()]
         if len(orphan_reads) > 0:
-            #TODO: this may happen if a single aligned read is paired with multiple alignments of its mate.
-            #we will remember the first mate, process the pair once we get the second mate and then forget both
-            #next time we see a new alignment for one of the mates we can never find the other alignment, since we have already deleted it
-            #I don't think there is an easy way to resolve this unfortunately.
-            #Options would be to keep _everything_ in memory for each contig (and lose a few), or to use name-sorted BAM files,
-            #or to see if bowtie2 gives us some idea of how many mates there are for a given read, so we know which ones to keep around for how long (reference counting)?
+            # TODO: this may happen if a single aligned read is paired with multiple alignments of its mate.
+            # we will remember the first mate, process the pair once we get the second mate and then forget both
+            # next time we see a new alignment for one of the mates we can never find the other alignment, since we have already deleted it
+            # I don't think there is an easy way to resolve this unfortunately.
+            # Options would be to keep _everything_ in memory for each contig (and lose a few), or to use name-sorted BAM files,
+            # or to see if bowtie2 gives us some idea of how many mates there are for a given read, so we know which ones to keep around for how long (reference counting)?
             log.info('Found %d orphaned read mates. First 10:', len(orphan_reads))
             pprint.pprint(orphan_reads[0:10])
 
-            #most of these will be on different references (in our test case all are)
+            # most of these will be on different references (in our test case all are)
             orphan_reads_same_ref = [orphan_read for orphan_read_list in orphan_reads for orphan_read in orphan_read_list if orphan_read['mate_reference_id'] == orphan_read['reference_id']]
             if len(orphan_reads_same_ref) > 0:
                 log.warn('Of these, %d orphaned read mates with same ref id. First 10:', len(orphan_reads_same_ref))
@@ -443,9 +443,9 @@ def process_file(
             else:
                 log.info('However, all of these involve pairs crossing chromosomes.')
 
-        #at the end, process the umi stats
+        # at the end, process the umi stats
         for (pname, umi_raw_counts) in probe_umi_alignments.items():
-            #use umi_tools to group raw UMIs together
+            # use umi_tools to group raw UMIs together
             umi_to_group = find_umi_groups(umi_raw_counts)
 
             # import pprint
@@ -455,27 +455,27 @@ def process_file(
             # print(pname)
             # pprint.pprint(umi_group_debug)
 
-            #now do a new count
+            # now do a new count
             umi_group_counts = collections.Counter()
             for umi, group in umi_to_group.items():
-                #we want the number of reads supporting the umi group here, which is
-                #the sum of the numbers of reads supporting each grouped umi
+                # we want the number of reads supporting the umi group here, which is
+                # the sum of the numbers of reads supporting each grouped umi
                 umi_group_counts[group] += umi_raw_counts[umi]
 
-            #now use these counts
+            # now use these counts
             for _, count in umi_group_counts.items():
                 n_umis_good[pname] += 1
                 if count >= min_consensus_count:
                     n_umis_good_coverage_ge_MIN[pname] += 1
 
-        #and find the top offtarget locations for each probe
+        # and find the top offtarget locations for each probe
         top_offtarget_locations = dict(
             (
                 ( pname, ';'.join(['%s=%d' % (location, count) for location, count in otl_counter.most_common(3)]) ) for pname, otl_counter in probe_offtarget_locations.items()
             )
         )
 
-        #make a table
+        # make a table
         df = pd.DataFrame(collections.OrderedDict((
             ('read_pairs_total', n_pairs),
             ('alignments_total', n_alignments),
@@ -493,17 +493,17 @@ def process_file(
             ('offtarget_locations', top_offtarget_locations)
             )))
 
-        #fill with 0s and make ints
+        # fill with 0s and make ints
         df = pd.concat([df.loc[:, [c for c in df.columns if c != 'offtarget_locations']].fillna(0).astype(int), df['offtarget_locations']],
             axis=1)
-        #set and sort by probe name (row index)
+        # set and sort by probe name (row index)
         df.index.rename('probe', inplace=True)
         df.sort_index(0, inplace=True)
 
-        #ASSERTIONS
-        #read_pairs_total should be == read_pairs_total from stats_overview
+        # ASSERTIONS
+        # read_pairs_total should be == read_pairs_total from stats_overview
         assert df['read_pairs_total'].sum() == len(reads_processed) #each read pair should be in one probe row
-        #assert df['alignments_total'].sum()*2 == n_rows #each alignment has two rows -- this falls apart if one mate is outside the target region!
+        # assert df['alignments_total'].sum()*2 == n_rows #each alignment has two rows -- this falls apart if one mate is outside the target region!
         assert (df['read_pairs_total'] == df['alignments_total'] - df['multimapping_alignments']).all() #should have one non-multimapping alignment per pair
         assert (df['alignments_total'] == df[ [c for c in df.columns if c.startswith('alignments_') and c != 'alignments_total'] ].sum(axis=1)).all() #each alignment should be counted once in the alignment_XX columns
 
@@ -519,9 +519,9 @@ def process_file(
 def main():
     log.info('Called with arguments: "%s"', '" "'.join(sys.argv))
 
-    #parse the arguments, which will be available as properties of args (e.g. args.probe)
+    # parse the arguments, which will be available as properties of args (e.g. args.probe)
     parser = argparse.ArgumentParser()
-    #specify parameters
+    # specify parameters
     parser.add_argument("--aggregate", help="folder with processed CSV files to aggregate")
     parser.add_argument("-d", "--design", help="CSV file with probes, arms sequences and locations")
     parser.add_argument("-i", "--input", help="input bam file name")

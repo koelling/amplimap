@@ -3,8 +3,8 @@
 This module contains methods for reading raw FASTQ files, finding primers in them and trimming the reads.
 """
 
-#python 3 compat
-#http://python-future.org/compatible_idioms.html
+# python 3 compat
+# http://python-future.org/compatible_idioms.html
 from __future__ import print_function
 
 import sys
@@ -15,9 +15,9 @@ import gzip
 import numpy as np
 import re
 import Bio.SeqIO
-#import Bio.Seq
-#import Bio.pairwise2
-#import itertools #for efficient zipping
+# import Bio.Seq
+# import Bio.pairwise2
+# import itertools #for efficient zipping
 
 import glob
 import shutil #for copy
@@ -31,31 +31,31 @@ log.addHandler(sh)
 
 import time
 
-#use pandas to read the CSV file and write output files
+# use pandas to read the CSV file and write output files
 import pandas as pd
-#to compute string distances
-#import distance
-#for defaultdict + sorting
+# to compute string distances
+# import distance
+# for defaultdict + sorting
 import collections
 import operator
-#for debug
+# for debug
 import random
 
-#use python's argumentparser to support command line parameters like --probe=62
+# use python's argumentparser to support command line parameters like --probe=62
 import argparse
 
-#functions for reading input files
+# functions for reading input files
 from .common import make_extended_read_name, find_umi_groups, parse_extended_read_name
 from .reader import read_new_probe_design
 
-#import cython module. if we have run setup.py this should have been built already
-#but we may get import errors (eg. for readthedocs)
+# import cython module. if we have run setup.py this should have been built already
+# but we may get import errors (eg. for readthedocs)
 try:
     from .parse_reads_cy import find_probe_from_reads, mismatch_count_with_max
 except ImportError:
     sys.stderr.write('Failed to import parse_reads_cy, trying again with pyximport\n')
-    
-    #try again with pyximport
+
+    # try again with pyximport
     import pyximport
     pyximport.install()
     from .parse_reads_cy import find_probe_from_reads, mismatch_count_with_max
@@ -82,44 +82,44 @@ def quality_trim_read(read_seq, read_qual_raw, phred_base: int = 33, p_threshold
     quality_trim_end = None
 
     for ix in range(len(read_qual_raw)):
-        #calculate phred score from character
+        # calculate phred score from character
         phred = ord(read_qual_raw[ix]) - phred_base
         assert phred >= 0 and phred <= 40, ('Invalid phred quality encountered: %s -- %s -> %d. Incorrect phred base?' % (read_qual_raw, read_qual_raw[ix], phred))
 
-        #calculate error probability from phred
+        # calculate error probability from phred
         p_error = 10 ** (-phred / 10)
 
-        #calculate offset from limit (will be negative if error prob > threshold)
+        # calculate offset from limit (will be negative if error prob > threshold)
         offset = p_threshold - p_error
 
-        #add offset to running sum
+        # add offset to running sum
         running_sum += offset
 
         if running_sum > 0:
-            #set quality_trim_start to current index the first time we get positive sum
-            #NOTE: this condition means that we will always cut from the first good base until the last max base.
-            #it's possible that we don't want this, since it does mean we include low-quality bases in-between
-            #not sure what's better, the description of the algorithm is a bit ambivalent there.
-            #unlikely to matter much anyway...
+            # set quality_trim_start to current index the first time we get positive sum
+            # NOTE: this condition means that we will always cut from the first good base until the last max base.
+            # it's possible that we don't want this, since it does mean we include low-quality bases in-between
+            # not sure what's better, the description of the algorithm is a bit ambivalent there.
+            # unlikely to matter much anyway...
             if quality_trim_start is None:
                 quality_trim_start = ix
 
-            #record max position of the running sum
+            # record max position of the running sum
             if running_sum >= running_sum_max:
                 running_sum_max = running_sum
                 quality_trim_end = ix + 1
-        #if sum < 0, set to 0
+        # if sum < 0, set to 0
         elif running_sum < 0:
             running_sum = 0
 
-    #did we find a start and an end?
+    # did we find a start and an end?
     if quality_trim_start is not None and quality_trim_end is not None:
         assert quality_trim_end > quality_trim_start
 
-        #note quality_trim_end should be index of last character + 1, so end-start = length
+        # note quality_trim_end should be index of last character + 1, so end-start = length
         return quality_trim_end - quality_trim_start, read_seq[quality_trim_start:quality_trim_end], read_qual_raw[quality_trim_start:quality_trim_end]
     else:
-        #return empty result, this should be filtered out downstream
+        # return empty result, this should be filtered out downstream
         return 0, '', ''
 
 def make_trimmed_read(
@@ -163,43 +163,43 @@ def make_trimmed_read(
         primer_trim_start = (umi_len)
         primer_trim_end = (umi_len + arm_len + target_len + other_arm_len)
 
-    #actually look for the arm sequence instead of blindly cutting
-    #find_arm_sequence = 'NNNNNNNNNNNNNNNN'
-    #find_arm_sequence = 'GTGTCCGGTGTGAAAAAAAAAA' #at end of read
+    # actually look for the arm sequence instead of blindly cutting
+    # find_arm_sequence = 'NNNNNNNNNNNNNNNN'
+    # find_arm_sequence = 'GTGTCCGGTGTGAAAAAAAAAA' #at end of read
     if find_arm_sequence is not None:
         assert find_arm_sequence_mismatches is not None
         if True:
-            #this is quite a dumb approach, but should work
+            # this is quite a dumb approach, but should work
             search_start = umi_len + arm_len #always search after the first arm
             rest_len = len(read[1]) - search_start
 
             primer_trim_ends = {}
             for offset in range(rest_len - 5):
-                #incomplete matches at the end - don't allow mismatches here anymore
+                # incomplete matches at the end - don't allow mismatches here anymore
                 match_len = min(len(find_arm_sequence), rest_len - offset)
                 max_mismatches = find_arm_sequence_mismatches if match_len >= len(find_arm_sequence) else 0
 
-                #print(read[1][search_start + offset:], '@', offset, 'l =', match_len)
+                # print(read[1][search_start + offset:], '@', offset, 'l =', match_len)
                 dist = mismatch_count_with_max(read[1][search_start + offset:search_start + offset + match_len], find_arm_sequence[:match_len], max_mismatches = max_mismatches)
-                #print(find_arm_sequence[:match_len], '=', dist)
+                # print(find_arm_sequence[:match_len], '=', dist)
 
                 if dist <= max_mismatches:
-                    #keep offset for each possible dist, overwriting later with earlier matches
-                    #but only if the match len is at least as long as the current one
+                    # keep offset for each possible dist, overwriting later with earlier matches
+                    # but only if the match len is at least as long as the current one
                     if not dist in primer_trim_ends or primer_trim_ends[dist][0] <= match_len:
                         primer_trim_ends[dist] = (match_len, offset)
 
-            #print(primer_trim_ends)
+            # print(primer_trim_ends)
 
             if len(primer_trim_ends) == 0:
-                #sys.exit('fail')
-                #return ''
+                # sys.exit('fail')
+                # return ''
                 primer_trim_end = None
             else:
                 trim_match = primer_trim_ends[min(primer_trim_ends.keys())]
-                #print(trim_match)
+                # print(trim_match)
                 primer_trim_end = search_start + trim_match[1]
-                #sys.exit('ok')
+                # sys.exit('ok')
         else:
             alignment = Bio.pairwise2.align.localxx(read[1][primer_trim_start:], find_arm_sequence, one_alignment_only=True)[0]
             print(find_arm_sequence)
@@ -218,11 +218,11 @@ def make_trimmed_read(
                 sys.exit('fail')
                 return ''
 
-    #make sure these are ints (they should be, but the probes.csv might contain floats)
+    # make sure these are ints (they should be, but the probes.csv might contain floats)
     primer_trim_start = int(primer_trim_start)
     primer_trim_end = int(primer_trim_end)
 
-    #trim seq and quality
+    # trim seq and quality
     read_seq_trimmed = read[1][primer_trim_start:primer_trim_end]
     read_qual_trimmed = read[2][primer_trim_start:primer_trim_end]
     primer_trimmed_len = len(read_seq_trimmed)
@@ -233,7 +233,7 @@ def make_trimmed_read(
 
     infos = 'pr:Z:%s\tum:Z:%s\tol:i:%d\tts:i:%d\tte:i:%d' % (probe, umi if len(umi) > 0 else 'X', len(read[1]), primer_trim_start, -1 if primer_trim_end is None else primer_trim_end)
 
-    #perform additional quality trimming (after arm trimming, can cut off both 3p and 5p!)
+    # perform additional quality trimming (after arm trimming, can cut off both 3p and 5p!)
     if quality_trim_threshold is not None:
         quality_trimmed_len, read_seq_trimmed, read_qual_trimmed = quality_trim_read(read_seq_trimmed, read_qual_trimmed,
             p_threshold = quality_trim_threshold,
@@ -245,7 +245,7 @@ def make_trimmed_read(
         quality_trimmed_difference = 0
         trimmed_len = primer_trimmed_len
 
-    #check length
+    # check length
     if trim_min_length is not None and trimmed_len < trim_min_length:
         return (None, primer_trim_end, False, 0, trimmed_len)
     else:
@@ -272,7 +272,7 @@ def parse_read_pairs(
     trim_primers, trim_min_length, trim_primers_strict, trim_primers_smart,
     quality_trim_threshold, quality_trim_phred_base,
     allow_multiple_probes,
-    consensus_fastqs = None,   
+    consensus_fastqs = None,
     min_consensus_count = 1,
     min_consensus_fraction = 0.51,
     debug = False, debug_probe = False
@@ -311,9 +311,9 @@ def parse_read_pairs(
         for cc in counter_columns:
             stats_samples[cc] = []
 
-    #convert input primers into expected format
+    # convert input primers into expected format
     first_arms_probes, first_arms_seq = zip(*probes_dict['first_primer_5to3'].items()) #split into lists
-    #convert to utf-8
+    # convert to utf-8
     first_arms_seq = tuple([seq.encode('utf-8') for seq in first_arms_seq])
     second_arms_dict = dict([(key, val.encode('utf-8')) for key, val in probes_dict['second_primer_5to3'].items()])
     log.info('Converted input primer sequences for optimised code')
@@ -323,7 +323,7 @@ def parse_read_pairs(
     max_readlen = 0
     umi_per_probe_counter = collections.defaultdict(collections.Counter)
     unknown_arms = (collections.defaultdict(int), collections.defaultdict(int))
-    
+
     tStart = time.time()
 
     fastqs = None
@@ -342,7 +342,7 @@ def parse_read_pairs(
         counters['files'] += 1
         opener = gzip.open if file1.endswith('.gz') else open
         with opener(file1, 'rt') as hdl1, opener(file2, 'rt') as hdl2:
-            #https://news.open-bio.org/2009/09/25/biopython-fast-fastq/
+            # https://news.open-bio.org/2009/09/25/biopython-fast-fastq/
             for first_read, second_read in zip( Bio.SeqIO.QualityIO.FastqGeneralIterator(hdl1),
                     Bio.SeqIO.QualityIO.FastqGeneralIterator(hdl2) ):
                 first_read_str = first_read[1]
@@ -361,7 +361,7 @@ def parse_read_pairs(
                 debug_this = False
                 if debug:
                     if nDebugged >= 5 and not debug_probe:
-                        #print(read_details)
+                        # print(read_details)
                         raise Exception('Stopping (debug)')
 
                     if random.randint(1, 1000) == 1:
@@ -382,8 +382,8 @@ def parse_read_pairs(
                     umi_one = umi_one,
                     umi_two = umi_two,
                     mismatches = mismatches #,
-                    #debug_probe = debug_probe,
-                    #debug_this = debug_this
+                    # debug_probe = debug_probe,
+                    # debug_this = debug_this
                 )
 
                 if len(matches) == 0:
@@ -394,10 +394,10 @@ def parse_read_pairs(
                     counters['pairs_unknown_arms'] += 1
                     continue
                 else:
-                    #if we're still here we actually found a match
+                    # if we're still here we actually found a match
                     counters['pairs_good_arms'] += 1
 
-                    #but maybe it's multi?
+                    # but maybe it's multi?
                     if len(matches) > 1:
                         if allow_multiple_probes:
                             counters['pairs_multiple_matching_arms'] += 1
@@ -405,11 +405,11 @@ def parse_read_pairs(
                             log.error('Multiple probes for read pair #%d (%s) -- %s', counters['pairs_total'], first_read[0], str(matches))
                             raise Exception('ABORTING: Multiple probes encountered!')
 
-                    #extract sequences
+                    # extract sequences
                     first_umi = first_read_str[:umi_one]
                     second_umi = second_read_str[:umi_two]
 
-                    #extract read id
+                    # extract read id
                     first_id = first_read[0]
                     if ' ' in first_id:
                         first_id = first_id[:first_id.index(' ')]
@@ -417,7 +417,7 @@ def parse_read_pairs(
                     if ' ' in second_id:
                         second_id = second_id[:second_id.index(' ')]
                     assert len(first_id) > 0, 'Encountered read with missing read name, stopping! Read #%d' % counters['pairs_total']
-                    #trim off /1 and /2
+                    # trim off /1 and /2
                     if first_id.endswith('/1') and second_id.endswith('/2'):
                         first_id = first_id[:-2]
                         second_id = second_id[:-2]
@@ -446,7 +446,7 @@ def parse_read_pairs(
 
                             r2_trimmed, r2_primer_trim_end, r2_long_enough, r2_quality_trimmed_difference, r2_trimmed_len = make_trimmed_read(
                                 pair_id,
-                                second_read, probe, probes_dict['target_length'][probe], first_umi+second_umi, 
+                                second_read, probe, probes_dict['target_length'][probe], first_umi+second_umi,
                                 umi_two,
                                 second_len, first_len,
                                 trim_primers = trim_primers, trim_min_length = trim_min_length,
@@ -457,7 +457,7 @@ def parse_read_pairs(
                                 quality_trim_phred_base = quality_trim_phred_base
                             )
 
-                            #keep track of max readlen
+                            # keep track of max readlen
                             max_readlen = max(max_readlen, r1_trimmed_len)
                             max_readlen = max(max_readlen, r2_trimmed_len)
 
@@ -484,13 +484,13 @@ def parse_read_pairs(
                     if debug_probe and counters['pairs_good_arms'] >= 3:
                         raise Exception('Debugging single probe, only showing first 3')
 
-    #fastq output - make sure file handles are closed properly
+    # fastq output - make sure file handles are closed properly
     if fastqs is not None:
         for fastq in fastqs.values():
             fastq.close()
         log.info('FASTQ files closed')
 
-    #write table of unknown probes
+    # write table of unknown probes
     for iarms, arms in enumerate(unknown_arms):
         n_unknown_arms_recorded = 0
         for count in arms.values():
@@ -504,33 +504,33 @@ def parse_read_pairs(
             for iarm, (arm, count) in enumerate(arms_sorted):
                 unknown_file.write('%s,%d,%f\n' % (arm, count, 1.0*count/n_unknown_arms_recorded))
 
-                #only write top 100
+                # only write top 100
                 if iarm > 100:
                     break
     log.info('Unknown arm files written')
 
-    #read statistics - with or without umi stats
+    # read statistics - with or without umi stats
     if umi_one + umi_two > 0:
-        #prepare arrays for consensus calling
+        # prepare arrays for consensus calling
         max_umi_group_index = 0
         umi_groups_global = dict()
         umi_probes_global = dict()
 
-        #calculate umi count stats
+        # calculate umi count stats
         for probe, umi_raw_counts in umi_per_probe_counter.items():
             umi_to_group = find_umi_groups(umi_raw_counts)
 
-            #now do a new count
+            # now do a new count
             umi_group_counts = collections.Counter()
             umi_groups_global[probe] = dict()
             for umi, group in umi_to_group.items():
                 umi_groups_global[probe][umi] = group + max_umi_group_index
                 umi_probes_global[group + max_umi_group_index] = probe.encode('utf-8') #this needs to be bytes
 
-                #we want the number of reads supporting the umi group here, which is
-                #the sum of the numbers of reads supporting each grouped umi
+                # we want the number of reads supporting the umi group here, which is
+                # the sum of the numbers of reads supporting each grouped umi
                 umi_group_counts[group] += umi_raw_counts[umi]
-            #update the max group index
+            # update the max group index
             max_umi_group_index = max(umi_groups_global[probe].values()) + 1
 
             umi_counter_series = pd.Series(list(umi_group_counts.values()))
@@ -541,12 +541,12 @@ def parse_read_pairs(
               'probe': probe,
               'read_pairs': umi_counter_series.sum(),
               'umis_total': len(umi_counter_series),
-              'umis_coverage_min': umi_counter_series.min(), 
-              'umis_coverage_mean': umi_counter_series.mean(), 
-              'umis_coverage_max': umi_counter_series.max(), 
-              'umis_coverage_05pct': umi_counter_series_quantiles[0.05], 
-              'umis_coverage_25pct': umi_counter_series_quantiles[0.25], 
-              'umis_coverage_median': umi_counter_series_quantiles[0.5], 
+              'umis_coverage_min': umi_counter_series.min(),
+              'umis_coverage_mean': umi_counter_series.mean(),
+              'umis_coverage_max': umi_counter_series.max(),
+              'umis_coverage_05pct': umi_counter_series_quantiles[0.05],
+              'umis_coverage_25pct': umi_counter_series_quantiles[0.25],
+              'umis_coverage_median': umi_counter_series_quantiles[0.5],
               'umis_coverage_75pct': umi_counter_series_quantiles[0.75],
               'umis_coverage_95pct': umi_counter_series_quantiles[0.95],
               'umis_coverage_ge_2': (umi_counter_series > 2).sum(),
@@ -555,10 +555,10 @@ def parse_read_pairs(
               'umis_coverage_ge_10': (umi_counter_series > 10).sum()
             })
 
-        #do consensus calling
+        # do consensus calling
         if consensus_fastqs is not None:
-            #TODO: could actually do this separately for read1/read2 to cut memory req in half
-            #TODO: could also handle N differently here!
+            # TODO: could actually do this separately for read1/read2 to cut memory req in half
+            # TODO: could also handle N differently here!
             consensus_shape = ( 2, max_umi_group_index+1, max_readlen, 5 )
 
             log.info('Allocating consensus arrays with shape %s', str(consensus_shape))
@@ -566,7 +566,7 @@ def parse_read_pairs(
             base_max_qual_chars = np.zeros( shape = consensus_shape, dtype = np.unsignedinteger )
             log.info('Consensus arrays allocated')
 
-            #dict to translate indices back to character
+            # dict to translate indices back to character
             call_to_char = {
                 1: ord(b'A'),
                 2: ord(b'C'),
@@ -575,21 +575,21 @@ def parse_read_pairs(
                 0: ord(b'N'),
             }
 
-            #reopen the trimmed fastq files that we just wrote
+            # reopen the trimmed fastq files that we just wrote
             log.info('Re-reading trimmed fastq files...')
             n_reads = 0
             umi_group_read_names = collections.defaultdict(set)
 
             opener = gzip.open if fastq_out1.endswith('.gz') else open
             with opener(fastq_out1, 'rt') as hdl1, opener(fastq_out2, 'rt') as hdl2:
-                #https://news.open-bio.org/2009/09/25/biopython-fast-fastq/
+                # https://news.open-bio.org/2009/09/25/biopython-fast-fastq/
                 for first_read, second_read in zip( Bio.SeqIO.QualityIO.FastqGeneralIterator(hdl1),
-                        Bio.SeqIO.QualityIO.FastqGeneralIterator(hdl2) ):        
+                        Bio.SeqIO.QualityIO.FastqGeneralIterator(hdl2) ):
                     n_reads += 1
                     qname = first_read[0].split('\t')[0]
                     read_name, read_probe, read_umi = parse_extended_read_name(qname)
                     read_umi_bytes = read_umi.encode('utf-8')
-                    
+
                     umi_group_index = umi_groups_global[read_probe][read_umi_bytes]
                     if len(umi_group_read_names[umi_group_index]) < 10:
                         umi_group_read_names[umi_group_index].add(read_name.encode('utf-8'))
@@ -598,16 +598,16 @@ def parse_read_pairs(
                         my_calls = np.array(list( (first_read[1] if read_index == 0 else second_read[1]).encode('utf-8') ))
                         my_quals = np.array(list( (first_read[2] if read_index == 0 else second_read[2]).encode('utf-8') ))
 
-                        #TODO: this also gets messy with read len < max read len (need to pad)
-                        #for base_index, base_byte in call_to_char.items():
-                            #increase count at base_index for all positions (=call_index) where our call is the given base
-                            #base_counts[read_index, umi_group_index, my_calls == base_byte, base_index] += 1
+                        # TODO: this also gets messy with read len < max read len (need to pad)
+                        # for base_index, base_byte in call_to_char.items():
+                            # increase count at base_index for all positions (=call_index) where our call is the given base
+                            # base_counts[read_index, umi_group_index, my_calls == base_byte, base_index] += 1
 
-                            #TODO: should do this with qual chars as well, but complicated...
-                            #my_qual_chars = my_quals[my_calls == base_byte]
-                            #base_max_qual_chars[read_index, umi_group_index, np.and(my_calls == base_byte, my_quals > base_max_qual_chars[read_index, umi_group_index, my_calls == base_byte, base_index] , base_index]
+                            # TODO: should do this with qual chars as well, but complicated...
+                            # my_qual_chars = my_quals[my_calls == base_byte]
+                            # base_max_qual_chars[read_index, umi_group_index, np.and(my_calls == base_byte, my_quals > base_max_qual_chars[read_index, umi_group_index, my_calls == base_byte, base_index] , base_index]
 
-                        #still need to loop over this for now
+                        # still need to loop over this for now
                         for call_index in range(len(my_calls)):
                             my_call = my_calls[call_index]
 
@@ -632,42 +632,42 @@ def parse_read_pairs(
             #     print(base_max_qual_chars[0, i])
             # sys.exit(1)
 
-            #figure out how many reads we have per base, and what the max per mate is, and finally what the min across mates per umi group is
+            # figure out how many reads we have per base, and what the max per mate is, and finally what the min across mates per umi group is
             n_reads_per_base = base_counts.sum(axis = 3)
             n_reads_per_mate = n_reads_per_base.max(axis=2)
-            n_reads_per_group = n_reads_per_mate.min(axis=0)          
-            #make sure we have the same value in 
-            #call consensus
+            n_reads_per_group = n_reads_per_mate.min(axis=0)
+            # make sure we have the same value in
+            # call consensus
             max_base = base_counts.argmax(axis = 3)
             max_base_count = base_counts.max(axis = 3)
-            #set to N if number of reads supporting this base is < 50% of all reads
+            # set to N if number of reads supporting this base is < 50% of all reads
             no_consensus = max_base_count < n_reads_per_base * min_consensus_fraction
             log.info('Found %d bases with no consensus, setting to N', no_consensus.sum())
             max_base[no_consensus] = 0
             log.info('Called consensus bases')
 
-            #loop over r1/r2
+            # loop over r1/r2
             log.info('Writing consensus fastq files...')
             assert min_consensus_count >= 1
             for read_index in [0, 1]:
                 log.info('Writing to: %s', consensus_fastqs[read_index])
                 n_consensus_reads = 0
                 with gzip.open(consensus_fastqs[read_index], 'wb') as consensus_fastq:
-                    #write one read entry per umi group
+                    # write one read entry per umi group
                     for umi_group_index in range(max_umi_group_index):
                         umi_group_read_count = n_reads_per_group[umi_group_index]
-                        #this should be at least 1 -- skip groups which have a read count of 0, implying that at least one read had no mates
-                        if umi_group_read_count >= min_consensus_count:                     
+                        # this should be at least 1 -- skip groups which have a read count of 0, implying that at least one read had no mates
+                        if umi_group_read_count >= min_consensus_count:
                             bases_with_reads = n_reads_per_base[read_index, umi_group_index] > 0 #should only happen at end!
                             n_bases_disagreement = (n_reads_per_base[read_index, umi_group_index] > max_base_count[read_index, umi_group_index]).sum()
 
-                            #generate name with group index, number of supporting reads and probe name
+                            # generate name with group index, number of supporting reads and probe name
                             my_name = b'id_%d_reads_%d:::pr_%s' % (umi_group_index, umi_group_read_count, umi_probes_global[umi_group_index])
                             my_tags = b'cr:Z:%s\tcn:i:%d\tcd:i:%d' % (b','.join(umi_group_read_names[umi_group_index]), umi_group_read_count, n_bases_disagreement)
-                            #generate seq based on max_base
+                            # generate seq based on max_base
                             my_seq = bytes([ call_to_char[base_index] \
                                 for call_index, base_index in enumerate(max_base[read_index, umi_group_index, bases_with_reads]) ])
-                            #generate quality based on max qual for each max_base (NB: 33 assumes phred33 encoding!)
+                            # generate quality based on max qual for each max_base (NB: 33 assumes phred33 encoding!)
                             my_quals = bytes([ base_max_qual_chars[read_index, umi_group_index, call_index, base_index] if base_index > 0 else 33 \
                                 for call_index, base_index in enumerate(max_base[read_index, umi_group_index, bases_with_reads]) ])
 
@@ -683,7 +683,7 @@ def parse_read_pairs(
 
             log.info('Consensus FASTQ files written')
     else:
-        #we don't have any umis, so for each probe we just have a dict of length one
+        # we don't have any umis, so for each probe we just have a dict of length one
         for probe, umi_raw_counts in umi_per_probe_counter.items():
             assert len(umi_raw_counts) == 1
 
@@ -694,7 +694,7 @@ def parse_read_pairs(
             })
     log.info('Read statistics calculated')
 
-    stats_samples['sample'].append(sample)        
+    stats_samples['sample'].append(sample)
     for counter_name, counter_value in counters.items():
         stats_samples[counter_name].append(counter_value)
 
@@ -735,12 +735,12 @@ def output_stats_reads(outname, stats_reads, umi_one, umi_two):
         if umi_one + umi_two > 0:
             columns += [
                 'umis_total',
-                'umis_coverage_min', 
-                'umis_coverage_mean', 
-                'umis_coverage_max', 
-                'umis_coverage_05pct', 
-                'umis_coverage_25pct', 
-                'umis_coverage_median', 
+                'umis_coverage_min',
+                'umis_coverage_mean',
+                'umis_coverage_max',
+                'umis_coverage_05pct',
+                'umis_coverage_25pct',
+                'umis_coverage_median',
                 'umis_coverage_75pct',
                 'umis_coverage_95pct',
                 'umis_coverage_ge_2',
@@ -758,10 +758,10 @@ def output_stats_reads(outname, stats_reads, umi_one, umi_two):
 
 def main():
     log.info('Called with arguments: "%s"', '" "'.join(sys.argv))
-    
-    #parse the arguments, which will be available as properties of args (e.g. args.probe)
+
+    # parse the arguments, which will be available as properties of args (e.g. args.probe)
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    #specify parameters
+    # specify parameters
     parser.add_argument("-i", "--input", help="input directory containing the fastq files")
     parser.add_argument("-o", "--output", help="working directory", default="out_reads/")
     parser.add_argument("--file-r1", help="name of the read 1 fastq file from a single sample to process")
@@ -777,7 +777,7 @@ def main():
                         action='store_true')
     parser.add_argument("--trim-primers", help="for fastq output, trim off primers (probe arms) in addition to umis",
                         action='store_true')
-    #parser.add_argument("--trim-primers-strict", help="TODO: for fastq output, only trim primers if second primer is in expected location",
+    # parser.add_argument("--trim-primers-strict", help="TODO: for fastq output, only trim primers if second primer is in expected location",
     #                    action='store_true')
     parser.add_argument("--trim-primers-smart", help="UNTESTED: search for second primer sequence in first read and vice versa to find point from where to trim",
                         action='store_true')
@@ -819,7 +819,7 @@ def main():
         raise Exception('Working directory does not exist: %s' % args.output)
 
     if not args.design:
-        #try probes.csv first, followed by design.csv
+        # try probes.csv first, followed by design.csv
         args.design = os.path.join(args.output, 'probes.csv')
 
     if not args.files_all:
@@ -831,12 +831,12 @@ def main():
         try:
             os.makedirs(fastq_directory)
         except OSError as e:
-            #log.info('Got OSError while trying to create FASTQ directory %s: %s' % (fastq_directory, str(e)))
+            # log.info('Got OSError while trying to create FASTQ directory %s: %s' % (fastq_directory, str(e)))
             pass
 
-    #read design
+    # read design
     design = read_new_probe_design(args.design, recalculate_targets = False, allow_wrong_columns = args.allow_wrong_columns, allow_duplicate_probes = args.allow_duplicate_probes)
-    #if we made it till here and are only checking probes, we can quit
+    # if we made it till here and are only checking probes, we can quit
     if args.check_probes:
         return 0
 
@@ -863,12 +863,12 @@ def main():
     if args.debug_probe:
         log.warn('Only debugging probe: %s', args.debug_probe)
         design = design[ design['id'] == args.debug_probe ]
-        assert len(design) == 1                    
+        assert len(design) == 1
 
-    #much faster to access than using DataFrame.loc every time
+    # much faster to access than using DataFrame.loc every time
     probes_dict = design.to_dict()
 
-    #figure out which filenames we need to read
+    # figure out which filenames we need to read
     sample_file_regex = args.file_mask
     files_to_process = []
     input_dir = args.input
@@ -889,7 +889,7 @@ def main():
             with open(args.files, 'Ur') as f:
                 file_prefixes = [l for l in [l.strip() for l in f.readlines()] if len(l) > 0]
 
-            #remove non-unique
+            # remove non-unique
             file_prefixes = set(file_prefixes)
 
             if len(file_prefixes) == 1 and file_prefixes.pop() == '*':
@@ -901,7 +901,7 @@ def main():
 
         log.info('Searching for fastq(.gz) files in %s', args.input)
         nFiles = 0
-        for file in os.listdir(args.input):  
+        for file in os.listdir(args.input):
             nFiles += 1
 
             match = re.search(sample_file_regex, file)
@@ -923,7 +923,7 @@ def main():
 
         log.info('Directory contains %d files, %d match pattern' % (nFiles, len(files_to_process)))
 
-    #now process filenames and make a list of samples
+    # now process filenames and make a list of samples
     sample_fastqs = {}
     for file in files_to_process:
         match = re.search(sample_file_regex, file)
@@ -946,7 +946,7 @@ def main():
 
         sample_fastqs[sample][read] = {
             'File': file,
-            #'Sample': sample,
+            # 'Sample': sample,
             'Lane': lane
         }
 
@@ -966,11 +966,11 @@ def main():
     if args.file_r1:
         (sample, info) = list(sample_fastqs.items())[0]
         output_code = 'sample_'+sample #+'_'+info['R1']['Sample']
-        #we already have our one file
+        # we already have our one file
     elif args.index:
         output_code = 'index__'+str(args.index)
 
-        #this is a bit hacky, but allows us to keep the loop code below
+        # this is a bit hacky, but allows us to keep the loop code below
         my_item = sample_fastqs.items()[args.index - 1]
         sample_fastqs = dict([my_item])
         log.info('Only processing sample #%d', args.index)
@@ -990,7 +990,7 @@ def main():
     nSamples = 0
     for (sample, read_files) in sample_fastqs.items():
         nSamples += 1
-        if re.search("Undetermined", sample): 
+        if re.search("Undetermined", sample):
             log.info('Ignoring sample: %s' % sample)
             continue
 

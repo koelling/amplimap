@@ -16,16 +16,16 @@ sh = logging.StreamHandler()
 sh.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
 log.addHandler(sh)
 
-#for bam creation
+# for bam creation
 import pysam
-#for getting ref chrs
+# for getting ref chrs
 import pyfaidx
-#for fastq reading
+# for fastq reading
 import Bio.SeqIO
 import Bio.pairwise2
 import gzip
 
-#amplimap imports
+# amplimap imports
 from .common import parse_extended_read_name
 from .reader import read_new_probe_design
 from .version import __title__, __version__
@@ -39,7 +39,7 @@ def align_and_find_cigar(read, ref, debug = False, reverse = False) -> tuple:
     """
     assert not reverse, 'not in use'
 
-    #we always want to be left-aligned with the proper seq (although it's not clear whether this actually makes a diff)
+    # we always want to be left-aligned with the proper seq (although it's not clear whether this actually makes a diff)
     if reverse:
         read = read[::-1]
         ref = ref[::-1]
@@ -48,7 +48,7 @@ def align_and_find_cigar(read, ref, debug = False, reverse = False) -> tuple:
         raise AmplimapNoAlignment()
 
     alignment = alignments[0]
-    #now we need to reverse these again, so that the cigar string (which is in genomic orientation) makes sense
+    # now we need to reverse these again, so that the cigar string (which is in genomic orientation) makes sense
     if reverse:
         alignment = (alignment[0][::-1], alignment[1][::-1])
     return find_cigar_for_alignment(len(read), alignment, debug)
@@ -70,15 +70,15 @@ def find_cigar_for_alignment(read_len, alignment, debug) -> tuple:
         if char_read == '-' and char_ref == '-':
             raise Exception('both gaps?!')
         elif char_read == '-':
-            #if we already aligned some bases then this is a deletion
+            # if we already aligned some bases then this is a deletion
             if cigar_read_consumed > 0:
                 char_cigar = 2 #DEL
-            #otherwise we have a start offset
+            # otherwise we have a start offset
             else:
                 cigar_read_start_offset += 1
             cigar_ref_consumed += 1
         elif char_ref == '-':
-            #if we already started the read this is an insertion, otherwise we soft-clip
+            # if we already started the read this is an insertion, otherwise we soft-clip
             if cigar_ref_consumed > 0:
                 char_cigar = 1 #INS
             else:
@@ -89,9 +89,9 @@ def find_cigar_for_alignment(read_len, alignment, debug) -> tuple:
             cigar_read_consumed += 1
             cigar_ref_consumed += 1
 
-        #this may be None if we have start offset
+        # this may be None if we have start offset
         if char_cigar is not None:
-            #start new tuple or increase counter for current tuple
+            # start new tuple or increase counter for current tuple
             if len(cigartuples) == 0 or cigartuples[-1][0] != char_cigar:
                 cigartuples.append( [char_cigar, 1] )
             else:
@@ -100,7 +100,7 @@ def find_cigar_for_alignment(read_len, alignment, debug) -> tuple:
         # if debug:
         #     print(char_read, cigar_read_consumed, char_ref, cigar_ref_consumed, char_cigar, cigar_read_start_offset)
 
-        #cigar should not get longer than read
+        # cigar should not get longer than read
         if cigar_read_consumed == read_len:
             break
 
@@ -108,15 +108,15 @@ def find_cigar_for_alignment(read_len, alignment, debug) -> tuple:
         print(cigar_read_start_offset, cigartuples, sum( [x[1] for x in cigartuples if x[0] in [0, 1, 4]] ))
         print(read_len)
 
-    #ensure that the last operation isn't an insertion (it should just be soft-clipped)
+    # ensure that the last operation isn't an insertion (it should just be soft-clipped)
     if cigartuples[-1][0] == 1:
         cigartuples[-1][0] = 4
 
-    #make sure we consumed the entire read
+    # make sure we consumed the entire read
     assert cigar_read_consumed == read_len
     assert sum( [x[1] for x in cigartuples if x[0] in [0, 1, 4]] ) == read_len
 
-    #make these into actual tuples
+    # make these into actual tuples
     cigartuples = [ tuple(x) for x in cigartuples ]
 
     return cigar_read_start_offset, cigartuples
@@ -175,7 +175,7 @@ def create_bam(
                         print('DEBUG - stopping after ', counters['pairs_total'])
                         break
 
-                    #extract and parse read name
+                    # extract and parse read name
                     read_names_original = [
                         read_pair[0][0].split('\t')[0],
                         read_pair[1][0].split('\t')[0],
@@ -193,7 +193,7 @@ def create_bam(
 
                     read_lens = [ len(read_pair[read_number][1]) for read_number in range(2) ]
 
-                    #untested: if we haven't trimmed off the primers then we need to start aligning from the primer start location!
+                    # untested: if we haven't trimmed off the primers then we need to start aligning from the primer start location!
                     if has_trimmed_primers:
                         probe_start = int(probes_dict['target_start_0'][read_probe] + 1)
                         probe_end = int(probes_dict['target_end'][read_probe])
@@ -209,13 +209,13 @@ def create_bam(
                         read_reverse = [ True, False ]
                     else: raise Exception('Unexpected strand for probe {}'.format(read_probe))
 
-                    #NOTE: this SHOULD BE one-based based on documentation
-                    #but actually seem to be ZERO-based -- at least the sequence we get for PRRX1-Ex1
-                    #starts CGGA but should start GGA; ends TTC but should end TTCT if we just use probe_start and probe_end
-                    #they are always in genomic sense
+                    # NOTE: this SHOULD BE one-based based on documentation
+                    # but actually seem to be ZERO-based -- at least the sequence we get for PRRX1-Ex1
+                    # starts CGGA but should start GGA; ends TTC but should end TTCT if we just use probe_start and probe_end
+                    # they are always in genomic sense
                     probe_target_sequence = str(ref_idx.fetch(probe_chr, probe_start, probe_end)).upper()
 
-                    #sanity check that we got the right sequence
+                    # sanity check that we got the right sequence
                     if has_trimmed_primers:
                         assert len(probe_target_sequence) == probes_dict['target_length'][read_probe]
                     else:
@@ -230,12 +230,12 @@ def create_bam(
                         print(read_pair)
 
                     try:
-                        #pre-process alignments to make sure the mate starts are actually correct
+                        # pre-process alignments to make sure the mate starts are actually correct
                         read_cigars = []
                         read_sequences = []
                         read_tags_for_pysam = []
                         for read_number in range(2):
-                            #copy over our custom tags from FASTQ file
+                            # copy over our custom tags from FASTQ file
                             read_tags = [ tag.split(':') for tag in read_pair[read_number][0].split('\t')[1:] ]
                             read_tags_for_pysam.append (
                                 [("RG", sample, "Z")] + [
@@ -246,18 +246,18 @@ def create_bam(
                                 print(read_tags)
                                 print(read_tags_for_pysam[read_number])
 
-                            #figure out sequence
+                            # figure out sequence
                             read_sequence = str(Bio.Seq.Seq(read_pair[read_number][1]).reverse_complement()) if read_reverse[read_number] else read_pair[read_number][1]
                             read_sequences.append(read_sequence)
 
-                            #align read to target sequence -- note both of these are in genomic sense!
+                            # align read to target sequence -- note both of these are in genomic sense!
                             try:
                                 cigar_read_start_offset, cigartuples = align_and_find_cigar(read_sequence, probe_target_sequence)
                                 read_tags_for_pysam[read_number].append( ("so", cigar_read_start_offset, 'i') )
 
-                                #remember cigar
+                                # remember cigar
                                 read_cigars.append(cigartuples)
-                                #adjust start -- need to use zero-based coords here but probe_start is 1-based
+                                # adjust start -- need to use zero-based coords here but probe_start is 1-based
                                 read_starts[read_number] = probe_start - 1 + cigar_read_start_offset
                             except AssertionError:
                                 cigar_read_start_offset, cigartuples = align_and_find_cigar(read_sequence, probe_target_sequence,
@@ -270,7 +270,7 @@ def create_bam(
 
                         for read_number in range(2):
 
-                            #create aligned segment
+                            # create aligned segment
                             a = pysam.AlignedSegment()
                             a.mapping_quality = 255 #always best quality
                             a.query_name = read_names_original[0]
@@ -283,7 +283,7 @@ def create_bam(
                             a.reference_start = read_starts[read_number]
                             a.next_reference_id = probe_chr_index
                             a.next_reference_start = read_starts[1 - read_number]
-                            #a.template_length = read_lens[read_number]
+                            # a.template_length = read_lens[read_number]
 
                             a.is_paired = True
                             a.is_proper_pair = True
@@ -297,7 +297,7 @@ def create_bam(
                             pairedreads.write(a)
                             if debug:
                                 break
-                    #normally we always get an alignment, but apparently sometimes we don't?
+                    # normally we always get an alignment, but apparently sometimes we don't?
                     except AmplimapNoAlignment:
                         counters['no_alignment'] += 1
                         pass

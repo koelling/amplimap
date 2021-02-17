@@ -30,7 +30,7 @@ def find_umi_groups(umi_counts: dict, id_offset = 0) -> dict:
     umi_to_group = {}
 
     if len(umi_counts) > 0:
-        #check keys
+        # check keys
         assert isinstance(next(iter(umi_counts.keys())), (bytes, bytearray))
 
         processor = umi_tools.network.UMIClusterer('directional')

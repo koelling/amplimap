@@ -33,17 +33,17 @@ def process_file(input: str, output: str):
         output: path to the summary CSV file
     """
 
-    #read bedtools output
+    # read bedtools output
     depth = pd.read_csv(input, sep='\t', names = ['chr', 'start_0', 'end', 'id', 'score', 'strand', 'position', 'coverage'], low_memory=False)
 
-    #summarize
+    # summarize
     summary = depth.groupby('id').aggregate({'coverage': [np.min, np.sum, len, np.mean, fraction_zero_coverage, fraction_10x_coverage, fraction_30x_coverage]})
 
-    #make id index into normal column, then reset column names
+    # make id index into normal column, then reset column names
     summary.reset_index(level=0, inplace=True)
     summary.columns = cov_cols
 
-    #write file
+    # write file
     summary.to_csv(output, index = False)
 
 def aggregate(input, output):
@@ -53,14 +53,14 @@ def aggregate(input, output):
         input: dict containing 'csvs', the list of csvs fils to aggregate, and optionally 'sample_info', a table with additional sample annotation
         output: dict containing paths for output files: merged, min_coverage, cov_per_bp, fraction_zero_coverage
     """
-    #load sample information table
+    # load sample information table
     sample_info = None
     if 'sample_info' in input and len(input['sample_info']) > 0:
         sample_info = read_sample_info(input['sample_info'][0])
 
     merged = None
     for file in input['csvs']:
-        sname = os.path.basename(file)            
+        sname = os.path.basename(file)
         sname = re.sub(r'\.coverage\.csv$', '', sname)
 
         print('Reading', file, 'for', sname, '...')
@@ -77,7 +77,7 @@ def aggregate(input, output):
 
     assert merged is not None, \
         '\n\nABORTED: Did not find any coverage data!\n\n'
-            
+
     print('Merged data shape:', str(merged.shape))
     print(merged.head())
 
@@ -87,12 +87,12 @@ def aggregate(input, output):
     if sample_info is not None:
         merged = merged.join(sample_info, on = ['Sample', 'Target'], how = 'left')
 
-    #make matrices
+    # make matrices
     for column in ['min_coverage', 'cov_per_bp', 'fraction_zero_coverage']:
         pivoted = merged.pivot(index='Target', columns='Sample', values=column)
         print('Made pivot table for', column, ' with shape', str(pivoted.shape))
         pivoted.to_csv(output[column])
         print(output[column])
 
-    #output full merged data set
+    # output full merged data set
     merged.to_csv(output['merged'], index = False)

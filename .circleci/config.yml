@@ -36,7 +36,7 @@ jobs:
 
             if [ ! -d /opt/conda/envs/amplimap/ ]; then
               conda env create --force --file environment.yml
-              conda install -y -n amplimap pytest  # we also need pytest
+              conda install -y -n amplimap pytest octopus  # we also need pytest and octopus
             fi
 
             # activate
@@ -53,7 +53,7 @@ jobs:
             - /opt/conda/
             - /root/.conda/
           key: v6-dependencies-{{ checksum "environment.yml" }}-{{ checksum "setup.py" }}
-      
+
       # reference genome
       - restore_cache:
           keys:
@@ -90,7 +90,7 @@ jobs:
               rename 's/hg19/hg19.fa/' /root/refs/hg19*bt2;
               ls -la /root/refs/;
             fi
-            
+
             if [ ! -f /root/refs/hg19.fa ]; then
               echo "Creating FASTA..."
               bowtie2-inspect /root/refs/hg19.fa > /root/refs/hg19.fa;
@@ -101,13 +101,13 @@ jobs:
               echo "Removing old ZIP"
               rm -f /root/refs/hg19.zip;
             fi
-            
+
             if [ ! -f /root/refs/hg19.fa.fai ]; then
               echo "Indexing reference..."
               samtools faidx /root/refs/hg19.fa;
               ls -la /root/refs/;
             fi
-            
+
             if [ ! -f /root/refs/hg19.dict ]; then
               echo "Generating dict..."
               picard CreateSequenceDictionary R=/root/refs/hg19.fa;
@@ -131,7 +131,7 @@ jobs:
             mkdir -p test-reports/general/ || true;
             conda list > test-reports/general/conda.txt;
             pip freeze > test-reports/general/pip.txt;
-            
+
             pytest --junitxml=test-reports/general/junit.xml tests/;
 
             conda deactivate;

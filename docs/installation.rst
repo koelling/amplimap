@@ -60,7 +60,7 @@ Requirements
 
 - Additional software for germline variant calling (optional):
 
-  - At least one variant caller: Platypus 0.8.1+, GATK 4+
+  - At least one variant caller: Platypus 0.8.1+, GATK 4+, Octopus
   - Annovar (tested with v2015-06-17)
   - bcftools (tested with v1.5)
 
@@ -74,4 +74,3 @@ Requirements
 
 If you do not have these required tools available yet, see :doc:`extended_installation`
 for details on how to install them.
-

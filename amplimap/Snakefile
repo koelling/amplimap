@@ -13,17 +13,17 @@ import os
 import shutil
 import sys
 
-#make sure we can import amplimap, and we are using the correct path
-#by adding it to the beginning of sys.path (but fall back on default if we don't have it)
+# make sure we can import amplimap, and we are using the correct path
+# by adding it to the beginning of sys.path (but fall back on default if we don't have it)
 try:
     sys.path.insert(0, config['general']['amplimap_parent_dir'])
 except KeyError:
     sys.stderr.write('Failed to add exact amplimap directory to Python path, using system version of amplimap.\n')
 
-#version and title
+# version and title
 from amplimap.version import __title__, __version__
 
-#list of rules that don't run on the cluster
+# list of rules that don't run on the cluster
 localrules: all, \
     start_analysis, check_test_variant, \
     copy_probes, copy_snps, copy_targets_bed, convert_targets_csv,
@@ -32,7 +32,7 @@ localrules: all, \
     link_reads, merge_targets, stats_samples_agg, stats_reads_agg, stats_alignment_agg, coverage_agg, stats_replacements_agg, \
     variants_summary, variants_summary_excel
 
-#find samples
+# find samples
 if os.path.isdir('bams_in'):
     SAMPLES, = glob_wildcards("bams_in/{sample_full}.bam")
     config['general']['lanes_actual'] = 1
@@ -43,42 +43,42 @@ elif os.path.isdir('unmapped_bams_in'):
     SAMPLES, = glob_wildcards("unmapped_bams_in/{sample_full}.bam")
     config['general']['lanes_actual'] = 1
 else:
-    #check that samples for R1 and R2 agree
+    # check that samples for R1 and R2 agree
     samples_with_lane1, = glob_wildcards("reads_in/{sample_with_lane}_R1_001.fastq.gz")
     samples_with_lane2, = glob_wildcards("reads_in/{sample_with_lane}_R1_001.fastq.gz")
     samples_with_lane1.sort()
     samples_with_lane2.sort()
     assert samples_with_lane1 == samples_with_lane2, 'Did not find R1 and R2 fastq files for all samples!'
 
-    #now get list of samples and lanes
+    # now get list of samples and lanes
     SAMPLES_FULL, LANES = glob_wildcards("reads_in/{sample_full}_L{lane}_R1_001.fastq.gz")
 
-    #make unique
+    # make unique
     SAMPLES = list(set(SAMPLES_FULL))
 
-    #auto-detect number of input lanes
+    # auto-detect number of input lanes
     if config['general']['lanes'] == 0:
         config['general']['lanes_actual'] = max((int(l) for l in LANES)) if len(LANES) > 0 else 1
     else:
         config['general']['lanes_actual'] = config['general']['lanes']
 
-#sort and make sure we don't use "Undetermined" sample
+# sort and make sure we don't use "Undetermined" sample
 SAMPLES.sort()
 SAMPLES = [s for s in SAMPLES if s != 'Undetermined_S0']
 assert len(SAMPLES) > 0, '\n\nNo samples found. Please check input filenames.\n\n'
 
-#versions
+# versions
 VERSIONS = {}
 VERSIONS['_amplimap'] = str(__version__)
 
-#helper function to load module
+# helper function to load module
 def load_module_command(name, config):
     if 'modules' in config and name in config['modules'] and len(config['modules'][name]) > 0:
         return 'module load {};'.format(config['modules'][name])
     else:
         return ''
 
-#helper to get paths for genome
+# helper to get paths for genome
 def get_path(name, my_config = None, default = None):
     if my_config is None:
         my_config = config
@@ -97,23 +97,23 @@ def get_path(name, my_config = None, default = None):
     else:
         return my_config['paths'][my_config['general']['genome_name']][name]
 
-#helper to get annovar name for genome
+# helper to get annovar name for genome
 def get_annovar_name():
-    #use get_path here even though this is of course not a path
+    # use get_path here even though this is of course not a path
     annovar_name = get_path('annovar_name', default = '') #empty default so we don't die if this is missing
     if len(annovar_name) == 0:
         annovar_name = config['general']['genome_name']
     return annovar_name
 
-#helper to figure out which index to use
-#used with False to get actual parameter for tool call, and with True to get path for Snakemake
+# helper to figure out which index to use
+# used with False to get actual parameter for tool call, and with True to get path for Snakemake
 def get_alignment_index_filename(real_path):
     if config['align']['aligner'] == 'naive':
         my_path = get_path('fasta')
     else:
         my_path = get_path(config['align']['aligner'])
 
-    #masked index name
+    # masked index name
     if config['general']['mask_bed'] and len(config['general']['mask_bed']) > 0:
         if config['align']['aligner'] in ['naive', 'bwa', 'bowtie2']:
             my_path = 'masked_reference/genome.fa'
@@ -122,7 +122,7 @@ def get_alignment_index_filename(real_path):
         else:
             raise Exception('unexpected aligner')
 
-    #add extension to index name to get actual filename
+    # add extension to index name to get actual filename
     if real_path:
         if config['align']['aligner'] == 'naive':
             return my_path+'.fai'
@@ -137,17 +137,17 @@ def get_alignment_index_filename(real_path):
     else:
         return my_path
 
-##### ALL-RULE (DEFAULT = FIRST RULE)
+# #### ALL-RULE (DEFAULT = FIRST RULE)
 rule all:
     input:
         "analysis/reads_parsed/stats_samples.csv",
         "analysis/reads_parsed/stats_reads.csv" if not config['general']['use_raw_reads'] else [],
         "analysis/stats_alignment/stats_alignment.csv" if not config['general']['use_raw_reads'] else [],
 
-##### CHECKING
+# #### CHECKING
 rule start_analysis:
     output:
-        #force this to be 'analysis' right now
+        # force this to be 'analysis' right now
         versions = "analysis/versions.yaml",
         samples = "analysis/samples.yaml",
         file_hashes = "analysis/file_hashes.yaml",
@@ -164,7 +164,7 @@ rule start_analysis:
         with open(output['file_hashes'], 'w') as f:
             yaml.dump(amplimap.reader.get_file_hashes(), f, default_flow_style=False)
 
-##### target rules
+# #### target rules
 rule coverages:
     input:
         rules.all.input,
@@ -183,7 +183,7 @@ rule pileups:
         rules.all.input,
         rules.pileups_only.input,
 
-#separate rule to only run SNP pileups
+# separate rule to only run SNP pileups
 rule pileups_snps:
     input:
         rules.all.input,
@@ -240,7 +240,7 @@ rule test_pileups:
         touch("test__{search}_{replace}_{percentage}/test_pileups.done")
 
 
-##### TOOL CHECKING AND VERSIONS
+# #### TOOL CHECKING AND VERSIONS
 rule tool_version:
     output:
         "{analysis_dir}/versions/{tool}.txt"
@@ -291,14 +291,14 @@ rule tool_version:
             elif tool_name == 'mutect2':
                 commands += 'gatk Mutect2 --version > "%s"' % (output[0])
             elif tool_name in config['tools'] and 'version_command' in config['tools'][tool_name]:
-                commands += config['tools'][tool_name]['version_command']
+                commands += '%s > "%s"' % (config['tools'][tool_name]['version_command'], output[0])
             else:
                 raise Exception('Unexpected tool: {}/{}. Please report this bug.'.format(
                     tool_name, wildcards['tool']
                 ))
 
-            #run command and then manually check result, so that we can handle cases like
-            #bwa and we can provide stderr if we get a returncode != 0
+            # run command and then manually check result, so that we can handle cases like
+            # bwa and we can provide stderr if we get a returncode != 0
             result = subprocess.run(
                 commands,
                 stdout = subprocess.PIPE,
@@ -307,27 +307,27 @@ rule tool_version:
                 check = False
             )
 
-            #normally we just check for a 0 exit status
+            # normally we just check for a 0 exit status
             if result.returncode != 0:
-                #bwa and annovar will return an error code if we run it like this, but it's the only way to get the version
+                # bwa and annovar will return an error code if we run it like this, but it's the only way to get the version
                 if tool_name in ['bwa', 'annovar', 'picard']:
-                    #bwa has version number in stdERR
+                    # bwa has version number in stdERR
                     if tool_name == 'bwa' \
                     and re.search(r'^Version:\s+.*$', result.stderr.decode('utf-8'), re.MULTILINE):
                         with open(output[0], 'wb') as f:
                             f.write(result.stderr)
-                    #annovar has version number in stdOUT
+                    # annovar has version number in stdOUT
                     elif tool_name == 'annovar' \
                     and re.search(r'^\s*Version:\s+.*$', result.stdout.decode('utf-8'), re.MULTILINE):
                         with open(output[0], 'wb') as f:
                             f.write(result.stdout)
-                    #picard has version number in stdERR, should return 1 and version number should be only result
+                    # picard has version number in stdERR, should return 1 and version number should be only result
                     elif tool_name == 'picard' \
                     and result.returncode == 1 \
                     and re.match(r'^[0-9.]+.*$', result.stderr.decode('utf-8')):
                         with open(output[0], 'wb') as f:
                             f.write(result.stderr)
-                    #didn't get a version number, so tool may just not be available
+                    # didn't get a version number, so tool may just not be available
                     else:
                         raise Exception(
                             '\nFailed to run tool {} and find version number (code={})\n{}\nPlease check that {} is available.\n'.format(
@@ -347,7 +347,7 @@ rule tool_version:
                         )
                     )
             else:
-                #check that we actually got the right version
+                # check that we actually got the right version
                 if tool_name == 'bedtools':
                     pass  # TODO: should check that we have at least v2.24.0, since the interface for bedtools coverage changed
                 elif tool_name == 'picard':
@@ -356,7 +356,7 @@ rule tool_version:
                     pass #we succeeded
 
 
-##### TARGET CONVERSION
+# #### TARGET CONVERSION
 rule copy_targets_bed:
     input:
         targets = "targets.bed"
@@ -387,7 +387,7 @@ rule convert_targets_csv:
         amplimap.reader.write_targets_bed(output['targets'], targets)
         print(len(targets), 'written to', output['targets'])
 
-##### PROBE CSV CONVERSION
+# #### PROBE CSV CONVERSION
 rule copy_probes:
     input:
         rules.start_analysis.output,
@@ -435,7 +435,7 @@ if os.path.isfile("probes_heatseq.csv"):
             design = amplimap.reader.read_and_convert_heatseq_probes(input['heatseq'])
             design.to_csv(output['probes'], index=False)
 
-##### SNPS CHECKING/COPYING
+# #### SNPS CHECKING/COPYING
 rule copy_snps:
     input:
         snps = "snps.txt"
@@ -446,10 +446,10 @@ rule copy_snps:
         amplimap.reader.read_snps_txt(input['snps'], reference_type = 'genome')
         print(input['snps'], 'checked.')
 
-        #just copy the file over to the analysis directory
+        # just copy the file over to the analysis directory
         shutil.copyfile(input['snps'], output['snps'])
 
-##### MASKING
+# #### MASKING
 rule mask_genome:
     input:
         ref_fasta = get_path('fasta'),
@@ -513,7 +513,7 @@ rule mask_genome_index_star:
         ;
         """ % (load_module_command('star', config))
 
-##### RAW BAM CONVERSION
+# #### RAW BAM CONVERSION
 if os.path.isdir('bams_in'):
     rule bam_to_fastq:
         input:
@@ -524,7 +524,7 @@ if os.path.isdir('bams_in'):
         run:
             shell("%s bedtools bamtofastq -i {input[0]:q} -fq {output[r1]:q} -fq2 {output[r2]:q}" % load_module_command('bedtools', config))
 
-##### MERGE RAW READS
+# #### MERGE RAW READS
 if os.path.isdir('reads_in') and config['general']['use_raw_reads']:
     rule merge_raw_reads:
         input:
@@ -534,7 +534,7 @@ if os.path.isdir('reads_in') and config['general']['use_raw_reads']:
         output:
             r1 = "{analysis_dir}/reads_merged/{sample_full}__MERGED__R1_001.fastq.gz",
             r2 = "{analysis_dir}/reads_merged/{sample_full}__MERGED__R2_001.fastq.gz",
-            #note that we only provide stats_samples if we actually have use_raw_reads set, otherwise we might accidentally use this rule instead of parse_reads
+            # note that we only provide stats_samples if we actually have use_raw_reads set, otherwise we might accidentally use this rule instead of parse_reads
             stats_samples = "{analysis_dir}/reads_parsed/stats_samples__sample_{sample_full}.csv" if config['general']['use_raw_reads'] else [],
         run:
             import os
@@ -544,17 +544,17 @@ if os.path.isdir('reads_in') and config['general']['use_raw_reads']:
 
             for read_number in ['r1', 'r2']:
                 if n_files == 1:
-                    #we don't actually need to merge, just symlink
+                    # we don't actually need to merge, just symlink
                     os.symlink(os.path.relpath(input[read_number][0], os.path.dirname(output[read_number])), output[read_number])
                 else:
-                    #merge files
+                    # merge files
                     with open(output[read_number], 'wb') as wfd:
                         for f in input[read_number]:
                             with open(f, 'rb') as fd:
-                                #use shutil to copy 10MB chunks at a time
+                                # use shutil to copy 10MB chunks at a time
                                 shutil.copyfileobj(fd, wfd, 1024*1024*10)
 
-            #count reads by looping through (merged) R1 file
+            # count reads by looping through (merged) R1 file
             import gzip
             opener = gzip.open if output['r1'].endswith('.gz') else open
             n_fastq_lines = -1
@@ -563,12 +563,12 @@ if os.path.isdir('reads_in') and config['general']['use_raw_reads']:
                     pass
             n_fastq_lines += 1
 
-            #we should have four lines per read
+            # we should have four lines per read
             assert n_fastq_lines % 4 == 0, 'encountered fastq file with %d lines, which is not a multiple of four' % (n_fastq_lines)
             n_pairs = int(n_fastq_lines // 4)
 
-            #align_pe rule expects stats_samples.csv, which is made from per-sample stats_samples.csv
-            #we will just fake this for now
+            # align_pe rule expects stats_samples.csv, which is made from per-sample stats_samples.csv
+            # we will just fake this for now
             import amplimap.parse_reads
             amplimap.parse_reads.output_stats_samples(output['stats_samples'], {
                 'sample': [wildcards['sample_full']],
@@ -580,7 +580,7 @@ if os.path.isdir('reads_in') and config['general']['use_raw_reads']:
                 'pairs_r2_too_short': [0]
             })
 
-##### TAGGED, ALIGNED BAMS
+# #### TAGGED, ALIGNED BAMS
 if os.path.isdir('mapped_bams_in'):
     rule link_tagged_bams:
         input:
@@ -588,22 +588,22 @@ if os.path.isdir('mapped_bams_in'):
             config_check = rules.start_analysis.output
         output:
             "{analysis_dir}/bams/{sample_full}.bam",
-            #note that we only provide stats_samples if we actually have use_raw_reads set, otherwise we might accidentally use this rule instead of parse_reads
+            # note that we only provide stats_samples if we actually have use_raw_reads set, otherwise we might accidentally use this rule instead of parse_reads
             stats_samples = "{analysis_dir}/reads_parsed/stats_samples__sample_{sample_full}.csv" if config['general']['use_raw_reads'] else [],
         run:
             import os
-            #could use os.path.abspath() here, but then we can't move working directory without breaking things
+            # could use os.path.abspath() here, but then we can't move working directory without breaking things
             os.symlink(os.path.join("..", "..", input[0]), output[0])
 
-            #count reads (same as for unmapped_bam_to_fastqs)
+            # count reads (same as for unmapped_bam_to_fastqs)
             n_alignments = 0
             import pysam
-            #need check_sq=False to handle unmapped file
+            # need check_sq=False to handle unmapped file
             with pysam.AlignmentFile(input[0], "rb", check_sq=False) as bam:
                 n_alignments = bam.count(until_eof=True)
 
-            #align_pe rule expects stats_samples.csv, which is made from per-sample stats_samples.csv
-            #we will just fake this for now
+            # align_pe rule expects stats_samples.csv, which is made from per-sample stats_samples.csv
+            # we will just fake this for now
             import amplimap.parse_reads
             amplimap.parse_reads.output_stats_samples(output['stats_samples'], {
                 'sample': [wildcards['sample_full']],
@@ -622,7 +622,7 @@ if os.path.isdir('mapped_bams_in'):
             "{analysis_dir}/bams/{sample_full}.bam.bai",
         run:
             import os
-            #could use os.path.abspath() here, but then we can't move working directory without breaking things
+            # could use os.path.abspath() here, but then we can't move working directory without breaking things
             os.symlink(os.path.join("..", "..", input[0]), output[0])
 
     rule link_tagged_bais_2:
@@ -632,10 +632,10 @@ if os.path.isdir('mapped_bams_in'):
             "{analysis_dir}/bams/{sample_full}.bam.bai",
         run:
             import os
-            #could use os.path.abspath() here, but then we can't move working directory without breaking things
+            # could use os.path.abspath() here, but then we can't move working directory without breaking things
             os.symlink(os.path.join("..", "..", input[0]), output[0])
 
-##### IDT INPUT
+# #### IDT INPUT
 if os.path.isdir('unmapped_bams_in'):
     rule link_unmapped_bams:
         input:
@@ -645,7 +645,7 @@ if os.path.isdir('unmapped_bams_in'):
             "{analysis_dir}/bams_unmapped/{sample_full}.bam",
         run:
             import os
-            #could use os.path.abspath() here, but then we can't move working directory without breaking things
+            # could use os.path.abspath() here, but then we can't move working directory without breaking things
             os.symlink(os.path.join("..", "..", input[0]), output[0])
 
     rule unmapped_bam_to_fastqs:
@@ -655,7 +655,7 @@ if os.path.isdir('unmapped_bams_in'):
         output:
             "{analysis_dir}/reads_merged/{sample_full}.UNTAGGED__MERGED__R1_001.fastq.gz",
             "{analysis_dir}/reads_merged/{sample_full}.UNTAGGED__MERGED__R2_001.fastq.gz",
-            #note that we only provide stats_samples if we actually have use_raw_reads set, otherwise we might accidentally use this rule instead of parse_reads
+            # note that we only provide stats_samples if we actually have use_raw_reads set, otherwise we might accidentally use this rule instead of parse_reads
             stats_samples = "{analysis_dir}/reads_parsed/stats_samples__sample_{sample_full}.csv" if config['general']['use_raw_reads'] else [],
         run:
             shell("""
@@ -671,15 +671,15 @@ if os.path.isdir('unmapped_bams_in'):
                 ;
             """ % load_module_command('picard', config))
 
-            #count reads
+            # count reads
             n_alignments = 0
             import pysam
-            #need check_sq=False to handle unmapped file
+            # need check_sq=False to handle unmapped file
             with pysam.AlignmentFile(input[0], "rb", check_sq=False) as bam:
                 n_alignments = bam.count(until_eof=True)
 
-            #align_pe rule expects stats_samples.csv, which is made from per-sample stats_samples.csv
-            #we will just fake this for now
+            # align_pe rule expects stats_samples.csv, which is made from per-sample stats_samples.csv
+            # we will just fake this for now
             import amplimap.parse_reads
             amplimap.parse_reads.output_stats_samples(output['stats_samples'], {
                 'sample': [wildcards['sample_full']],
@@ -694,9 +694,9 @@ if os.path.isdir('unmapped_bams_in'):
     rule attach_tags_from_unmapped:
         input:
             "{analysis_dir}/bams_unmapped/{sample_full}.bam",
-            #TODO: this uses the normal align_pe rule for the alignment, which includes coordinate sorting
-            #the merge scripts wants queryname sort, but detects and fixes that automatically.
-            #just a bit of a waste...
+            # TODO: this uses the normal align_pe rule for the alignment, which includes coordinate sorting
+            # the merge scripts wants queryname sort, but detects and fixes that automatically.
+            # just a bit of a waste...
             "{analysis_dir}/bams/{sample_full}.UNTAGGED.bam",
             "{analysis_dir}/bams/{sample_full}.UNTAGGED.bam.bai",
             "{analysis_dir}/versions/picard.txt",
@@ -709,7 +709,7 @@ if os.path.isdir('unmapped_bams_in'):
             shell("""
                 %s%s
 
-                #attach tags from unmapped bam
+                # attach tags from unmapped bam
                 {config[tools][picard][prefix]} MergeBamAlignment \
                     ALIGNED={input[1]:q} \
                     UNMAPPED={input[0]:q} \
@@ -723,9 +723,9 @@ if os.path.isdir('unmapped_bams_in'):
                     VALIDATION_STRINGENCY=LENIENT \
                 ;
 
-                #fix the read groups, which will otherwise come from unmapped bam
-                #note SILENT stringency to deal with invalid read groups from before
-                #(LENIENT would still spam the logs with errors)
+                # fix the read groups, which will otherwise come from unmapped bam
+                # note SILENT stringency to deal with invalid read groups from before
+                # (LENIENT would still spam the logs with errors)
                 {config[tools][picard][prefix]} AddOrReplaceReadGroups \
                     I={output[2]:q} \
                     O={output[0]:q} \
@@ -740,7 +740,7 @@ if os.path.isdir('unmapped_bams_in'):
                 samtools index {output[0]:q};
             """ % (load_module_command('picard', config), load_module_command('samtools', config), get_path('fasta')))
 
-##### ACTUAL PIPELINE
+# #### ACTUAL PIPELINE
 if os.path.isdir('reads_in'):
     rule link_reads:
         input:
@@ -765,19 +765,19 @@ if os.path.isdir('reads_in') and not config['general']['use_raw_reads']:
             stats_samples = "{analysis_dir}/reads_parsed/stats_samples__sample_{sample_full}.csv",
             stats_reads = "{analysis_dir}/reads_parsed/stats_reads__sample_{sample_full}.csv"
         run:
-            #prepare stats dicts
+            # prepare stats dicts
             import collections
             stats_samples = collections.OrderedDict()
             stats_reads = []
 
-            #load probes
+            # load probes
             import amplimap.reader
-            #read new format
+            # read new format
             probes = amplimap.reader.read_new_probe_design(input['probes'], reference_type = 'genome')
-            #much faster to access than using DataFrame.loc every time
+            # much faster to access than using DataFrame.loc every time
             probes_dict = probes.to_dict()
 
-            #run
+            # run
             import amplimap.parse_reads
             amplimap.parse_reads.parse_read_pairs(
                 wildcards['sample_full'],
@@ -803,7 +803,7 @@ if os.path.isdir('reads_in') and not config['general']['use_raw_reads']:
                 min_consensus_fraction = config['general']['umi_min_consensus_percentage'] / 100.0
             )
 
-            #output stats files
+            # output stats files
             amplimap.parse_reads.output_stats_samples(output['stats_samples'], stats_samples)
             amplimap.parse_reads.output_stats_reads(output['stats_reads'], stats_reads, config['parse_reads']['umi_one'], config['parse_reads']['umi_two'])
 
@@ -847,7 +847,7 @@ rule stats_samples_agg:
             config['parse_reads']['umi_two']
         )
 
-        #should we ensure that we have at least X good reads?
+        # should we ensure that we have at least X good reads?
         percentage_good = (100.0 * merged['pairs_good_arms'].sum() / merged['pairs_total'].sum())
         print('Overall good read percentage =', percentage_good)
 
@@ -891,7 +891,7 @@ rule stats_reads_agg:
 
 rule align_pe:
     input:
-        #use either _MIP_TRIMMED_ or merged raw fastq files here, depending on config
+        # use either _MIP_TRIMMED_ or merged raw fastq files here, depending on config
         "{analysis_dir}/reads_merged/{sample_full}__MERGED__R1_001.fastq.gz" if config['general']['use_raw_reads'] \
             else "{analysis_dir}/reads_parsed/fastq/{sample_full}__MIP_TRIMMED__R1_001.fastq.gz",
         "{analysis_dir}/reads_merged/{sample_full}__MERGED__R2_001.fastq.gz" if config['general']['use_raw_reads'] \
@@ -915,12 +915,12 @@ rule align_pe:
 
         my_index = get_alignment_index_filename(real_path = False)
         if config['align']['aligner'] == 'naive':
-            #load probes
+            # load probes
             import amplimap.reader
             probes = amplimap.reader.read_new_probe_design(input['probes'], reference_type = 'genome')
             probes_dict = probes.to_dict()
 
-            #just place the reads based on the probe location
+            # just place the reads based on the probe location
             import amplimap.naive_mapper
             amplimap.naive_mapper.create_bam(
                 wildcards['sample_full'],
@@ -933,7 +933,7 @@ rule align_pe:
                 debug = False
             )
 
-            #we still need to sort and index these
+            # we still need to sort and index these
             cmds = cmds % (
                 load_module_command('samtools', config),
                 '',
@@ -1010,7 +1010,7 @@ rule align_pe:
                     --outFilterMultimapNmax 5 \
                 ;
 
-                #fix names -- this will fail if no reads but should handle only unmapped thanks to --outSAMunmapped
+                # fix names -- this will fail if no reads but should handle only unmapped thanks to --outSAMunmapped
                 mv "{output[0]}.Aligned.sortedByCoord.out.bam" {output[0]:q};
                 """ % (extra, my_index)
             )
@@ -1038,7 +1038,7 @@ rule align_pe_CONSENSUS:
         "{analysis_dir}/versions/%s.txt" % config['align']['aligner'],
         "{analysis_dir}/versions/samtools.txt",
     output:
-        #note the `,.*` to allow empty subdir
+        # note the `,.*` to allow empty subdir
         "{analysis_dir}/bams_consensus/{sample_full}_CONSENSUS.bam",
         "{analysis_dir}/bams_consensus/{sample_full}_CONSENSUS.bam.bai",
     threads: 4
@@ -1111,7 +1111,7 @@ rule align_pe_CONSENSUS:
                     --outFilterMultimapNmax 5 \
                 ;
 
-                #fix names -- this will fail if no reads but should handle only unmapped thanks to --outSAMunmapped
+                # fix names -- this will fail if no reads but should handle only unmapped thanks to --outSAMunmapped
                 mv "{output[0]}.Aligned.sortedByCoord.out.bam" {output[0]:q};
                 """ % (extra, my_index))
         elif config['align']['aligner'] in config['tools'] and 'align_command' in config['tools'][config['align']['aligner']]:
@@ -1140,7 +1140,7 @@ rule stats_alignment:
         import amplimap.stats_alignment
         amplimap.stats_alignment.process_file(
             probes_path = input['probes'],
-            #targets_path = input['targets'],
+            # targets_path = input['targets'],
             input_path = input[0],
             output_path = output[0],
             min_mapq = config['pileup']['min_mapq'],
@@ -1188,7 +1188,7 @@ rule do_pileup:
             min_consensus_count = config['general']['umi_min_consensus_count'],
             min_consensus_fraction = config['general']['umi_min_consensus_percentage'] / 100.0,
 
-            #to allow running straight from tagged bams:
+            # to allow running straight from tagged bams:
             no_probe_data = config['general']['use_raw_reads'],
             umi_tag_name = config['general']['umi_tag_name'],
         )
@@ -1240,7 +1240,7 @@ rule do_pileup_snps:
             min_consensus_count = config['general']['umi_min_consensus_count'],
             min_consensus_fraction = config['general']['umi_min_consensus_percentage'] / 100.0,
 
-            #to allow running straight from tagged bams:
+            # to allow running straight from tagged bams:
             no_probe_data = config['general']['use_raw_reads'],
             umi_tag_name = config['general']['umi_tag_name'],
         )
@@ -1357,7 +1357,7 @@ rule call_variants_raw:
     output:
         "{analysis_dir}/variants_raw/{sample_full}.vcf"
     run:
-        #same as below
+        # same as below
         if config['variants']['caller'] == 'platypus':
             shell("""
                 %s
@@ -1371,11 +1371,11 @@ rule call_variants_raw:
                 """ % (load_module_command('platypus', config), get_path('fasta'))
             )
         elif config['variants']['caller'] == 'gatk':
-            #NB: We are not using duplicate marking, BQSR and VQSR here. this may result in suboptimal variant calls and increased false positives.
-            #However, none of these tools seem to be suitable for targeted sequencing data:
-            #- duplicate calling: we actually expect to see duplicates, since all reads are generated with the same primers and read length.
-            #- BQSR, VQSR: we won't have a large genome-wide set of known SNPs to work with.
-            #Nevertheless, it may be worth running them manually and comparing results.
+            # NB: We are not using duplicate marking, BQSR and VQSR here. this may result in suboptimal variant calls and increased false positives.
+            # However, none of these tools seem to be suitable for targeted sequencing data:
+            # - duplicate calling: we actually expect to see duplicates, since all reads are generated with the same primers and read length.
+            # - BQSR, VQSR: we won't have a large genome-wide set of known SNPs to work with.
+            # Nevertheless, it may be worth running them manually and comparing results.
             shell("""
                 %s
                 gatk HaplotypeCaller \
@@ -1420,7 +1420,7 @@ rule call_variants_umi:
     output:
         "{analysis_dir}/variants_umi/{sample_full}.vcf"
     run:
-        #same as above
+        # same as above
         if config['variants']['caller'] == 'platypus':
             shell("""
                 %s
@@ -1480,7 +1480,7 @@ rule call_variants_low_frequency:
         "{analysis_dir}/variants_low_frequency/{sample_full}.vcf",
         "{analysis_dir}/variants_low_frequency_unfiltered/{sample_full}.vcf"
     run:
-        #same as below
+        # same as below
         if config['variants']['caller_low_frequency'] == 'mutect2':
             shell("""
                 %s

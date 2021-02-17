@@ -186,7 +186,7 @@ To get a bash shell inside the Docker container:
 
 
 To annotate variant calls, also install Annovar inside the Docker container
-and add the path to the Annovar indices to your config. 
+and add the path to the Annovar indices to your config.
 Make sure you also add the directory containing
 the Annovar Perl scripts to your ``PATH`` so that amplimap can find them.
 
@@ -257,7 +257,7 @@ through conda.
 
 - Additional software for germline variant calling (optional):
 
-  - At least one variant caller: Platypus 0.8.1+, GATK 4+
+  - At least one variant caller: Platypus 0.8.1+, GATK 4+, Octopus
   - Annovar (tested with v2015-06-17)
   - bcftools (tested with v1.5)
 

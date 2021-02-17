@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+# !/usr/bin/env python
 import os
 import sys
 
@@ -33,13 +33,13 @@ class Question:
         while len(answer) == 0:
             answer = input(question)
             if len(answer) == 0:
-                #use the default if we have no answer
+                # use the default if we have no answer
                 if self.default is not None:
                     answer = self.default
                 else:
                     sys.stdout.write('Please provide a value!\n')
             else:
-                #check valid answer if we have options
+                # check valid answer if we have options
                 if self.options is not None:
                     if not answer in self.options:
                         sys.stdout.write('Please enter one of: {}\n'.format(', '.join(self.options)))
@@ -53,13 +53,13 @@ def main(argv = None):
     """
     try:
         basedir = os.path.dirname(os.path.realpath(__file__))
-        
-        #parse the arguments, which will be available as properties of args (e.g. args.probe)
+
+        # parse the arguments, which will be available as properties of args (e.g. args.probe)
         parser = argparse.ArgumentParser(
             description = "amplimap v{} setup wizard".format(__version__),
             formatter_class = argparse.ArgumentDefaultsHelpFormatter)
 
-        #specify parameters
+        # specify parameters
         parser.add_argument("operation", help="type of setup to perform: paths / indices", action="store_true")
         parser.add_argument("--debug", help="debug mode", action="store_true")
         if argv is None:
@@ -70,12 +70,12 @@ def main(argv = None):
         raise Exception('Not implemented yet.')
 
         if args.operation == 'paths':
-            #TODO:
-            #- ask aligner, caller
-            #- ask about modules:
-            #- check path for:
-            #aligner, caller, bedtools, samtools (error if not found)
-            #annovar, picard, bcftools (warning if not found)
+            # TODO:
+            # - ask aligner, caller
+            # - ask about modules:
+            # - check path for:
+            # aligner, caller, bedtools, samtools (error if not found)
+            # annovar, picard, bcftools (warning if not found)
 
             answers = collections.ordereddict()
             for key, q in questions.items():
@@ -102,10 +102,10 @@ def main(argv = None):
             elif answers['aligner'] == 'star':
                 tools_required.append('bwa')
         elif args.operation == 'indices':
-            #TODO:
-            #- ask path to reference genome
-            #- build fasta index, default aligner index
-            #- ask to enter name of other index to create (bwa, bowtie2, star)
+            # TODO:
+            # - ask path to reference genome
+            # - build fasta index, default aligner index
+            # - ask to enter name of other index to create (bwa, bowtie2, star)
             pass
         else:
             raise Exception('Please specify a valid operation!')

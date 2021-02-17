@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-#python 3 compat
-#http://python-future.org/compatible_idioms.html
+# python 3 compat
+# http://python-future.org/compatible_idioms.html
 from __future__ import print_function
 
 import sys
@@ -18,23 +18,23 @@ sh.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(me
 log.addHandler(sh)
 import time
 
-#use pandas to read the CSV file and write output files
+# use pandas to read the CSV file and write output files
 import pandas as pd
-#for defaultdict + sorting
+# for defaultdict + sorting
 import collections
 import operator
 
-#use python's argumentparser to support command line parameters like --probe=62
+# use python's argumentparser to support command line parameters like --probe=62
 import argparse
 
-#for pileup
+# for pileup
 import pysam
-#for getting ref base 
+# for getting ref base
 import pyfaidx
-#for debugging umi distance
+# for debugging umi distance
 import distance
 
-#import reader script for reading probe design
+# import reader script for reading probe design
 from .reader import read_new_probe_design
 
 class ConsensusFilterException(Exception):
@@ -65,9 +65,9 @@ def process_file(design, input, output,
         sys.exit('input does not exist: %s' % input)
 
     def process_aln_pile(outbam, alns_by_umi):
-        #determine counts per umi
+        # determine counts per umi
         umi_counts = dict( [(umi, len(umi_alns)) for umi, umi_alns in alns_by_umi.items() ]  )
-        #group these raw umis into umi groups
+        # group these raw umis into umi groups
         umi_to_group = find_umi_groups( umi_counts )
 
         group_firstread = {}
@@ -81,7 +81,7 @@ def process_file(design, input, output,
             umi_group = umi_to_group[umi]
 
             for aln in umi_alns:
-                #we also need to handle different mate starts
+                # we also need to handle different mate starts
                 umi_group_mate = '%d_%d_%d' % (umi_group, aln.next_reference_id, aln.next_reference_start)
                 if not umi_group_mate in group_firstread:
                     group_firstread[umi_group_mate] = aln
@@ -92,7 +92,7 @@ def process_file(design, input, output,
                 group_cigars[umi_group_mate][aln.cigarstring] += 1
                 group_max_mapqual[umi_group_mate] = max(group_max_mapqual[umi_group_mate], aln.mapping_quality)
 
-                #go through read base by base to form consensus
+                # go through read base by base to form consensus
                 for index in range( len(aln.query_sequence) ):
                     group_bases[umi_group_mate][index][aln.query_sequence[index]] += 1
                     group_max_basequal[umi_group_mate][index][aln.query_sequence[index]] = max(
@@ -108,16 +108,16 @@ def process_file(design, input, output,
             aln.cigarstring = group_cigars[umi_group_mate].most_common(1)[0][0]
             aln.mapping_quality = group_max_mapqual[umi_group_mate]
 
-            #TODO: do we need to do something about the flags?
+            # TODO: do we need to do something about the flags?
 
-            #determine most common base at each position
+            # determine most common base at each position
             my_bases = [counts.most_common(1)[0][0] for counts in group_bases[umi_group_mate]]
             my_sequence = ''.join( my_bases )
-            #determine highest quality score for most common base at each position
+            # determine highest quality score for most common base at each position
             my_qualities = [group_maxqual[umi_group_mate][base] for base in my_bases]
 
-            #set sequence and qualities
-            #note: need to set seq before qual
+            # set sequence and qualities
+            # note: need to set seq before qual
             aln.query_sequence = my_sequence
             aln.query_qualities = my_qualities
 
@@ -131,51 +131,51 @@ def process_file(design, input, output,
                 current_location = (None, None)
                 current_alns = collections.defaultdict(list)
 
-                #doc: If until_eof is True, all reads from the current file position will be returned in order as they are within the file. Using this option will also fetch unmapped reads.
+                # doc: If until_eof is True, all reads from the current file position will be returned in order as they are within the file. Using this option will also fetch unmapped reads.
                 for aln in inbam.fetch(until_eof = True):
                     rindex = 1 if aln.is_read1 else 2 if aln.is_read2 else None
                     assert rindex is not None
                     other_rindex = 3 - rindex
 
-                    #only count rows after this to fulfil assumption later
+                    # only count rows after this to fulfil assumption later
                     counters['alignments_in'] += 1
 
                     try:
-                        #supplementary alignments mess up the assumption that each mate has one other mate
-                        #so we ignore them for now
+                        # supplementary alignments mess up the assumption that each mate has one other mate
+                        # so we ignore them for now
                         if aln.is_supplementary:
                             raise ConsensusFilterException('is_supplementary')
 
-                        #we also don't want unmapped reads here
+                        # we also don't want unmapped reads here
                         if aln.is_unmapped:
                             raise ConsensusFilterException('is_unmapped')
 
-                        #and no unmapped mates
+                        # and no unmapped mates
                         if aln.mate_is_unmapped:
                             raise ConsensusFilterException('mate_is_unmapped')
 
                         if debug:
                             print(aln)
 
-                        #parse info from read name (should be bowtie2 compatible)
+                        # parse info from read name (should be bowtie2 compatible)
                         read_name, read_probe, read_umi = parse_extended_read_name(aln.query_name)
 
-                        #make sure we have a valid read pair
+                        # make sure we have a valid read pair
                         is_valid_pair = True
                         is_valid_pair = is_valid_pair and aln.is_reverse != aln.mate_is_reverse #should be opposite
                         is_valid_pair = is_valid_pair and aln.reference_id == aln.next_reference_id #should be on same chr
                         if debug:
                             print('is_valid_pair =', is_valid_pair)
 
-                        #and no unmapped mates
+                        # and no unmapped mates
                         if not is_valid_pair:
                             raise ConsensusFilterException('not_valid_pair')
 
-                        #check probe data
+                        # check probe data
                         probe_data = design.loc[pname, :]
                         matches_probe = aln.reference_name == probe_data['chr']
                         if matches_probe:
-                            #TODO: this may be the wrong way round!
+                            # TODO: this may be the wrong way round!
                             my_column = probe_column_start
                             if aln.is_reverse or (not aln.is_reverse and aln.is_read2):
                                 matches_probe = matches_probe and aln.reference_end + 1 == probe_data[probe_column_end]
@@ -184,17 +184,17 @@ def process_file(design, input, output,
                         if debug:
                             print('matches_probe =', matches_probe)
 
-                        #and no unmapped mates
+                        # and no unmapped mates
                         if not matches_probe:
                             raise ConsensusFilterException('mismatches_probe')
 
-                        #update flags if this is a mate of a read that has been filtered
+                        # update flags if this is a mate of a read that has been filtered
                         my_tuple = (aln.query_name, aln.reference_id, aln.reference_start)
                         if my_tuple in mates_of_invalid_reads:
                             mates_of_invalid_reads.remove( my_tuple )
                             raise ConsensusFilterException('mate_filtered')
 
-                        #is this a new pile of alignments?
+                        # is this a new pile of alignments?
                         if current_location[0] != aln.reference_id or current_location[1] != aln.reference_start:
                             process_aln_pile(outbam, current_alns)
 
@@ -205,14 +205,14 @@ def process_file(design, input, output,
                         read_umi_bytes = read_umi.encode('utf-8')
                         current_alns[read_umi_bytes].append(aln)
                     except ConsensusFilterException as ex:
-                        #if the row is filtered, we raise an exception with message being the corresponding counter column
+                        # if the row is filtered, we raise an exception with message being the corresponding counter column
                         counters[ex.filter_column] += 1
 
-                        #keep track of mates we still need to filter out
+                        # keep track of mates we still need to filter out
                         if ex.filter_column != 'mate_filtered':
                             mates_of_invalid_reads.add( (aln.query_name, aln.next_reference_id, aln.next_reference_start) )
 
-                    #print some stats
+                    # print some stats
                     t_now = time.time()
                     if n_rows > 0 and (n_rows % 10000 == 0 or (t_now - t_shown > 60)):
                         t_shown = t_now
@@ -222,10 +222,10 @@ def process_file(design, input, output,
                             (t_now - t_start) / counters['alignments_in'],
                             counters['alignments_in'] / (t_now - t_start))
 
-                #run this one final time to catch the last pile
+                # run this one final time to catch the last pile
                 process_aln_pile(outbam, current_alns)
 
-            #summary stats
+            # summary stats
             log.info('processed %d alignment rows (reads) total.', counters['alignments_in'])
 
         log.info('Re-processing file to remove invalid pairs...', counters['alignments'])
@@ -247,10 +247,10 @@ def process_file(design, input, output,
 
 def main():
     log.info('Called with arguments: "%s"', '" "'.join(sys.argv))
-    
-    #parse the arguments, which will be available as properties of args (e.g. args.probe)
+
+    # parse the arguments, which will be available as properties of args (e.g. args.probe)
     parser = argparse.ArgumentParser()
-    #specify parameters
+    # specify parameters
     parser.add_argument("--aggregate", help="folder with processed CSV files to aggregate")
     parser.add_argument("-d", "--design", help="CSV file with probes, arms sequences and locations")
     parser.add_argument("-i", "--input", help="input bam file name")

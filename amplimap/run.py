@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+# !/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
 This module provides the ``amplimap.run.main()`` method called from the `amplimap` command-line executable,
@@ -22,16 +22,16 @@ def check_config_keys(default_config, my_config, path = []):
         if key in default_config:
             if isinstance(default_config[key], dict) == isinstance(value, dict):
                 if isinstance(default_config[key], dict):
-                    #both are dicts, keep checking
-                    #but don't check paths/cluster because they can contain custom values
+                    # both are dicts, keep checking
+                    # but don't check paths/cluster because they can contain custom values
                     if not (len(path) == 0 and key in ['paths', 'clusters']):
                         differences += check_config_keys(default_config[key], value, path + [key])
                 else:
-                    #we're done here
+                    # we're done here
                     pass
             else:
                 differences.append(path + [key])
-                #raise Exception('Config setting {} is invalid\n'.format(':'.join(path+[key])))
+                # raise Exception('Config setting {} is invalid\n'.format(':'.join(path+[key])))
         else:
             differences.append(path + [key])
     return differences
@@ -47,7 +47,7 @@ def compare_config_dicts(my_config, used_config, path = []):
                 if value != used_config[key]:
                     differences.append(path + [key])
         else:
-            #key does not exist in used config
+            # key does not exist in used config
             sys.stderr.write('Warning - config key {} not set in used config\n'.format(':'.join(path+[key])))
     return differences
 
@@ -63,7 +63,7 @@ def read_config_file(print_config, path):
         with open(path, 'r') as config_file:
             this_config = yaml.safe_load(config_file.read())
 
-        #make sure we always get an empty dict, yaml.safe_load may give us None for an empty file
+        # make sure we always get an empty dict, yaml.safe_load may give us None for an empty file
         if this_config is None:
             this_config = {}
 
@@ -130,7 +130,7 @@ def main(argv = None):
         # read base config to know which parameters etc are allowed
         default_config = read_config_file(args.print_config, os.path.join(basedir, 'config_default.yaml'))
         if not default_config:
-            raise Exception('config_default.yaml file missing!')
+            raise Exception('config_default.yaml file missing')
 
         # add undocumented config keys to make sure these don't raise an error
         for key in ['include_gbrowse_links', 'include_exon_distance', 'include_score']:
@@ -185,7 +185,7 @@ def main(argv = None):
             if 'align_command' in tool_config:
                 aligners.append(tool_name)
         if not config['align']['aligner'] in aligners:
-            raise Exception('align: aligner must be one of {}!'.format(','.join(aligners)))
+            raise Exception('align: aligner must be one of {}'.format(','.join(aligners)))
 
         callers = ['gatk', 'platypus', 'wecall']  # allowed values for the variant caller
         # add custom tools
@@ -193,13 +193,13 @@ def main(argv = None):
             if 'call_command' in tool_config:
                 callers.append(tool_name)
         if not config['variants']['caller'] in callers:
-            raise Exception('variants: caller must be one of {}!'.format(','.join(callers)))
+            raise Exception('variants: caller must be one of {}'.format(','.join(callers)))
 
         if config['parse_reads']['quality_trim_threshold'] != False:
             if not isinstance(config['parse_reads']['quality_trim_threshold'], float):
-                raise Exception('quality_trim_threshold must be a decimal number!')
+                raise Exception('quality_trim_threshold must be a decimal number')
             if not config['parse_reads']['quality_trim_threshold'] > 0 and config['parse_reads']['quality_trim_threshold'] < 1:
-                raise Exception('quality_trim_threshold must be either "false" or above 0 and below 1!')
+                raise Exception('quality_trim_threshold must be either "false" or above 0 and below 1')
 
         if not (config['general']['umi_min_consensus_percentage'] >= 0 and config['general']['umi_min_consensus_percentage'] <= 100):
             raise Exception('umi_min_consensus_percentage must be between 0 and 100')
@@ -211,14 +211,14 @@ def main(argv = None):
             raise Exception('umi_one and umi_two must be 0 or greater')
 
         if config['annotate']['annovar']['protocols'].count(',') != config['annotate']['annovar']['operations'].count(','):
-            raise Exception('The number of comma-separated protocols and operations under `annotate: annovar:` must match!')
+            raise Exception('The number of comma-separated protocols and operations under `annotate: annovar:` must match')
 
-        #if we don't have UMIs (either on reads or as bam tag) we definitely have to ignore them
-        #this makes it possible to "auto-detect" whether we need to ignore_umis or not
+        # if we don't have UMIs (either on reads or as bam tag) we definitely have to ignore them
+        # this makes it possible to "auto-detect" whether we need to ignore_umis or not
         if (config['parse_reads']['umi_one'] + config['parse_reads']['umi_two'] == 0) and config['general']['umi_tag_name'] == "":
             config['general']['ignore_umis'] = True
 
-        #check we have proper paths
+        # check we have proper paths
         if not config['general']['genome_name'] in config['paths'] or not isinstance(config['paths'][config['general']['genome_name']], dict):
             raise Exception('Could not find list of paths for genome_name: "{}". Please add the paths to your default configuration or your local config.yaml file.'.format(config['general']['genome_name']))
 
@@ -231,10 +231,10 @@ def main(argv = None):
             yaml.dump(config, sys.stdout, default_flow_style=False)
             return 0
 
-        #do some basic checks
+        # do some basic checks
         assert os.path.isdir(args.working_directory), 'working directory does not exist'
 
-        #check for one (and only one) input directory
+        # check for one (and only one) input directory
         input_directory = None
         input_directory_count = 0
         input_directories = ['reads_in', 'unmapped_bams_in', 'mapped_bams_in', 'bams_in']
@@ -260,7 +260,7 @@ def main(argv = None):
                     % (input_directory)
                 )
 
-        #check input files
+        # check input files
         sys.stderr.write('Checking input files...\n')
         if os.path.isfile(os.path.join(args.working_directory, 'probes.csv')):
             read_new_probe_design(os.path.join(args.working_directory, 'probes.csv'), reference_type = 'genome')
@@ -271,29 +271,29 @@ def main(argv = None):
         if os.path.isfile(os.path.join(args.working_directory, 'probes_heatseq.tsv')):
             process_probe_design(read_and_convert_heatseq_probes(os.path.join(args.working_directory, 'probes_heatseq.tsv')))
         if os.path.isfile(os.path.join(args.working_directory, 'targets.csv')):
-            #note: this will fail on overlapping targets
+            # note: this will fail on overlapping targets
             read_targets(os.path.join(args.working_directory, 'targets.csv'), check_overlaps=True, reference_type = 'genome', file_type = 'csv')
         if os.path.isfile(os.path.join(args.working_directory, 'targets.bed')):
-            #note: this will fail on overlapping targets
+            # note: this will fail on overlapping targets
             read_targets(os.path.join(args.working_directory, 'targets.bed'), check_overlaps=True, reference_type = 'genome', file_type = 'bed')
         if os.path.isfile(os.path.join(args.working_directory, 'snps.txt')):
             read_snps_txt(os.path.join(args.working_directory, 'snps.txt'), reference_type = 'genome')
 
-        #this will be used to (very hackily) make sure amplimap can be imported as amplimap.xxx
-        #by adding the parent dir to the top of sys.path in the Snakefile
+        # this will be used to (very hackily) make sure amplimap can be imported as amplimap.xxx
+        # by adding the parent dir to the top of sys.path in the Snakefile
         config['general']['amplimap_parent_dir'] = os.path.dirname(basedir)
 
-        #check if analysis dir exists already
+        # check if analysis dir exists already
         analysis_dir = os.path.join(args.working_directory, 'analysis')
         configfile = os.path.join(analysis_dir, 'config_used.yaml')
         used_versions_path = os.path.join(analysis_dir, 'versions.yaml')
 
-        #the analysis dir may exist just because we did a dry run, but once the versions exist we actually executed snakemake!
+        # the analysis dir may exist just because we did a dry run, but once the versions exist we actually executed snakemake!
         if os.path.exists(analysis_dir) and os.path.exists(used_versions_path):
             if not args.resume:
                 raise Exception('An analysis directory already exists. Please rename it or set --resume to reuse it and possibly overwrite existing files.')
             else:
-                #check version
+                # check version
                 if os.path.isfile(used_versions_path):
                     with open(used_versions_path, 'r') as used_versions_file:
                         used_versions = yaml.safe_load(used_versions_file.read())
@@ -304,7 +304,7 @@ def main(argv = None):
                         else:
                             sys.stderr.write('{} version checked.\n'.format(__title__))
 
-                #check used config file
+                # check used config file
                 if os.path.isfile(configfile):
                     with open(configfile, 'r') as used_config_file:
                         used_config = yaml.safe_load(used_config_file.read())
@@ -318,7 +318,7 @@ def main(argv = None):
                         else:
                             sys.stderr.write('Config files checked.\n')
 
-                #check hashes of input files
+                # check hashes of input files
                 if not args.skip_file_check:
                     used_file_hashes_path = os.path.join(analysis_dir, 'file_hashes.yaml')
                     if os.path.isfile(used_file_hashes_path):
