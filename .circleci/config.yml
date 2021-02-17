@@ -36,7 +36,8 @@ jobs:
 
             if [ ! -d /opt/conda/envs/amplimap/ ]; then
               conda env create --force --file environment.yml
-              conda install -y -n amplimap pytest octopus  # we also need pytest and octopus
+              conda install -y -n amplimap pytest  # we also need pytest
+              conda install -y -n -c conda-forge -c bioconda octopus  # we also need octopus
             fi
 
             # activate
