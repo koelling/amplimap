@@ -45,18 +45,18 @@ Selecting the aligner and variant caller
 
 amplimap can work with different aligners and variant callers.
 
-Supported aligners, specified through `align: aligner:`, are:
+Supported aligners, specified through ``align: aligner:``, are:
 
-  - BWA (`bwa`)
-  - Bowtie2 (`bowtie2`)
-  - STAR (`star`)
+  - BWA (``bwa``)
+  - Bowtie2 (``bowtie2``)
+  - STAR (``star``)
 
-Supported variant callers, specified through `variants: caller:`, are:
+Supported variant callers, specified through ``variants: caller:``, are:
 
-  - Platypus (`platypus`)
-  - GATK 4 (`gatk`)
-  - weCall (`wecall`, experimental)
-  - Octopus (`octopus`, experimental)
+  - Platypus (``platypus``)
+  - GATK 4 (``gatk``)
+  - weCall (``wecall``, experimental)
+  - Octopus (``octopus``, experimental)
 
 For example:
 
