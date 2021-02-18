@@ -90,7 +90,7 @@ pileup:
 
 # variant calling settings
 variants:
-  # default variant caller (platypus/gatk/wecall)
+  # default variant caller (platypus/gatk/wecall/octopus)
   caller: "gatk"
   # beta: variant caller to use for low frequency variant calling (only mutect2 currently supported)
   caller_low_frequency: "mutect2"

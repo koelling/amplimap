@@ -38,6 +38,38 @@ configuration files, run ``amplimap --print-config``.
 Common configuration changes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+.. _config-tools:
+
+Selecting the aligner and variant caller
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+amplimap can work with different aligners and variant callers.
+
+Supported aligners, specified through `align: aligner:`, are:
+
+  - BWA (`bwa`)
+  - Bowtie2 (`bowtie2`)
+  - STAR (`star`)
+
+Supported variant callers, specified through `variants: caller:`, are:
+
+  - Platypus (`platypus`)
+  - GATK 4 (`gatk`)
+  - weCall (`wecall`, experimental)
+  - Octopus (`octopus`, experimental)
+
+For example:
+
+::
+
+    align:
+      aligner: "bowtie2"
+    variants:
+      caller: "octopus"
+
+Additional aligners and variant callers can also be added by specifying the relevant commands under `tools:`.
+See the comments in the config file for details.
+
 .. _config-reference:
 
 Reference genome paths
@@ -184,4 +216,3 @@ is available in config_default.yaml:
 .. include:: ../amplimap/config_default.yaml
   :start-line: 4
   :code: yaml
-
