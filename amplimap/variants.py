@@ -46,6 +46,11 @@ variants_dtypes = {
 }
 variants_na_values = ['', 'NA', '.']
 
+
+def int_if_not_missing(x: str) -> int:
+    return int(x) if x != '.' else 0
+
+
 def load_gene_exons(file: str, genes: list) -> dict:
     """Load list of exon chr, strand, start and end locations for each gene in genes."""
     genes = genes.unique()
@@ -422,7 +427,7 @@ def make_summary_dataframe(
         vcf_infos['Total_Coverage'] = vcf_sample['DP'].astype(int)
     elif 'AD' in vcf_sample:
         # mutect2 won't
-        vcf_infos['Total_Coverage'] = [int(x.split(',')[0]) + int(x.split(',')[1]) for x in vcf_sample['AD']]
+        vcf_infos['Total_Coverage'] = [int_if_not_missing(x.split(',')[0]) + int_if_not_missing(x.split(',')[1]) for x in vcf_sample['AD']]
 
     if 'TCF' in vcf_infos:
         have_fwd_rev = True
@@ -438,8 +443,8 @@ def make_summary_dataframe(
 
     # GATK will give us an AD value
     if 'AD' in vcf_sample:
-        vcf_infos['Total_Reads_Ref'] = [int(x.split(',')[0]) for x in vcf_sample['AD']]
-        vcf_infos['Total_Reads_Alt'] = [int(x.split(',')[1]) for x in vcf_sample['AD']]
+        vcf_infos['Total_Reads_Ref'] = [int_if_not_missing(x.split(',')[0]) for x in vcf_sample['AD']]
+        vcf_infos['Total_Reads_Alt'] = [int_if_not_missing(x.split(',')[1]) for x in vcf_sample['AD']]
 
     # some error checking
     if ((vcf_infos['Total_Coverage_fwd'] != -1) & (vcf_infos['Total_Coverage_rev'] != -1)).any():
