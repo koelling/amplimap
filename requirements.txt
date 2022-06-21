@@ -17,7 +17,7 @@ interlap==0.2.6
 jsonschema==3.0.0a3
 kiwisolver==1.0.1
 matplotlib==3.0.2
-numpy==1.15.4
+numpy==1.22.0
 pandas==0.23.4
 pyfaidx==0.5.5.2
 pyparsing==2.3.0

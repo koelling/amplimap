@@ -98,7 +98,7 @@ notebook==5.0.0
 numba==0.36.2
 numcodecs==0.2.1
 numexpr==2.6.4
-numpy==1.13.3
+numpy==1.22.0
 numpydoc==0.6.0
 odo==0.5.0
 olefile==0.44
